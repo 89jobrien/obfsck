@@ -1,0 +1,34 @@
+[tools]
+rust = "stable"
+
+[tasks.check]
+description = "Type-check the project"
+run = "cargo check"
+
+[tasks.build]
+description = "Build the project"
+run = "cargo build"
+
+[tasks.test]
+description = "Run all tests"
+run = "cargo test"
+
+[tasks.format]
+description = "Format source code"
+run = "cargo fmt --all"
+
+[tasks."format-check"]
+description = "Check formatting without changing files"
+run = "cargo fmt --all -- --check"
+
+[tasks.lint]
+description = "Run clippy with warnings denied"
+run = "cargo clippy --all-targets --all-features -- -D warnings"
+
+[tasks.fix]
+description = "Apply automatic clippy fixes"
+run = "cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-features"
+
+[tasks.ci]
+description = "Run local CI checks"
+depends = ["format-check", "lint", "test", "build"]

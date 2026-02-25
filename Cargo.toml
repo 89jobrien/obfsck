@@ -5,3 +5,17 @@ edition = "2024"
 
 [dependencies]
 regex = "1"
+
+[features]
+legacy-user-scan = []
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "user_obfuscation"
+harness = false
+
+[[bench]]
+name = "full_obfuscation"
+harness = false

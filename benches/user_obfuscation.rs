@@ -2,6 +2,7 @@ use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criteri
 use regex::Regex;
 use std::collections::HashMap;
 
+#[cfg(feature = "legacy-user-scan")]
 fn legacy_user_obfuscation(text: &str) -> String {
     let patterns = [
         r"(?i)(user=)(\w+)",
@@ -79,6 +80,7 @@ fn is_system_user(user: &str) -> bool {
 fn bench_user_obfuscation(c: &mut Criterion) {
     let input = "user=alice uid=1001 by user bob user=alice user=root User carol user=alice";
     let mut group = c.benchmark_group("user_obfuscation");
+    #[cfg(feature = "legacy-user-scan")]
     group.bench_with_input(BenchmarkId::new("legacy", "short"), input, |b, i| {
         b.iter(|| black_box(legacy_user_obfuscation(black_box(i))));
     });

@@ -264,6 +264,7 @@ impl Obfuscator {
         )
     }
 
+    #[cfg(feature = "legacy-user-scan")]
     fn obfuscate_users(&mut self, text: &str) -> String {
         let mut s: Cow<'_, str> = Cow::Borrowed(text);
 
@@ -290,6 +291,28 @@ impl Obfuscator {
         }
 
         s.into_owned()
+    }
+
+    #[cfg(not(feature = "legacy-user-scan"))]
+    fn obfuscate_users(&mut self, text: &str) -> String {
+        if !user_re().is_match(text) {
+            return text.to_string();
+        }
+
+        let counters = &mut self.counters;
+        let users = &mut self.map.users;
+        user_re()
+            .replace_all(text, |caps: &regex::Captures<'_>| {
+                let prefix = caps.get(1).map_or("", |m| m.as_str());
+                let user = caps.get(2).map_or("", |m| m.as_str());
+                if Self::is_system_user(user) {
+                    caps[0].to_string()
+                } else {
+                    let token = get_or_create_token(counters, TokenCategory::User, user, users);
+                    format!("{prefix}{token}")
+                }
+            })
+            .into_owned()
     }
 
     fn obfuscate_paths(&mut self, text: &str) -> String {
@@ -631,6 +654,7 @@ fn container_id_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"\b[a-f0-9]{12,64}\b").expect("container id regex"))
 }
 
+#[cfg(feature = "legacy-user-scan")]
 fn user_res() -> &'static [Regex] {
     static RES: OnceLock<Vec<Regex>> = OnceLock::new();
     RES.get_or_init(|| {
@@ -644,6 +668,12 @@ fn user_res() -> &'static [Regex] {
         .map(|p| Regex::new(p).expect("user regex"))
         .collect()
     })
+}
+
+#[cfg(not(feature = "legacy-user-scan"))]
+fn user_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"(?i)(user=|uid=|User |by user )(\w+)").expect("user regex"))
 }
 
 fn path_re() -> &'static Regex {

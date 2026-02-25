@@ -30,6 +30,17 @@ Input:  /home/alice/notes.txt /opt/app/config.yml
 Output: /home/alice/[FILE].txt /opt/app/[FILE].yml
 ```
 
+## Benchmarks
+
+Run benchmarks with Criterion:
+
+```bash
+cargo bench
+```
+
+Recent performance improvement:
+- User obfuscation now uses a single regex pass instead of multiple passes, measured ~2.7x faster in the user-scan micro-bench.
+
 ## Public API
 
 - `obfuscate_text(text, level) -> (String, ObfuscationMapExport)`

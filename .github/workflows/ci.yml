@@ -34,3 +34,15 @@ jobs:
 
       - name: Build
         run: cargo build --all-targets --all-features
+
+      - name: Install coverage tooling
+        run: cargo install --locked cargo-tarpaulin
+
+      - name: Coverage (tarpaulin)
+        run: cargo tarpaulin --out Xml --output-dir target/tarpaulin
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: target/tarpaulin/tarpaulin.xml

@@ -653,7 +653,7 @@ fn path_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         Regex::new(
-            r#"(?i)(?:[a-z]:[\/][\w.\-\/ ]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[\w.\-\\ ]+)*|/[\w./-]+)"#,
+            r#"(?i)(?:[a-z]:[\/][\w.\-\/\\ ]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[\w.\-\\ ]+)*|/[\w./-]+)"#,
         )
         .expect("path regex")
     })

@@ -1,4 +1,4 @@
-use obfsck::{ObfuscationLevel, obfuscate_alert, obfuscate_text};
+use obfsck::{obfuscate_alert, obfuscate_text, secret_pattern_errors, ObfuscationLevel};
 use std::collections::HashMap;
 
 #[test]
@@ -55,11 +55,9 @@ fn obfuscate_alert_obfuscates_output_and_fields() {
     let (obf_output, obf_fields, map) =
         obfuscate_alert(output.as_deref(), Some(&fields), ObfuscationLevel::Standard);
 
-    assert!(
-        obf_output
-            .expect("output should exist")
-            .contains("[IP-EXTERNAL-1]")
-    );
+    assert!(obf_output
+        .expect("output should exist")
+        .contains("[IP-EXTERNAL-1]"));
     let obf_fields = obf_fields.expect("fields should exist");
     assert_eq!(obf_fields.get("email"), Some(&"[EMAIL-1]".to_string()));
     assert!(map.ips.contains_key("203.0.113.9"));
@@ -132,4 +130,36 @@ fn paranoid_only_secret_patterns_are_not_applied_in_minimal() {
     assert_eq!(minimal_map.secrets_count, 0);
     assert!(paranoid_out.contains("[REDACTED-CLOUDFLARE-KEY]"));
     assert!(paranoid_map.secrets_count >= 1);
+}
+
+#[test]
+fn paranoid_level_obfuscates_windows_paths() {
+    let input = r"C:\Users\alice\notes.txt \\server\share\docs\config.yml";
+    let (out, _) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        out.contains(r"C:\Users\alice\[FILE].txt"),
+        "windows drive path not obfuscated: {out}"
+    );
+    assert!(
+        out.contains(r"\\server\share\docs\[FILE].yml"),
+        "unc path not obfuscated: {out}"
+    );
+}
+
+#[test]
+fn paranoid_level_preserves_sensitive_windows_paths() {
+    let input = r"C:\Windows\System32\config\SAM";
+    let (out, _) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(out.contains(input));
+}
+
+#[test]
+fn secret_pattern_definitions_compile() {
+    let errors = secret_pattern_errors();
+    assert!(
+        errors.is_empty(),
+        "secret pattern compile errors: {errors:?}"
+    );
 }

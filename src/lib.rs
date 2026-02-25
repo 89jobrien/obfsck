@@ -304,45 +304,7 @@ impl Obfuscator {
                     return path.to_string();
                 }
 
-                let mut out = String::with_capacity(path.len());
-                for (idx, part) in path.split('/').enumerate() {
-                    if idx > 0 {
-                        out.push('/');
-                    }
-                    if part.is_empty() {
-                        continue;
-                    }
-                    if matches!(
-                        part,
-                        "home"
-                            | "var"
-                            | "tmp"
-                            | "etc"
-                            | "usr"
-                            | "opt"
-                            | "root"
-                            | "proc"
-                            | "sys"
-                            | "dev"
-                    ) {
-                        out.push_str(part);
-                        continue;
-                    }
-
-                    if let Some((name, ext)) = part.rsplit_once('.') {
-                        if name.len() > 3 {
-                            out.push_str("[FILE].");
-                            out.push_str(ext);
-                        } else {
-                            out.push_str(part);
-                        }
-                        continue;
-                    }
-
-                    out.push_str(part);
-                }
-
-                out
+                obfuscate_path_value(path)
             })
             .into_owned()
     }
@@ -489,8 +451,97 @@ fn is_sensitive_path(path: &str) -> bool {
         "/secrets/",
         "/vault/",
         "/.env",
+        "/windows/system32/config/sam",
+        "/windows/system32/config/system",
+        "/windows/system32/config/security",
+        "/windows/system32/config/",
     ];
-    SENSITIVE.iter().any(|s| path.contains(s))
+    let normalized = path.to_ascii_lowercase().replace('\\', "/");
+    SENSITIVE.iter().any(|s| normalized.contains(s))
+}
+
+fn obfuscate_path_value(path: &str) -> String {
+    let (separator, prefix, preserve_count, parts) = if path.starts_with("\\\\") {
+        let trimmed = &path[2..];
+        let parts: Vec<&str> = trimmed.split('\\').filter(|p| !p.is_empty()).collect();
+        ('\\', String::from("\\\\"), 2, parts)
+    } else if path.len() >= 2 && path.as_bytes()[1] == b':' {
+        let drive = &path[..2];
+        let rest = &path[2..];
+        let separator = if rest.contains('\\') { '\\' } else { '/' };
+        let mut prefix = drive.to_string();
+        if rest.starts_with('\\') || rest.starts_with('/') {
+            prefix.push(separator);
+        }
+        let parts: Vec<&str> = rest
+            .split(|c| c == '\\' || c == '/')
+            .filter(|p| !p.is_empty())
+            .collect();
+        (separator, prefix, 0, parts)
+    } else if path.contains('\\') {
+        let parts: Vec<&str> = path.split('\\').filter(|p| !p.is_empty()).collect();
+        ('\\', String::new(), 0, parts)
+    } else {
+        let parts: Vec<&str> = path.split('/').filter(|p| !p.is_empty()).collect();
+        let prefix = if path.starts_with('/') {
+            String::from("/")
+        } else {
+            String::new()
+        };
+        ('/', prefix, 0, parts)
+    };
+
+    let mut out = String::with_capacity(path.len());
+    out.push_str(&prefix);
+
+    for (idx, part) in parts.iter().enumerate() {
+        if !out.is_empty() && !out.ends_with(separator) && !out.ends_with('/') {
+            out.push(separator);
+        }
+
+        if idx < preserve_count {
+            out.push_str(part);
+            continue;
+        }
+
+        if should_preserve_path_segment(part) {
+            out.push_str(part);
+            continue;
+        }
+
+        if let Some((name, ext)) = part.rsplit_once('.') {
+            if name.len() > 3 {
+                out.push_str("[FILE].");
+                out.push_str(ext);
+            } else {
+                out.push_str(part);
+            }
+            continue;
+        }
+
+        out.push_str(part);
+    }
+
+    out
+}
+
+fn should_preserve_path_segment(part: &str) -> bool {
+    matches!(
+        part.to_ascii_lowercase().as_str(),
+        "home"
+            | "var"
+            | "tmp"
+            | "etc"
+            | "usr"
+            | "opt"
+            | "root"
+            | "proc"
+            | "sys"
+            | "dev"
+            | "users"
+            | "windows"
+            | "programdata"
+    )
 }
 
 struct SecretPattern {
@@ -506,27 +557,54 @@ struct SecretPatternDef {
     paranoid_only: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SecretPatternError {
+    pub name: &'static str,
+    pub error: String,
+}
+
 mod secret_patterns;
 use secret_patterns::SECRET_PATTERN_DEFS;
 
 fn secret_patterns() -> &'static [SecretPattern] {
     static PATS: OnceLock<Vec<SecretPattern>> = OnceLock::new();
     PATS.get_or_init(|| {
-        SECRET_PATTERN_DEFS
+        let mut errors = Vec::new();
+        let patterns = SECRET_PATTERN_DEFS
             .iter()
-            .map(|d| {
-                let re = RegexBuilder::new(d.pattern)
-                    .case_insensitive(true)
-                    .build()
-                    .unwrap_or_else(|e| panic!("secret pattern {} failed to compile: {e}", d.name));
-                SecretPattern {
+            .filter_map(|d| {
+                let re = match RegexBuilder::new(d.pattern).case_insensitive(true).build() {
+                    Ok(re) => re,
+                    Err(err) => {
+                        errors.push(SecretPatternError {
+                            name: d.name,
+                            error: err.to_string(),
+                        });
+                        return None;
+                    }
+                };
+
+                Some(SecretPattern {
                     label: d.label,
                     paranoid_only: d.paranoid_only,
                     re,
-                }
+                })
             })
-            .collect()
+            .collect();
+
+        let _ = SECRET_PATTERN_ERRORS.set(errors);
+        patterns
     })
+}
+
+static SECRET_PATTERN_ERRORS: OnceLock<Vec<SecretPatternError>> = OnceLock::new();
+
+pub fn secret_pattern_errors() -> &'static [SecretPatternError] {
+    if SECRET_PATTERN_ERRORS.get().is_none() {
+        let _ = secret_patterns();
+    }
+
+    SECRET_PATTERN_ERRORS.get_or_init(Vec::new)
 }
 
 fn ipv4_re() -> &'static Regex {
@@ -573,7 +651,12 @@ fn user_res() -> &'static [Regex] {
 
 fn path_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"/[\w./-]+").expect("path regex"))
+    RE.get_or_init(|| {
+        Regex::new(
+            r#"(?i)(?:[a-z]:[\/][\w.\-\/ ]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[\w.\-\\ ]+)*|/[\w./-]+)"#,
+        )
+        .expect("path regex")
+    })
 }
 
 fn hostname_re() -> &'static Regex {

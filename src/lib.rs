@@ -461,35 +461,32 @@ fn is_sensitive_path(path: &str) -> bool {
 }
 
 fn obfuscate_path_value(path: &str) -> String {
-    let (separator, prefix, preserve_count, parts) = if path.starts_with("\\\\") {
-        let trimmed = &path[2..];
-        let parts: Vec<&str> = trimmed.split('\\').filter(|p| !p.is_empty()).collect();
-        ('\\', String::from("\\\\"), 2, parts)
-    } else if path.len() >= 2 && path.as_bytes()[1] == b':' {
-        let drive = &path[..2];
-        let rest = &path[2..];
-        let separator = if rest.contains('\\') { '\\' } else { '/' };
-        let mut prefix = drive.to_string();
-        if rest.starts_with('\\') || rest.starts_with('/') {
-            prefix.push(separator);
-        }
-        let parts: Vec<&str> = rest
-            .split(|c| c == '\\' || c == '/')
-            .filter(|p| !p.is_empty())
-            .collect();
-        (separator, prefix, 0, parts)
-    } else if path.contains('\\') {
-        let parts: Vec<&str> = path.split('\\').filter(|p| !p.is_empty()).collect();
-        ('\\', String::new(), 0, parts)
-    } else {
-        let parts: Vec<&str> = path.split('/').filter(|p| !p.is_empty()).collect();
-        let prefix = if path.starts_with('/') {
-            String::from("/")
+    let (separator, prefix, preserve_count, parts) =
+        if let Some(trimmed) = path.strip_prefix("\\\\") {
+            let parts: Vec<&str> = trimmed.split('\\').filter(|p| !p.is_empty()).collect();
+            ('\\', String::from("\\\\"), 2, parts)
+        } else if path.len() >= 2 && path.as_bytes()[1] == b':' {
+            let drive = &path[..2];
+            let rest = &path[2..];
+            let separator = if rest.contains('\\') { '\\' } else { '/' };
+            let mut prefix = drive.to_string();
+            if rest.starts_with('\\') || rest.starts_with('/') {
+                prefix.push(separator);
+            }
+            let parts: Vec<&str> = rest.split(['\\', '/']).filter(|p| !p.is_empty()).collect();
+            (separator, prefix, 0, parts)
+        } else if path.contains('\\') {
+            let parts: Vec<&str> = path.split('\\').filter(|p| !p.is_empty()).collect();
+            ('\\', String::new(), 0, parts)
         } else {
-            String::new()
+            let parts: Vec<&str> = path.split('/').filter(|p| !p.is_empty()).collect();
+            let prefix = if path.starts_with('/') {
+                String::from("/")
+            } else {
+                String::new()
+            };
+            ('/', prefix, 0, parts)
         };
-        ('/', prefix, 0, parts)
-    };
 
     let mut out = String::with_capacity(path.len());
     out.push_str(&prefix);
@@ -653,7 +650,7 @@ fn path_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         Regex::new(
-            r#"(?i)(?:[a-z]:[\/][\w.\-\/\\ ]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[\w.\-\\ ]+)*|/[\w./-]+)"#,
+            r#"(?i)(?:[a-z]:\\[^\s]+|[a-z]:/[^\s]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[^\\\s]+)*|/[\w./-]+)"#,
         )
         .expect("path regex")
     })

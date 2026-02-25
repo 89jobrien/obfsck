@@ -38,9 +38,6 @@ Run benchmarks with Criterion:
 cargo bench
 ```
 
-Recent performance improvement:
-- User obfuscation now uses a single regex pass instead of multiple passes, measured ~2.7x faster in the user-scan micro-bench.
-
 ## Public API
 
 - `obfuscate_text(text, level) -> (String, ObfuscationMapExport)`

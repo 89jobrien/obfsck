@@ -1,4 +1,4 @@
-use crate::alert_analyzer::{AlertAnalyzer, AnalyzerConfig, AnalyzerError, load_config};
+use crate::analyzer::{AlertAnalyzer, AnalyzerConfig, AnalyzerError, load_config};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse};

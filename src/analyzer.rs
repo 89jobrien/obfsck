@@ -1,10 +1,12 @@
-use crate::log_agents::{LogClient, LokiClient, VictoriaLogsClient};
+use crate::logs::{LogClient, LokiClient, VictoriaLogsClient};
+use crate::schema::AnalysisOutput;
 use crate::{ObfuscationLevel, obfuscate_alert};
 use chrono::{DateTime, Duration, Utc};
 use clap::Parser;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
+use simplify_baml::{BamlSchema, BamlSchemaRegistry, FieldType, IR, parse_llm_response_with_ir};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -157,7 +159,7 @@ pub enum AnalyzerError {
 type Result<T> = std::result::Result<T, AnalyzerError>;
 
 pub trait LlmProvider {
-    fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<Value>;
+    fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String>;
 }
 
 pub struct OllamaProvider {
@@ -177,7 +179,7 @@ impl OllamaProvider {
 }
 
 impl LlmProvider for OllamaProvider {
-    fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<Value> {
+    fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String> {
         let response = self
             .client
             .post(format!("{}/api/chat", self.url))
@@ -204,7 +206,7 @@ impl LlmProvider for OllamaProvider {
                 )
             })?;
 
-        serde_json::from_str(content).map_err(AnalyzerError::from)
+        Ok(content.to_string())
     }
 }
 
@@ -225,7 +227,7 @@ impl OpenAiProvider {
 }
 
 impl LlmProvider for OpenAiProvider {
-    fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<Value> {
+    fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String> {
         let response = self
             .client
             .post("https://api.openai.com/v1/chat/completions")
@@ -255,7 +257,7 @@ impl LlmProvider for OpenAiProvider {
                 )
             })?;
 
-        serde_json::from_str(content).map_err(AnalyzerError::from)
+        Ok(content.to_string())
     }
 }
 
@@ -276,7 +278,7 @@ impl AnthropicProvider {
 }
 
 impl LlmProvider for AnthropicProvider {
-    fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<Value> {
+    fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String> {
         let response = self
             .client
             .post("https://api.anthropic.com/v1/messages")
@@ -304,22 +306,7 @@ impl LlmProvider for AnthropicProvider {
                 )
             })?;
 
-        if let Ok(json_obj) = serde_json::from_str::<Value>(content) {
-            return Ok(json_obj);
-        }
-
-        if let Some(start) = content.find('{')
-            && let Some(end) = content.rfind('}')
-        {
-            let maybe_json = &content[start..=end];
-            if let Ok(json_obj) = serde_json::from_str::<Value>(maybe_json) {
-                return Ok(json_obj);
-            }
-        }
-
-        Err(AnalyzerError::ResponseParse(
-            "anthropic response did not contain valid JSON".to_string(),
-        ))
+        Ok(content.to_string())
     }
 }
 
@@ -484,6 +471,8 @@ pub struct AlertAnalyzer {
     log_client: Box<dyn LogClient>,
     obfuscation_level: ObfuscationLevel,
     provider: Box<dyn LlmProvider>,
+    analysis_ir: IR,
+    analysis_output_type: FieldType,
 }
 
 impl AlertAnalyzer {
@@ -531,12 +520,32 @@ impl AlertAnalyzer {
             }
         };
 
+        let analysis_ir = BamlSchemaRegistry::new().register::<AnalysisOutput>().build();
+        let analysis_output_type = FieldType::Class(AnalysisOutput::schema_name().to_string());
+
         Ok(Self {
             backend,
             log_client,
             obfuscation_level,
             provider,
+            analysis_ir,
+            analysis_output_type,
         })
+    }
+
+    fn parse_analysis_response(&self, raw_response: &str) -> Result<Value> {
+        let parsed = parse_llm_response_with_ir(
+            &self.analysis_ir,
+            raw_response,
+            &self.analysis_output_type,
+        )
+        .map_err(|e| AnalyzerError::ResponseParse(format!("strict parse failed: {e}")))?;
+
+        let as_json = serde_json::to_value(parsed)?;
+        let typed: AnalysisOutput = serde_json::from_value(as_json)
+            .map_err(|e| AnalyzerError::ResponseParse(format!("schema validation failed: {e}")))?;
+
+        serde_json::to_value(typed).map_err(AnalyzerError::from)
     }
 
     pub fn fetch_alerts(&self, priority: Option<&str>, last: &str, limit: usize) -> Result<Vec<Value>> {
@@ -643,6 +652,7 @@ impl AlertAnalyzer {
         let analysis = self
             .provider
             .analyze(SYSTEM_PROMPT, &user_prompt)
+            .and_then(|raw| self.parse_analysis_response(&raw))
             .unwrap_or_else(|e| {
                 json!({
                     "error": e.to_string(),

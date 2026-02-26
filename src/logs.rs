@@ -1,4 +1,4 @@
-use crate::alert_analyzer::AnalyzerError;
+use crate::analyzer::AnalyzerError;
 use chrono::{DateTime, Utc};
 use reqwest::blocking::Client;
 use serde_json::{json, Map, Value};

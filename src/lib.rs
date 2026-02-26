@@ -3,6 +3,7 @@
 pub mod analyzer;
 pub mod api;
 pub mod clients;
+pub mod logging;
 pub mod schema;
 
 mod helpers;

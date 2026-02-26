@@ -1,5 +1,5 @@
 use clap::Parser;
-use obfsck::analysis_api::run_server;
+use obfsck::api::run_server;
 
 #[derive(Debug, Parser)]
 #[command(name = "analysis-api")]

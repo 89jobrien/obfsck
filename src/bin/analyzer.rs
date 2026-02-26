@@ -1,5 +1,5 @@
 use clap::Parser;
-use obfsck::alert_analyzer::{run_from_args, CliArgs};
+use obfsck::analyzer::{run_from_args, CliArgs};
 
 fn main() {
     let args = CliArgs::parse();

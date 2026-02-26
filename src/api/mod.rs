@@ -18,7 +18,7 @@ use thiserror::Error;
 use tower_http::cors::CorsLayer;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::TraceLayer;
-use tracing::{debug, error, instrument, warn};
+use tracing::{error, instrument, warn};
 
 mod render;
 
@@ -634,7 +634,6 @@ async fn analyze_alert_with_config(
     config: AnalyzerConfig,
     alert: Value,
 ) -> Result<Value, ApiError> {
-    debug!("Spawning blocking task for alert analysis");
     tokio::task::spawn_blocking(move || {
         let analyzer = AlertAnalyzer::from_config(&config)?;
         Ok::<Value, AnalyzerError>(analyzer.analyze_alert(&alert, false))

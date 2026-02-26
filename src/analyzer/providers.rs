@@ -34,8 +34,6 @@ impl LlmProvider for OllamaProvider {
     ))]
     fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String> {
         let start = std::time::Instant::now();
-        info!("Sending LLM request");
-
         let response = self
             .client
             .post(format!("{}/api/chat", self.url))
@@ -100,8 +98,6 @@ impl LlmProvider for OpenAiProvider {
     ))]
     fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String> {
         let start = std::time::Instant::now();
-        info!("Sending LLM request");
-
         let response = self
             .client
             .post("https://api.openai.com/v1/chat/completions")
@@ -169,8 +165,6 @@ impl LlmProvider for AnthropicProvider {
     ))]
     fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String> {
         let start = std::time::Instant::now();
-        info!("Sending LLM request");
-
         let response = self
             .client
             .post("https://api.anthropic.com/v1/messages")

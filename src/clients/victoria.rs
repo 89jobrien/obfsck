@@ -1,5 +1,5 @@
+use super::client_utils::{from_rfc3339_or_now, parse_alert_value, with_metadata};
 use super::http::BlockingHttp;
-use super::normalize::{from_rfc3339_or_now, parse_alert_value, with_metadata};
 use super::{LogClient, Result};
 use chrono::{DateTime, Utc};
 use serde_json::{Map, Value};

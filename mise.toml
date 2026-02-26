@@ -32,3 +32,23 @@ run = "cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-featu
 [tasks.ci]
 description = "Run local CI checks"
 depends = ["lint", "test", "build"]
+
+[tasks.logs]
+description = "Watch API server logs (pretty format, info level)"
+run = "LOG_FORMAT=pretty RUST_LOG=obfsck=info,tower_http=debug cargo run --bin api"
+
+[tasks."logs:analyzer"]
+description = "Watch analyzer logs (pretty format, info level)"
+run = "LOG_FORMAT=pretty RUST_LOG=obfsck=info cargo run --bin analyzer -- --limit 5"
+
+[tasks."logs:debug"]
+description = "Watch API server logs with debug level"
+run = "LOG_FORMAT=pretty RUST_LOG=obfsck=debug,tower_http=debug cargo run --bin api"
+
+[tasks."logs:json"]
+description = "Watch API server logs in JSON format (production simulation)"
+run = "LOG_FORMAT=json RUST_LOG=obfsck=info,tower_http=debug cargo run --bin api"
+
+[tasks."logs:trace"]
+description = "Watch API server logs with maximum verbosity"
+run = "LOG_FORMAT=pretty RUST_LOG=obfsck=trace,tower_http=trace cargo run --bin api"

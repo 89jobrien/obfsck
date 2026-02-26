@@ -164,7 +164,6 @@ fn default_anthropic_model() -> String {
 
 #[instrument(fields(config_path = ?config_path))]
 pub fn load_config(config_path: Option<&str>) -> Result<AnalyzerConfig> {
-    debug!("Loading configuration");
     let mut raw = None;
 
     if let Some(path) = config_path {
@@ -197,12 +196,10 @@ pub fn load_config(config_path: Option<&str>) -> Result<AnalyzerConfig> {
     }
 
     let mut cfg = if let Some(text) = raw {
-        debug!("Parsing YAML configuration");
         let mut value: Value = serde_yaml::from_str::<Value>(&text)?;
         expand_env_in_value(&mut value);
         serde_json::from_value::<AnalyzerConfig>(value)?
     } else {
-        debug!("No config file found, using defaults");
         AnalyzerConfig::default()
     };
 
@@ -210,14 +207,12 @@ pub fn load_config(config_path: Option<&str>) -> Result<AnalyzerConfig> {
     cfg.analysis.openai.api_key = expand_env_string(&cfg.analysis.openai.api_key);
     cfg.analysis.anthropic.api_key = expand_env_string(&cfg.analysis.anthropic.api_key);
 
-    debug!(backend = %cfg.storage.backend, provider = %cfg.analysis.provider, "Configuration loaded successfully");
     Ok(cfg)
 }
 
 fn read_secret(env_var: &str) -> Option<String> {
     let file_var = format!("{env_var}_FILE");
     if let Ok(file_path) = env::var(&file_var) {
-        debug!(var = %file_var, path = %file_path, "Reading secret from file");
         if let Ok(meta) = fs::metadata(&file_path)
             && meta.len() > 65_536
         {
@@ -225,16 +220,12 @@ fn read_secret(env_var: &str) -> Option<String> {
             return None;
         }
         if let Ok(content) = fs::read_to_string(&file_path) {
-            debug!("Secret loaded from file");
             return Some(content.trim().to_string());
         } else {
             warn!(path = %file_path, "Failed to read secret file");
         }
     }
 
-    if env::var(env_var).is_ok() {
-        debug!(var = %env_var, "Reading secret from environment variable");
-    }
     env::var(env_var).ok()
 }
 

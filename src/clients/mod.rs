@@ -3,9 +3,9 @@ use chrono::{DateTime, Utc};
 use serde_json::Value;
 use std::collections::HashMap;
 
+mod client_utils;
 mod http;
 mod loki;
-mod normalize;
 mod victoria;
 
 pub use loki::LokiClient;

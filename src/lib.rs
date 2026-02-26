@@ -1,8 +1,9 @@
 //! Obfuscator
 
-pub mod alert_analyzer;
-pub mod analysis_api;
-pub mod log_agents;
+pub mod analyzer;
+pub mod api;
+pub mod logs;
+pub mod schema;
 
 use regex::{Regex, RegexBuilder};
 use std::borrow::Cow;
@@ -587,8 +588,8 @@ pub struct SecretPatternError {
     pub error: String,
 }
 
-mod secret_patterns;
-use secret_patterns::SECRET_PATTERN_DEFS;
+mod secrets;
+use secrets::SECRET_PATTERN_DEFS;
 
 fn secret_patterns() -> &'static [SecretPattern] {
     static PATS: OnceLock<Vec<SecretPattern>> = OnceLock::new();

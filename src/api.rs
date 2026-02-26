@@ -17,6 +17,10 @@ use std::sync::OnceLock;
 use thiserror::Error;
 use tower_http::cors::CorsLayer;
 
+mod render;
+
+use render::{html_escape, render_analysis_html};
+
 #[derive(Debug, Error)]
 pub enum ApiError {
     #[error("analyzer error: {0}")]
@@ -134,9 +138,7 @@ pub async fn run_server(host: String, port: u16) -> Result<(), ApiError> {
     let listener = tokio::net::TcpListener::bind(format!("{host}:{port}"))
         .await
         .map_err(ApiError::Io)?;
-    axum::serve(listener, app)
-        .await
-        .map_err(ApiError::Io)
+    axum::serve(listener, app).await.map_err(ApiError::Io)
 }
 
 async fn health() -> Json<HealthResp> {
@@ -290,52 +292,51 @@ async fn analyze_page(
     let show_mapping = parse_boolish(query.show_mapping.as_deref(), false);
 
     if output.is_empty() {
-        return Html(render_analysis_html(
-            &AnalysisPageView {
-                error: Some("No alert output provided. Use ?output=...".to_string()),
+        return Html(render_analysis_html(&AnalysisPageView {
+            error: Some("No alert output provided. Use ?output=...".to_string()),
+            analysis: &json!({}),
+            original_output: "",
+            obfuscated_output: "",
+            obfuscation_mapping: &json!({}),
+            show_mapping,
+            cached: false,
+            timestamp: &Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        }));
+    }
+
+    let cache_key = get_cache_key(&output, &rule);
+    if let Ok(Some(cached)) = get_cached_analysis(&state, &cache_key) {
+        return Html(render_analysis_html(&AnalysisPageView {
+            error: None,
+            analysis: &cached.analysis,
+            original_output: &output,
+            obfuscated_output: &cached.obfuscated_output,
+            obfuscation_mapping: &cached.obfuscation_mapping,
+            show_mapping,
+            cached: true,
+            timestamp: &cached.timestamp,
+        }));
+    }
+
+    let alert = build_alert(
+        output.clone(),
+        rule.clone(),
+        priority.clone(),
+        hostname.clone(),
+    );
+    let result = match analyze_alert_with_config(state.config.clone(), alert).await {
+        Ok(r) => r,
+        Err(err) => {
+            return Html(render_analysis_html(&AnalysisPageView {
+                error: Some(err.to_string()),
                 analysis: &json!({}),
-                original_output: "",
+                original_output: &output,
                 obfuscated_output: "",
                 obfuscation_mapping: &json!({}),
                 show_mapping,
                 cached: false,
                 timestamp: &Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-            },
-        ));
-    }
-
-    let cache_key = get_cache_key(&output, &rule);
-    if let Ok(Some(cached)) = get_cached_analysis(&state, &cache_key) {
-        return Html(render_analysis_html(
-            &AnalysisPageView {
-                error: None,
-                analysis: &cached.analysis,
-                original_output: &output,
-                obfuscated_output: &cached.obfuscated_output,
-                obfuscation_mapping: &cached.obfuscation_mapping,
-                show_mapping,
-                cached: true,
-                timestamp: &cached.timestamp,
-            },
-        ));
-    }
-
-    let alert = build_alert(output.clone(), rule.clone(), priority.clone(), hostname.clone());
-    let result = match analyze_alert_with_config(state.config.clone(), alert).await {
-        Ok(r) => r,
-        Err(err) => {
-            return Html(render_analysis_html(
-                &AnalysisPageView {
-                    error: Some(err.to_string()),
-                    analysis: &json!({}),
-                    original_output: &output,
-                    obfuscated_output: "",
-                    obfuscation_mapping: &json!({}),
-                    show_mapping,
-                    cached: false,
-                    timestamp: &Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-                },
-            ));
+            }));
         }
     };
 
@@ -343,7 +344,9 @@ async fn analyze_page(
         let _ = store_analysis_with_config(state.config.clone(), result.clone()).await;
     }
 
-    let _ = save_to_cache(&state, &cache_key, &result, &output, &rule, &priority, &hostname);
+    let _ = save_to_cache(
+        &state, &cache_key, &result, &output, &rule, &priority, &hostname,
+    );
 
     let analysis = result.get("analysis").cloned().unwrap_or_else(|| json!({}));
     let obfuscated_output = result
@@ -356,18 +359,16 @@ async fn analyze_page(
         .cloned()
         .unwrap_or_else(|| json!({}));
 
-    Html(render_analysis_html(
-        &AnalysisPageView {
-            error: None,
-            analysis: &analysis,
-            original_output: &output,
-            obfuscated_output: &obfuscated_output,
-            obfuscation_mapping: &mapping,
-            show_mapping,
-            cached: false,
-            timestamp: &Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-        },
-    ))
+    Html(render_analysis_html(&AnalysisPageView {
+        error: None,
+        analysis: &analysis,
+        original_output: &output,
+        obfuscated_output: &obfuscated_output,
+        obfuscation_mapping: &mapping,
+        show_mapping,
+        cached: false,
+        timestamp: &Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+    }))
 }
 
 async fn history_page(State(state): State<Arc<AppState>>) -> impl IntoResponse {
@@ -405,18 +406,16 @@ async fn history_detail(
     Path(cache_key): Path<String>,
 ) -> impl IntoResponse {
     match get_cached_analysis(&state, &cache_key) {
-        Ok(Some(cached)) => Html(render_analysis_html(
-            &AnalysisPageView {
-                error: None,
-                analysis: &cached.analysis,
-                original_output: &cached.original_output,
-                obfuscated_output: &cached.obfuscated_output,
-                obfuscation_mapping: &cached.obfuscation_mapping,
-                show_mapping: false,
-                cached: true,
-                timestamp: &cached.timestamp,
-            },
-        ))
+        Ok(Some(cached)) => Html(render_analysis_html(&AnalysisPageView {
+            error: None,
+            analysis: &cached.analysis,
+            original_output: &cached.original_output,
+            obfuscated_output: &cached.obfuscated_output,
+            obfuscation_mapping: &cached.obfuscation_mapping,
+            show_mapping: false,
+            cached: true,
+            timestamp: &cached.timestamp,
+        }))
         .into_response(),
         _ => (StatusCode::NOT_FOUND, "Analysis not found").into_response(),
     }
@@ -592,8 +591,12 @@ fn normalize_output(output: &str) -> String {
     let mut normalized = output.split_whitespace().collect::<Vec<_>>().join(" ");
 
     normalized = re_iso_ts().replace_all(&normalized, "[TIME]").into_owned();
-    normalized = re_unix_ts().replace_all(&normalized, "[TIMESTAMP]").into_owned();
-    normalized = re_plain_dt().replace_all(&normalized, "[TIME]").into_owned();
+    normalized = re_unix_ts()
+        .replace_all(&normalized, "[TIMESTAMP]")
+        .into_owned();
+    normalized = re_plain_dt()
+        .replace_all(&normalized, "[TIME]")
+        .into_owned();
     normalized = re_ids().replace_all(&normalized, "$1=[ID]").into_owned();
     normalized = re_container_id()
         .replace_all(&normalized, "$1=[CID]")
@@ -612,166 +615,10 @@ fn get_cache_key(output: &str, rule: &str) -> String {
     hex.chars().take(16).collect()
 }
 
-fn html_escape(input: &str) -> String {
-    input
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&#39;")
-}
-
-fn render_analysis_html(view: &AnalysisPageView<'_>) -> String {
-    let severity = view
-        .analysis
-        .pointer("/risk/severity")
-        .and_then(Value::as_str)
-        .unwrap_or("medium")
-        .to_ascii_lowercase();
-    let severity_class = if ["critical", "high", "medium", "low"].contains(&severity.as_str()) {
-        severity
-    } else {
-        "medium".to_string()
-    };
-
-    let attack_vector = html_escape(
-        view.analysis
-            .get("attack_vector")
-            .and_then(Value::as_str)
-            .unwrap_or("N/A"),
-    );
-    let summary = html_escape(
-        view.analysis
-            .get("summary")
-            .and_then(Value::as_str)
-            .unwrap_or("N/A"),
-    );
-    let mitre_tactic = html_escape(
-        view.analysis
-            .pointer("/mitre_attack/tactic")
-            .and_then(Value::as_str)
-            .unwrap_or("Unknown"),
-    );
-    let mitre_technique_id = html_escape(
-        view.analysis
-            .pointer("/mitre_attack/technique_id")
-            .and_then(Value::as_str)
-            .unwrap_or("Unknown"),
-    );
-    let mitre_technique_name = html_escape(
-        view.analysis
-            .pointer("/mitre_attack/technique_name")
-            .and_then(Value::as_str)
-            .unwrap_or(""),
-    );
-    let risk_severity = html_escape(
-        view.analysis
-            .pointer("/risk/severity")
-            .and_then(Value::as_str)
-            .unwrap_or("Unknown"),
-    );
-    let risk_confidence = html_escape(
-        view.analysis
-            .pointer("/risk/confidence")
-            .and_then(Value::as_str)
-            .unwrap_or("Unknown"),
-    );
-    let risk_impact = html_escape(
-        view.analysis
-            .pointer("/risk/impact")
-            .and_then(Value::as_str)
-            .unwrap_or(""),
-    );
-    let fp_likelihood = html_escape(
-        view.analysis
-            .pointer("/false_positive/likelihood")
-            .and_then(Value::as_str)
-            .unwrap_or("Unknown"),
-    );
-
-    let mut investigate_items = String::new();
-    if let Some(items) = view.analysis.get("investigate").and_then(Value::as_array) {
-        for item in items {
-            if let Some(text) = item.as_str() {
-                investigate_items.push_str(&format!("<li>{}</li>", html_escape(text)));
-            }
-        }
-    }
-
-    let mitigations = view
-        .analysis
-        .get("mitigations")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
-    let mut mitigation_sections = String::new();
-    for (label, key) in [
-        ("Immediate Actions", "immediate"),
-        ("Short-term", "short_term"),
-        ("Long-term", "long_term"),
-    ] {
-        let mut items_html = String::new();
-        if let Some(items) = mitigations.get(key).and_then(Value::as_array) {
-            for item in items {
-                if let Some(text) = item.as_str() {
-                    items_html.push_str(&format!("<li>{}</li>", html_escape(text)));
-                }
-            }
-        }
-        if !items_html.is_empty() {
-            mitigation_sections.push_str(&format!(
-                "<h3>{label}</h3><ul>{items_html}</ul>",
-            ));
-        }
-    }
-
-    let mapping_block = if view.show_mapping {
-        format!(
-            "<h2>Obfuscation Mapping</h2><pre>{}</pre>",
-            html_escape(&serde_json::to_string_pretty(view.obfuscation_mapping).unwrap_or_default())
-        )
-    } else {
-        String::new()
-    };
-
-    if let Some(err) = view.error.clone() {
-        return format!(
-            "<!DOCTYPE html><html><head><title>Alert Analysis</title><style>body{{font-family:-apple-system,sans-serif;background:#111217;color:#d8d9da;padding:20px;}}.container{{max-width:900px;margin:0 auto;}}.error{{background:#f2495c22;border:1px solid #f2495c;padding:20px;border-radius:8px;color:#f2495c;}}</style></head><body><div class='container'><p><a href='/'>← API Home</a> · <a href='/history'>History</a></p><h1>Alert Analysis</h1><div class='error'><strong>Analysis Error:</strong> {}</div><p style='margin-top:20px;color:#8e8e8e;'>{}</p></div></body></html>",
-            html_escape(&err),
-            html_escape(view.timestamp)
-        );
-    }
-
-    let cached_badge = if view.cached {
-        " <span style='background:#3274d9;color:white;padding:4px 10px;border-radius:4px;font-size:0.85em;'>Cached</span>"
-    } else {
-        ""
-    };
-
-    let obf_section = if !view.obfuscated_output.is_empty() && view.obfuscated_output != view.original_output {
-        format!(
-            "<h2>What Was Sent to AI (Obfuscated)</h2><pre style='border-left:3px solid #73bf69;padding-left:10px;'>{}</pre>",
-            html_escape(view.obfuscated_output)
-        )
-    } else {
-        String::new()
-    };
-
-    let investigate_section = if investigate_items.is_empty() {
-        String::new()
-    } else {
-        format!("<h2>Investigation Steps</h2><ol>{investigate_items}</ol>")
-    };
-
-    format!(
-        "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Alert Analysis</title><style>body{{font-family:-apple-system,sans-serif;background:#111217;color:#d8d9da;padding:20px;line-height:1.6;}}.container{{max-width:900px;margin:0 auto;}}h1{{color:#ff9830;}}h2{{color:#73bf69;}}.card{{background:#1f2129;border-radius:8px;padding:20px;margin-bottom:20px;border-left:4px solid #3274d9;}}.card.critical{{border-left-color:#f2495c;}}.card.high{{border-left-color:#ff9830;}}.card.medium{{border-left-color:#fade2a;}}.card.low{{border-left-color:#73bf69;}}pre{{background:#181b1f;padding:15px;border-radius:4px;overflow-x:auto;border:1px solid #2c3235;}}.badge{{display:inline-block;background:#3274d9;color:white;padding:4px 10px;border-radius:4px;font-size:0.85em;margin-right:8px;}}.severity{{display:inline-block;padding:4px 12px;border-radius:4px;font-weight:bold;background:#2a2d35;}}</style></head><body><div class='container'><p><a href='/'>← API Home</a> · <a href='/history'>History</a></p><h1>Alert Analysis{cached_badge}</h1><div class='card'><strong>Privacy Protected:</strong> Sensitive data was obfuscated before AI analysis. <em>{}</em></div><h2>Original Alert</h2><pre>{}</pre>{obf_section}<div class='card {severity_class}'><h2>Attack Vector</h2><p>{attack_vector}</p><h2>MITRE ATT&CK</h2><p><span class='badge'>{mitre_tactic}</span><span class='badge'>{mitre_technique_id} - {mitre_technique_name}</span></p><h2>Risk Assessment</h2><p><span class='severity'>{risk_severity}</span> Confidence: {risk_confidence}</p><p>{risk_impact}</p></div><h2>Mitigations</h2><div class='card'>{}</div><h2>False Positive Assessment</h2><div class='card'><p>Likelihood: {fp_likelihood}</p></div>{investigate_section}<h2>Summary</h2><div class='card'><p>{summary}</p></div>{mapping_block}<p style='margin-top:40px;color:#6e6e6e;'>Analyzed at {}</p></div></body></html>",
-        html_escape(view.timestamp),
-        html_escape(view.original_output),
-        mitigation_sections,
-        html_escape(view.timestamp)
-    )
-}
-
-async fn analyze_alert_with_config(config: AnalyzerConfig, alert: Value) -> Result<Value, ApiError> {
+async fn analyze_alert_with_config(
+    config: AnalyzerConfig,
+    alert: Value,
+) -> Result<Value, ApiError> {
     tokio::task::spawn_blocking(move || {
         let analyzer = AlertAnalyzer::from_config(&config)?;
         Ok::<Value, AnalyzerError>(analyzer.analyze_alert(&alert, false))
@@ -806,9 +653,7 @@ fn re_unix_ts() -> &'static Regex {
 
 fn re_plain_dt() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}").expect("plain dt regex")
-    })
+    RE.get_or_init(|| Regex::new(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}").expect("plain dt regex"))
 }
 
 fn re_ids() -> &'static Regex {
@@ -825,9 +670,7 @@ fn re_container_id() -> &'static Regex {
 
 fn re_ip_port() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?").expect("ip regex")
-    })
+    RE.get_or_init(|| Regex::new(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?").expect("ip regex"))
 }
 
 #[cfg(test)]

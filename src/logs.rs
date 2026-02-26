@@ -1,7 +1,7 @@
 use crate::analyzer::AnalyzerError;
 use chrono::{DateTime, Utc};
 use reqwest::blocking::Client;
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 use std::collections::HashMap;
 use std::time::Duration as StdDuration;
 

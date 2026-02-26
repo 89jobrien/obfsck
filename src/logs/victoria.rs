@@ -4,6 +4,7 @@ use super::{LogClient, Result};
 use chrono::{DateTime, Utc};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
+use tracing::{debug, info, warn, instrument};
 
 pub struct VictoriaLogsClient {
     http: BlockingHttp,
@@ -18,6 +19,7 @@ impl VictoriaLogsClient {
 }
 
 impl LogClient for VictoriaLogsClient {
+    #[instrument(skip(self), fields(query = %query, limit = %limit))]
     fn query_range(
         &self,
         query: &str,
@@ -25,6 +27,7 @@ impl LogClient for VictoriaLogsClient {
         end: DateTime<Utc>,
         limit: usize,
     ) -> Result<Vec<Value>> {
+        debug!("Querying VictoriaLogs");
         let body = self.http.get_bytes(
             "/select/logsql/query",
             &[
@@ -36,12 +39,15 @@ impl LogClient for VictoriaLogsClient {
         )?;
 
         let mut alerts = Vec::new();
+        let mut parse_errors = 0;
+
         for line in body.split(|&b| b == b'\n') {
             if line.is_empty() {
                 continue;
             }
 
             let Ok(entry) = serde_json::from_slice::<Value>(line) else {
+                parse_errors += 1;
                 continue;
             };
 
@@ -64,15 +70,22 @@ impl LogClient for VictoriaLogsClient {
             alerts.push(with_metadata(alert, labels, ts));
         }
 
+        if parse_errors > 0 {
+            warn!(parse_errors, "Failed to parse some log lines");
+        }
+
+        info!(count = alerts.len(), "VictoriaLogs query complete");
         Ok(alerts)
     }
 
+    #[instrument(skip(self, labels, log_line))]
     fn push(
         &self,
         labels: &HashMap<String, String>,
         log_line: &str,
         timestamp: Option<DateTime<Utc>>,
     ) -> Result<()> {
+        debug!("Pushing to VictoriaLogs");
         let mut entry = Map::new();
         entry.insert("_msg".to_string(), Value::String(log_line.to_string()));
         entry.insert(
@@ -83,7 +96,12 @@ impl LogClient for VictoriaLogsClient {
             entry.insert(k.clone(), Value::String(v.clone()));
         }
 
-        self.http
-            .post_ndjson_unit("/insert/jsonline", &format!("{}\n", Value::Object(entry)))
+        let result = self.http
+            .post_ndjson_unit("/insert/jsonline", &format!("{}\n", Value::Object(entry)));
+
+        if result.is_ok() {
+            debug!("Successfully pushed to VictoriaLogs");
+        }
+        result
     }
 }

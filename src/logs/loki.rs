@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
+use tracing::{debug, info, instrument};
 
 pub struct LokiClient {
     http: BlockingHttp,
@@ -39,6 +40,7 @@ impl LokiClient {
 }
 
 impl LogClient for LokiClient {
+    #[instrument(skip(self), fields(query = %query, limit = %limit))]
     fn query_range(
         &self,
         query: &str,
@@ -46,6 +48,7 @@ impl LogClient for LokiClient {
         end: DateTime<Utc>,
         limit: usize,
     ) -> Result<Vec<Value>> {
+        debug!("Querying Loki");
         let data: LokiQueryResponse = self.http.get_json(
             "/loki/api/v1/query_range",
             &[
@@ -73,15 +76,18 @@ impl LogClient for LokiClient {
             }
         }
 
+        info!(count = alerts.len(), "Loki query complete");
         Ok(alerts)
     }
 
+    #[instrument(skip(self, labels, log_line))]
     fn push(
         &self,
         labels: &HashMap<String, String>,
         log_line: &str,
         timestamp: Option<DateTime<Utc>>,
     ) -> Result<()> {
+        debug!("Pushing to Loki");
         let ts_ns = timestamp
             .unwrap_or_else(Utc::now)
             .timestamp_nanos_opt()
@@ -95,6 +101,10 @@ impl LogClient for LokiClient {
             }]
         });
 
-        self.http.post_json_unit("/loki/api/v1/push", &payload)
+        let result = self.http.post_json_unit("/loki/api/v1/push", &payload);
+        if result.is_ok() {
+            debug!("Successfully pushed to Loki");
+        }
+        result
     }
 }

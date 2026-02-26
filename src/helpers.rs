@@ -82,6 +82,11 @@ pub(super) fn obfuscate_path_value(path: &str) -> String {
             continue;
         }
 
+        if should_redact_home_user_segment(&parts, idx) {
+            out.push_str("[USERDIR]");
+            continue;
+        }
+
         if should_preserve_path_segment(part) {
             out.push_str(part);
             continue;
@@ -97,10 +102,42 @@ pub(super) fn obfuscate_path_value(path: &str) -> String {
             continue;
         }
 
+        if should_redact_non_allowlisted_segment(part) {
+            out.push_str("[DIR]");
+            continue;
+        }
+
         out.push_str(part);
     }
 
     out
+}
+
+#[cfg(feature = "path-policy-home-user-redact")]
+fn should_redact_home_user_segment(parts: &[&str], idx: usize) -> bool {
+    if idx == 0 {
+        return false;
+    }
+
+    matches!(
+        parts[idx - 1].to_ascii_lowercase().as_str(),
+        "home" | "users"
+    )
+}
+
+#[cfg(not(feature = "path-policy-home-user-redact"))]
+fn should_redact_home_user_segment(_parts: &[&str], _idx: usize) -> bool {
+    false
+}
+
+#[cfg(feature = "path-policy-non-allowlisted-redact")]
+fn should_redact_non_allowlisted_segment(_part: &str) -> bool {
+    true
+}
+
+#[cfg(not(feature = "path-policy-non-allowlisted-redact"))]
+fn should_redact_non_allowlisted_segment(_part: &str) -> bool {
+    false
 }
 
 fn should_preserve_path_segment(part: &str) -> bool {

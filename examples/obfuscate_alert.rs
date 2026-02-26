@@ -1,4 +1,4 @@
-use obfsck::{obfuscate_alert, ObfuscationLevel};
+use obfsck::{ObfuscationLevel, obfuscate_alert};
 use std::collections::HashMap;
 
 fn main() {

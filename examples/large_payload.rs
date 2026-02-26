@@ -1,4 +1,4 @@
-use obfsck::{obfuscate_text, ObfuscationLevel};
+use obfsck::{ObfuscationLevel, obfuscate_text};
 use std::env;
 use std::process::Command;
 

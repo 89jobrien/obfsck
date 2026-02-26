@@ -1,4 +1,4 @@
-use obfsck::{obfuscate_text, ObfuscationLevel};
+use obfsck::{ObfuscationLevel, obfuscate_text};
 
 fn main() {
     let mut lines = Vec::new();

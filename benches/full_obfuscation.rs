@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use obfsck::{obfuscate_text, ObfuscationLevel};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use obfsck::{ObfuscationLevel, obfuscate_text};
 use regex::Regex;
 use std::collections::HashMap;
 

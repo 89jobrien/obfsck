@@ -4,7 +4,7 @@ use super::{LogClient, Result};
 use chrono::{DateTime, Utc};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
-use tracing::{debug, info, warn, instrument};
+use tracing::{info, warn, instrument};
 
 pub struct VictoriaLogsClient {
     http: BlockingHttp,
@@ -27,7 +27,6 @@ impl LogClient for VictoriaLogsClient {
         end: DateTime<Utc>,
         limit: usize,
     ) -> Result<Vec<Value>> {
-        debug!("Querying VictoriaLogs");
         let body = self.http.get_bytes(
             "/select/logsql/query",
             &[
@@ -85,7 +84,6 @@ impl LogClient for VictoriaLogsClient {
         log_line: &str,
         timestamp: Option<DateTime<Utc>>,
     ) -> Result<()> {
-        debug!("Pushing to VictoriaLogs");
         let mut entry = Map::new();
         entry.insert("_msg".to_string(), Value::String(log_line.to_string()));
         entry.insert(
@@ -96,12 +94,7 @@ impl LogClient for VictoriaLogsClient {
             entry.insert(k.clone(), Value::String(v.clone()));
         }
 
-        let result = self.http
-            .post_ndjson_unit("/insert/jsonline", &format!("{}\n", Value::Object(entry)));
-
-        if result.is_ok() {
-            debug!("Successfully pushed to VictoriaLogs");
-        }
-        result
+        self.http
+            .post_ndjson_unit("/insert/jsonline", &format!("{}\n", Value::Object(entry)))
     }
 }

@@ -1,4 +1,4 @@
-use crate::logs::{LogClient, LokiClient, VictoriaLogsClient};
+use crate::clients::{LogClient, LokiClient, VictoriaLogsClient};
 use crate::schema::AnalysisOutput;
 use crate::{ObfuscationLevel, obfuscate_alert};
 use chrono::{DateTime, Utc};
@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 use simplify_baml::{BamlSchema, FieldType, IR, parse_llm_response_with_ir};
 use std::collections::HashMap;
 use thiserror::Error;
-use tracing::{info, warn, error, debug, instrument};
+use tracing::{debug, info, warn, error, instrument};
 
 mod cli;
 mod config;
@@ -60,24 +60,16 @@ impl AlertAnalyzer {
         obfuscation = %config.analysis.obfuscation_level
     ))]
     pub fn from_config(config: &AnalyzerConfig) -> Result<Self> {
-        debug!("Initializing AlertAnalyzer");
-
         let backend_raw = config.storage.backend.to_ascii_lowercase();
         let (backend, log_client): (String, Box<dyn LogClient>) = match backend_raw.as_str() {
-            "victorialogs" | "vm" => {
-                info!(backend = "victorialogs", url = %config.victorialogs.url, "Initializing VictoriaLogs client");
-                (
-                    "victorialogs".to_string(),
-                    Box::new(VictoriaLogsClient::new(config.victorialogs.url.clone())?),
-                )
-            },
-            _ => {
-                info!(backend = "loki", url = %config.loki.url, "Initializing Loki client");
-                (
-                    "loki".to_string(),
-                    Box::new(LokiClient::new(config.loki.url.clone())?),
-                )
-            },
+            "victorialogs" | "vm" => (
+                "victorialogs".to_string(),
+                Box::new(VictoriaLogsClient::new(config.victorialogs.url.clone())?),
+            ),
+            _ => (
+                "loki".to_string(),
+                Box::new(LokiClient::new(config.loki.url.clone())?),
+            ),
         };
 
         let obfuscation_level = ObfuscationLevel::parse(&config.analysis.obfuscation_level)
@@ -90,15 +82,11 @@ impl AlertAnalyzer {
             })?;
 
         let provider: Box<dyn LlmProvider> = match config.analysis.provider.as_str() {
-            "ollama" => {
-                info!(provider = "ollama", model = %config.analysis.ollama.model, "Initializing Ollama provider");
-                Box::new(OllamaProvider::new(
-                    config.analysis.ollama.url.clone(),
-                    config.analysis.ollama.model.clone(),
-                )?)
-            },
+            "ollama" => Box::new(OllamaProvider::new(
+                config.analysis.ollama.url.clone(),
+                config.analysis.ollama.model.clone(),
+            )?),
             "openai" => {
-                info!(provider = "openai", model = %config.analysis.openai.model, "Initializing OpenAI provider");
                 let key = expand_env_string(&config.analysis.openai.api_key);
                 Box::new(OpenAiProvider::new(
                     key,
@@ -106,7 +94,6 @@ impl AlertAnalyzer {
                 )?)
             }
             "anthropic" => {
-                info!(provider = "anthropic", model = %config.analysis.anthropic.model, "Initializing Anthropic provider");
                 let key = expand_env_string(&config.analysis.anthropic.api_key);
                 Box::new(AnthropicProvider::new(
                     key,
@@ -124,7 +111,6 @@ impl AlertAnalyzer {
         let analysis_ir = crate::schema::analysis_ir();
         let analysis_output_type = FieldType::Class(AnalysisOutput::schema_name().to_string());
 
-        info!("AlertAnalyzer initialized successfully");
         Ok(Self {
             backend,
             log_client,
@@ -186,7 +172,6 @@ impl AlertAnalyzer {
         last: &str,
         limit: usize,
     ) -> Result<Vec<Value>> {
-        debug!("Fetching alerts");
         let delta = parse_last(last)?;
         let end = Utc::now();
         let start = end - delta;
@@ -211,7 +196,6 @@ impl AlertAnalyzer {
 
     #[instrument(skip(self, alert), fields(dry_run = %dry_run))]
     pub fn analyze_alert(&self, alert: &Value, dry_run: bool) -> Value {
-        debug!("Analyzing alert");
         let labels = value_to_string_map(alert.get("_labels").and_then(Value::as_object));
         let output = alert.get("output").and_then(Value::as_str);
         let output_fields = value_to_string_map_optional(alert.get("output_fields"));
@@ -259,7 +243,6 @@ impl AlertAnalyzer {
                 })
             });
 
-        info!("Alert analysis complete");
         json!({
             "original_alert": alert,
             "obfuscated_alert": obf_alert,
@@ -270,7 +253,6 @@ impl AlertAnalyzer {
 
     #[instrument(skip(self, result))]
     pub fn store_analysis(&self, result: &Value) -> Result<()> {
-        debug!("Storing analysis to backend");
         let analysis = result
             .get("analysis")
             .and_then(Value::as_object)
@@ -387,21 +369,15 @@ impl AlertAnalyzer {
             "investigate": analysis.get("investigate").cloned().unwrap_or_else(|| json!([])),
         });
 
-        let result = self.log_client
-            .push(&enriched_labels, &enriched_entry.to_string(), timestamp);
-
-        if result.is_ok() {
-            info!("Analysis stored successfully");
-        } else {
-            error!("Failed to store analysis");
-        }
-
-        result
+        self.log_client
+            .push(&enriched_labels, &enriched_entry.to_string(), timestamp).map_err(|e| {
+                error!(error = %e, "Failed to store analysis");
+                e
+            })
     }
 
     #[instrument(skip(self, alerts), fields(count = alerts.len(), dry_run = %dry_run, store = %store))]
     pub fn analyze_batch(&self, alerts: &[Value], dry_run: bool, store: bool) -> Vec<Value> {
-        info!("Starting batch analysis");
         let mut results = Vec::new();
         let mut stored_count = 0;
 

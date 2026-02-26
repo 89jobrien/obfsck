@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
-use tracing::{debug, info, instrument};
+use tracing::{info, instrument};
 
 pub struct LokiClient {
     http: BlockingHttp,
@@ -48,7 +48,6 @@ impl LogClient for LokiClient {
         end: DateTime<Utc>,
         limit: usize,
     ) -> Result<Vec<Value>> {
-        debug!("Querying Loki");
         let data: LokiQueryResponse = self.http.get_json(
             "/loki/api/v1/query_range",
             &[
@@ -87,7 +86,6 @@ impl LogClient for LokiClient {
         log_line: &str,
         timestamp: Option<DateTime<Utc>>,
     ) -> Result<()> {
-        debug!("Pushing to Loki");
         let ts_ns = timestamp
             .unwrap_or_else(Utc::now)
             .timestamp_nanos_opt()
@@ -101,10 +99,6 @@ impl LogClient for LokiClient {
             }]
         });
 
-        let result = self.http.post_json_unit("/loki/api/v1/push", &payload);
-        if result.is_ok() {
-            debug!("Successfully pushed to Loki");
-        }
-        result
+        self.http.post_json_unit("/loki/api/v1/push", &payload)
     }
 }

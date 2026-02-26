@@ -49,5 +49,9 @@ pub struct FalsePositive {
 pub fn analysis_ir() -> simplify_baml::IR {
     BamlSchemaRegistry::new()
         .register::<AnalysisOutput>()
+        .register::<MitreAttack>()
+        .register::<Risk>()
+        .register::<Mitigations>()
+        .register::<FalsePositive>()
         .build()
 }

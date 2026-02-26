@@ -1,0 +1,45 @@
+{
+  "attack_vector": "Unauthorized access attempt via SSH with suspicious credentials",
+  "mitre_attack": {
+    "tactic": "Initial Access",
+    "technique_id": "T1078",
+    "technique_name": "Valid Accounts",
+    "sub_technique": "Local Accounts"
+  },
+  "risk": {
+    "severity": "High",
+    "confidence": "Medium",
+    "impact": "Potential system compromise"
+  },
+  "investigate": [
+    "Check SSH login history for this user",
+    "Review authentication logs for failed attempts",
+    "Verify user account status and permissions"
+  ],
+  "mitigations": {
+    "immediate": [
+      "Disable compromised account",
+      "Force password reset for affected users"
+    ],
+    "short_term": [
+      "Enable MFA for SSH access",
+      "Implement SSH key-based authentication"
+    ],
+    "long_term": [
+      "Deploy automated threat detection",
+      "Implement zero-trust architecture"
+    ]
+  },
+  "false_positive": {
+    "likelihood": "Low",
+    "common_causes": [
+      "Legitimate user with typo in credentials",
+      "Automated backup system authentication"
+    ],
+    "distinguishing_factors": [
+      "Source IP not in known ranges",
+      "Multiple failed attempts before success"
+    ]
+  },
+  "summary": "Detected potential unauthorized SSH access attempt with medium confidence. Investigation recommended."
+}

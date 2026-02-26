@@ -86,3 +86,128 @@ run = "LOG_DIR=~/logs/obfsck LOG_FORMAT=pretty cargo run --bin api"
 [tasks."logs:file-analyzer"]
 description = "Run analyzer with file logging enabled (logs to ~/logs/obfsck/)"
 run = "LOG_DIR=~/logs/obfsck LOG_FORMAT=pretty cargo run --bin analyzer -- --limit 5"
+
+[tasks."baml:dry-run"]
+description = "Run analyzer in dry-run mode to see BAML prompts without LLM calls"
+run = "LOG_FORMAT=pretty cargo run --bin analyzer -- --dry-run --limit 3"
+
+[tasks."baml:dry-run-verbose"]
+description = "Run analyzer dry-run with verbose logging to see BAML schema details"
+run = "LOG_FORMAT=pretty RUST_LOG=obfsck=debug cargo run --bin analyzer -- --dry-run --limit 1"
+
+[tasks."baml:test-schema"]
+description = "Test BAML schema generation and validation"
+run = """
+cargo test --lib schema -- --nocapture
+cargo test --lib analyzer::tests -- --nocapture
+"""
+
+[tasks."baml:inspect"]
+description = "Inspect BAML schema IR (intermediate representation)"
+run = """
+echo "Building BAML schema IR..."
+cargo run --example inspect_schema 2>/dev/null || echo "Run 'mise run baml:create-example' to create the inspector"
+"""
+
+[tasks."baml:create-example"]
+description = "Create example program to inspect BAML schemas"
+run = """
+mkdir -p examples
+cat > examples/inspect_schema.rs << 'EOF'
+//! Inspect the BAML schema IR for debugging
+
+use obfsck::schema::analysis_ir;
+use simplify_baml::BamlSchema;
+
+fn main() {
+    let ir = analysis_ir();
+
+    println!("=== BAML Schema IR ===\n");
+    println!("{:#?}", ir);
+
+    println!("\n=== Schema Classes ===\n");
+    for class in ir.classes() {
+        println!("Class: {}", class.name);
+        println!("  Fields:");
+        for field in &class.fields {
+            println!("    - {}: {:?}", field.name, field.ty);
+        }
+        println!();
+    }
+}
+EOF
+echo "Created examples/inspect_schema.rs"
+echo "Run with: cargo run --example inspect_schema"
+"""
+
+[tasks."baml:validate"]
+description = "Validate BAML schemas by parsing sample LLM responses"
+run = """
+if [ ! -f tests/sample_llm_responses.json ]; then
+    echo "Creating sample LLM responses..."
+    mise run baml:create-samples
+fi
+cargo test --test '*' -- baml --nocapture
+"""
+
+[tasks."baml:create-samples"]
+description = "Create sample LLM response files for testing"
+run = """
+mkdir -p tests/fixtures
+cat > tests/fixtures/sample_llm_response.json << 'EOF'
+{
+  "attack_vector": "Unauthorized access attempt via SSH with suspicious credentials",
+  "mitre_attack": {
+    "tactic": "Initial Access",
+    "technique_id": "T1078",
+    "technique_name": "Valid Accounts",
+    "sub_technique": "Local Accounts"
+  },
+  "risk": {
+    "severity": "High",
+    "confidence": "Medium",
+    "impact": "Potential system compromise"
+  },
+  "investigate": [
+    "Check SSH login history for this user",
+    "Review authentication logs for failed attempts",
+    "Verify user account status and permissions"
+  ],
+  "mitigations": {
+    "immediate": [
+      "Disable compromised account",
+      "Force password reset for affected users"
+    ],
+    "short_term": [
+      "Enable MFA for SSH access",
+      "Implement SSH key-based authentication"
+    ],
+    "long_term": [
+      "Deploy automated threat detection",
+      "Implement zero-trust architecture"
+    ]
+  },
+  "false_positive": {
+    "likelihood": "Low",
+    "common_causes": [
+      "Legitimate user with typo in credentials",
+      "Automated backup system authentication"
+    ],
+    "distinguishing_factors": [
+      "Source IP not in known ranges",
+      "Multiple failed attempts before success"
+    ]
+  },
+  "summary": "Detected potential unauthorized SSH access attempt with medium confidence. Investigation recommended."
+}
+EOF
+echo "Created tests/fixtures/sample_llm_response.json"
+"""
+
+[tasks."baml:watch"]
+description = "Watch for changes and run BAML schema tests"
+run = """
+echo "Watching for schema changes..."
+echo "Press Ctrl+C to stop"
+cargo watch -x 'test --lib schema' -x 'test --lib analyzer::tests'
+"""

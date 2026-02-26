@@ -79,6 +79,29 @@ cargo bench
 
 `ObfuscationMapExport` includes generated mappings for IPs, hostnames, users, containers, paths, emails, plus `secrets_count`.
 
+### SIB Alert Analyzer (Rust)
+
+This crate now includes a Rust port of the SIB alert analyzer under `src/alert_analyzer.rs` with a CLI binary:
+
+```bash
+cargo run --bin alert_analyzer -- --last 1h --limit 5 --dry-run
+```
+
+Common options:
+
+```text
+--config <path>
+--priority <Critical|Error|Warning|Notice>
+--last <15m|1h|7d>
+--limit <n>
+--dry-run
+--store
+--json
+--backend <loki|vm|victorialogs>
+--loki-url <url>
+--victorialogs-url <url>
+```
+
 ## Run locally with `cargo` or
 
 ```bash

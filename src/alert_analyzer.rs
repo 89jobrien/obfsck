@@ -1,8 +1,3 @@
-//! SIB Alert Analysis - AI-powered security alert analysis.
-//!
-//! Provides LLM-based analysis of Falco-style security alerts with
-//! privacy-preserving obfuscation of sensitive data.
-
 use crate::log_agents::{LogClient, LokiClient, VictoriaLogsClient};
 use crate::{ObfuscationLevel, obfuscate_alert};
 use chrono::{DateTime, Duration, Utc};
@@ -813,7 +808,7 @@ impl AlertAnalyzer {
 
 #[derive(Debug, Parser, Clone)]
 #[command(name = "alert-analyzer")]
-#[command(about = "SIB Alert Analyzer - LLM-powered security alert analysis")]
+#[command(about = "Alert Analyzer - LLM-powered security alert analysis")]
 pub struct CliArgs {
     #[arg(short = 'c', long = "config")]
     pub config: Option<String>,

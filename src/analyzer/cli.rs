@@ -1,6 +1,7 @@
 use super::{AlertAnalyzer, Result, load_config};
 use clap::Parser;
 use serde_json::Value;
+use tracing::{debug, error, info, warn};
 
 #[derive(Debug, Parser, Clone)]
 #[command(name = "alert-analyzer")]
@@ -18,7 +19,6 @@ pub struct CliArgs {
     pub dry_run: bool,
     #[arg(short = 's', long = "store", default_value_t = false)]
     pub store: bool,
-    #[arg(short = 'v', long = "verbose", default_value_t = false)]
     pub verbose: bool,
     #[arg(short = 'j', long = "json", default_value_t = false)]
     pub json: bool,
@@ -46,20 +46,20 @@ pub fn run_from_args(args: CliArgs) -> Result<i32> {
     }
 
     if !config.analysis.enabled {
-        eprintln!("analysis is disabled in config. set analysis.enabled=true to enable");
+        warn!("Analysis is disabled in config. Set analysis.enabled=true to enable");
         return Ok(1);
     }
 
     let analyzer = AlertAnalyzer::from_config(&config)?;
-    eprintln!("fetching alerts from last {}...", args.last);
+    info!(duration = %args.last, "Fetching alerts");
     let alerts = analyzer.fetch_alerts(args.priority.as_deref(), &args.last, args.limit)?;
 
     if alerts.is_empty() {
-        println!("no alerts found matching criteria");
+        info!("No alerts found matching criteria");
         return Ok(0);
     }
 
-    eprintln!("found {} alerts. analyzing...", alerts.len());
+    info!(count = alerts.len(), "Analyzing alerts");
     let results = analyzer.analyze_batch(&alerts, args.dry_run, args.store);
 
     if args.json {
@@ -81,9 +81,9 @@ fn print_analysis(result: &Value, verbose: bool) {
         .unwrap_or_default();
 
     if let Some(err) = analysis.get("error").and_then(Value::as_str) {
-        println!("analysis error: {err}");
+        error!(error = %err, "Analysis failed");
         if let Some(fallback) = analysis.get("fallback_mitre") {
-            println!("fallback mitre: {fallback}");
+            warn!(fallback = %fallback, "Using fallback MITRE tactics");
         }
         return;
     }
@@ -150,11 +150,36 @@ fn print_analysis(result: &Value, verbose: bool) {
     println!("summary: {summary}");
 
     if verbose {
-        println!("obfuscation mapping:");
-        if let Some(mapping) = result.get("obfuscation_mapping") {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(mapping).unwrap_or_else(|_| "{}".to_string())
+        if let Some(mapping) = result.get("obfuscation_mapping").and_then(Value::as_object) {
+            let ips = mapping
+                .get("ips")
+                .and_then(Value::as_object)
+                .map(|m| m.len())
+                .unwrap_or(0);
+            let users = mapping
+                .get("users")
+                .and_then(Value::as_object)
+                .map(|m| m.len())
+                .unwrap_or(0);
+            let emails = mapping
+                .get("emails")
+                .and_then(Value::as_object)
+                .map(|m| m.len())
+                .unwrap_or(0);
+            let hostnames = mapping
+                .get("hostnames")
+                .and_then(Value::as_object)
+                .map(|m| m.len())
+                .unwrap_or(0);
+            let containers = mapping
+                .get("containers")
+                .and_then(Value::as_object)
+                .map(|m| m.len())
+                .unwrap_or(0);
+
+            debug!(
+                ips,
+                users, emails, hostnames, containers, "Obfuscation token summary"
             );
         }
     }

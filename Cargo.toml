@@ -16,6 +16,8 @@ axum = "0.8"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 tower-http = { version = "0.6", features = ["cors"] }
 sha2 = "0.10"
+simplify_baml = "0.2.0"
+simplify_baml_macros = "0.2.0"
 
 [features]
 legacy-user-scan = []

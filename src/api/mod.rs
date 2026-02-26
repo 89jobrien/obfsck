@@ -594,14 +594,14 @@ fn list_cached_analyses(state: &AppState, limit: usize) -> Result<Vec<HistoryIte
     Ok(out)
 }
 
-fn parse_boolish(value: Option<&str>, default: bool) -> bool {
+pub fn parse_boolish(value: Option<&str>, default: bool) -> bool {
     match value {
         Some(v) => matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"),
         None => default,
     }
 }
 
-fn normalize_output(output: &str) -> String {
+pub fn normalize_output(output: &str) -> String {
     let mut normalized = output.split_whitespace().collect::<Vec<_>>().join(" ");
 
     normalized = re_iso_ts().replace_all(&normalized, "[TIME]").into_owned();
@@ -620,7 +620,7 @@ fn normalize_output(output: &str) -> String {
     normalized
 }
 
-fn get_cache_key(output: &str, rule: &str) -> String {
+pub fn get_cache_key(output: &str, rule: &str) -> String {
     let content = format!("{}:{}", normalize_output(output), rule);
     let mut hasher = Sha256::new();
     hasher.update(content.as_bytes());
@@ -689,34 +689,4 @@ fn re_container_id() -> &'static Regex {
 fn re_ip_port() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?").expect("ip regex"))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{get_cache_key, normalize_output, parse_boolish};
-
-    #[test]
-    fn normalize_replaces_variable_fields() {
-        let out = "2026-01-09T12:34:56Z pid=1234 user_uid=1000 container_id=abcdef1234567890 src=10.1.2.3";
-        let normalized = normalize_output(out);
-        assert!(normalized.contains("[TIME]"));
-        assert!(normalized.contains("pid=[ID]"));
-        assert!(normalized.contains("[CID]"));
-        assert!(normalized.contains("[IP]"));
-    }
-
-    #[test]
-    fn cache_key_is_stable() {
-        let a = get_cache_key("pid=1 src=1.2.3.4", "RuleA");
-        let b = get_cache_key("pid=2 src=5.6.7.8", "RuleA");
-        assert_eq!(a, b);
-    }
-
-    #[test]
-    fn parse_boolish_works() {
-        assert!(parse_boolish(Some("true"), false));
-        assert!(parse_boolish(Some("1"), false));
-        assert!(!parse_boolish(Some("false"), true));
-        assert!(parse_boolish(None, true));
-    }
 }

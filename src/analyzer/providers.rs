@@ -2,6 +2,7 @@ use super::{AnalyzerError, Result};
 use reqwest::blocking::Client;
 use serde_json::{Value, json};
 use std::time::Duration as StdDuration;
+use tracing::{error, info, instrument};
 
 pub(super) trait LlmProvider {
     fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String>;
@@ -26,7 +27,15 @@ impl OllamaProvider {
 }
 
 impl LlmProvider for OllamaProvider {
+    #[instrument(skip(self, system_prompt, user_prompt), fields(
+        provider = "ollama",
+        model = %self.model,
+        prompt_len = user_prompt.len()
+    ))]
     fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String> {
+        let start = std::time::Instant::now();
+        info!("Sending LLM request");
+
         let response = self
             .client
             .post(format!("{}/api/chat", self.url))
@@ -39,7 +48,11 @@ impl LlmProvider for OllamaProvider {
                 "stream": false,
                 "format": "json"
             }))
-            .send()?
+            .send()
+            .map_err(|e| {
+                error!(error = %e, "LLM request failed");
+                e
+            })?
             .error_for_status()?;
 
         let value: Value = response.json()?;
@@ -48,10 +61,14 @@ impl LlmProvider for OllamaProvider {
             .and_then(|m| m.get("content"))
             .and_then(Value::as_str)
             .ok_or_else(|| {
+                error!("Ollama response missing message.content");
                 AnalyzerError::ResponseParse(
                     "ollama response missing message.content string".to_string(),
                 )
             })?;
+
+        let duration = start.elapsed();
+        info!(duration_ms = duration.as_millis(), "LLM request completed");
 
         Ok(content.to_string())
     }
@@ -76,7 +93,15 @@ impl OpenAiProvider {
 }
 
 impl LlmProvider for OpenAiProvider {
+    #[instrument(skip(self, system_prompt, user_prompt), fields(
+        provider = "openai",
+        model = %self.model,
+        prompt_len = user_prompt.len()
+    ))]
     fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String> {
+        let start = std::time::Instant::now();
+        info!("Sending LLM request");
+
         let response = self
             .client
             .post("https://api.openai.com/v1/chat/completions")
@@ -89,7 +114,11 @@ impl LlmProvider for OpenAiProvider {
                 ],
                 "response_format": {"type": "json_object"}
             }))
-            .send()?
+            .send()
+            .map_err(|e| {
+                error!(error = %e, "LLM request failed");
+                e
+            })?
             .error_for_status()?;
 
         let value: Value = response.json()?;
@@ -101,10 +130,14 @@ impl LlmProvider for OpenAiProvider {
             .and_then(|m| m.get("content"))
             .and_then(Value::as_str)
             .ok_or_else(|| {
+                error!("OpenAI response missing choices[0].message.content");
                 AnalyzerError::ResponseParse(
                     "openai response missing choices[0].message.content string".to_string(),
                 )
             })?;
+
+        let duration = start.elapsed();
+        info!(duration_ms = duration.as_millis(), "LLM request completed");
 
         Ok(content.to_string())
     }
@@ -129,7 +162,15 @@ impl AnthropicProvider {
 }
 
 impl LlmProvider for AnthropicProvider {
+    #[instrument(skip(self, system_prompt, user_prompt), fields(
+        provider = "anthropic",
+        model = %self.model,
+        prompt_len = user_prompt.len()
+    ))]
     fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String> {
+        let start = std::time::Instant::now();
+        info!("Sending LLM request");
+
         let response = self
             .client
             .post("https://api.anthropic.com/v1/messages")
@@ -141,7 +182,11 @@ impl LlmProvider for AnthropicProvider {
                 "system": system_prompt,
                 "messages": [{"role": "user", "content": user_prompt}]
             }))
-            .send()?
+            .send()
+            .map_err(|e| {
+                error!(error = %e, "LLM request failed");
+                e
+            })?
             .error_for_status()?;
 
         let value: Value = response.json()?;
@@ -152,10 +197,14 @@ impl LlmProvider for AnthropicProvider {
             .and_then(|c| c.get("text"))
             .and_then(Value::as_str)
             .ok_or_else(|| {
+                error!("Anthropic response missing content[0].text");
                 AnalyzerError::ResponseParse(
                     "anthropic response missing content[0].text string".to_string(),
                 )
             })?;
+
+        let duration = start.elapsed();
+        info!(duration_ms = duration.as_millis(), "LLM request completed");
 
         Ok(content.to_string())
     }

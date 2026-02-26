@@ -229,7 +229,7 @@ fn read_secret(env_var: &str) -> Option<String> {
     env::var(env_var).ok()
 }
 
-pub(super) fn expand_env_string(input: &str) -> String {
+pub fn expand_env_string(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
     let mut rest = input;
 

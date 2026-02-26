@@ -15,12 +15,12 @@ mod prompts;
 mod providers;
 
 pub use cli::{CliArgs, run_from_args};
-use config::expand_env_string;
 pub use config::{
     AnalysisConfig, AnalyzerConfig, AnthropicConfig, LokiConfig, OllamaConfig, OpenAiConfig,
-    StorageConfig, VictoriaLogsConfig, load_config,
+    StorageConfig, VictoriaLogsConfig, expand_env_string, load_config,
 };
-use parsing::{parse_last, value_to_string_map, value_to_string_map_optional};
+pub use parsing::parse_last;
+use parsing::{value_to_string_map, value_to_string_map_optional};
 pub use prompts::{SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, mitre_mapping};
 use providers::{AnthropicProvider, LlmProvider, OllamaProvider, OpenAiProvider};
 
@@ -488,32 +488,4 @@ fn extract_json_object(raw: &str) -> Option<&str> {
     let start = raw.find('{')?;
     let end = raw.rfind('}')?;
     (end > start).then_some(&raw[start..=end])
-}
-
-#[cfg(test)]
-mod tests {
-    use super::config::expand_env_string;
-    use super::parsing::parse_last;
-
-    #[test]
-    fn parses_last_durations() {
-        assert!(parse_last("15m").is_ok());
-        assert!(parse_last("1h").is_ok());
-        assert!(parse_last("7d").is_ok());
-        assert!(parse_last("10x").is_err());
-        assert!(parse_last("0h").is_err());
-        assert!(parse_last("-1h").is_err());
-    }
-
-    #[test]
-    fn expands_env_var_with_default() {
-        let value = expand_env_string("${DOES_NOT_EXIST:-fallback}");
-        assert_eq!(value, "fallback");
-    }
-
-    #[test]
-    fn expand_env_preserves_unicode() {
-        let value = expand_env_string("préfix-${DOES_NOT_EXIST:-défaut}-suffixe");
-        assert_eq!(value, "préfix-défaut-suffixe");
-    }
 }

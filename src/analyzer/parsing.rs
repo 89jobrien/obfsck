@@ -3,7 +3,7 @@ use chrono::Duration;
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 
-pub(super) fn parse_last(last: &str) -> Result<Duration> {
+pub fn parse_last(last: &str) -> Result<Duration> {
     if last.len() < 2 {
         return Err(AnalyzerError::InvalidArgument(
             "last must look like 15m, 1h, 7d".to_string(),

@@ -16,6 +16,29 @@ Path obfuscation supports Unix, Windows drive paths, and UNC paths. Sensitive sy
 
 Preserved path segments include common roots like `home`, `usr`, `etc`, `windows`, `users`, and `programdata`.
 
+## Run locally with `cargo` or use the `mise.toml`:
+
+```bash
+# check / build / test
+mise run check
+mise run build
+mise run test
+
+# formatting
+mise run format
+mise run format-check
+
+# linting
+mise run lint
+
+# auto-fix clippy suggestions
+mise run fix
+
+# local CI bundle
+mise run ci
+```
+
+
 ## Examples
 
 ### Obfuscation alert
@@ -81,7 +104,7 @@ cargo bench
 
 ### Alert Analyzer (Rust)
 
-This crate now includes a Rust alert analyzer under `src/analyzer.rs` with a CLI binary:
+This crate now includes a Rust alert analyzer under the `src/analyzer/` module with a CLI binary:
 
 ```bash
 cargo run --bin analyzer -- --last 1h --limit 5 --dry-run
@@ -100,26 +123,4 @@ Common options:
 --backend <loki|vm|victorialogs>
 --loki-url <url>
 --victorialogs-url <url>
-```
-
-## Run locally with `cargo` or
-
-```bash
-# check / build / test
-mise run check
-mise run build
-mise run test
-
-# formatting
-mise run format
-mise run format-check
-
-# linting
-mise run lint
-
-# auto-fix clippy suggestions
-mise run fix
-
-# local CI bundle
-mise run ci
 ```

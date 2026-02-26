@@ -1,5 +1,8 @@
 //! Obfuscator
 
+pub mod alert_analyzer;
+pub mod log_agents;
+
 use regex::{Regex, RegexBuilder};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};

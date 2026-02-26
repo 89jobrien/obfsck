@@ -1,5 +1,7 @@
 use clap::Parser;
 use obfsck::api::run_server;
+use tracing::{error, info};
+use tracing_subscriber::{EnvFilter, fmt};
 
 #[derive(Debug, Parser)]
 #[command(name = "analysis-api")]
@@ -11,16 +13,31 @@ struct Args {
     port: u16,
 }
 
+fn init_logging() {
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("obfsck=info,tower_http=debug,warn"));
+
+    let format = std::env::var("LOG_FORMAT").unwrap_or_else(|_| "json".to_string());
+
+    match format.as_str() {
+        "pretty" => fmt().with_env_filter(env_filter).pretty().init(),
+        _ => fmt().with_env_filter(env_filter).json().init(),
+    }
+}
+
 #[tokio::main]
 async fn main() {
+    init_logging();
     let args = Args::parse();
-    eprintln!(
-        "Alert Analysis API starting on http://{}:{}",
-        args.host, args.port
+
+    info!(
+        host = %args.host,
+        port = args.port,
+        "Alert Analysis API starting"
     );
 
     if let Err(err) = run_server(args.host, args.port).await {
-        eprintln!("error: {err}");
+        error!(error = %err, "Server error");
         std::process::exit(1);
     }
 }

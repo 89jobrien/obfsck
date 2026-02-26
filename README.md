@@ -113,14 +113,15 @@ cargo run --bin analyzer -- --last 1h --limit 5 --dry-run
 Common options:
 
 ```text
---config <path>
---priority <Critical|Error|Warning|Notice>
---last <15m|1h|7d>
---limit <n>
---dry-run
---store
---json
---backend <loki|vm|victorialogs>
---loki-url <url>
---victorialogs-url <url>
+-c, --config <path>            Configuration file path
+-p, --priority <priority>      Filter by priority (Critical|Error|Warning|Notice)
+-l, --last <duration>          Time range to query (15m|1h|7d) [default: 1h]
+-n, --limit <n>                Maximum number of alerts [default: 5]
+-d, --dry-run                  Skip LLM analysis, show obfuscated prompt only
+-s, --store                    Store analysis results back to log backend
+-v, --verbose                  Show obfuscation mapping statistics
+-j, --json                     Output results as JSON
+-b, --backend <backend>        Log backend (loki|vm|victorialogs)
+    --loki-url <url>           Override Loki URL
+    --victorialogs-url <url>   Override VictoriaLogs URL
 ```

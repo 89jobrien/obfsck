@@ -19,6 +19,7 @@ pub struct CliArgs {
     pub dry_run: bool,
     #[arg(short = 's', long = "store", default_value_t = false)]
     pub store: bool,
+    #[arg(short = 'v', long = "verbose", default_value_t = false)]
     pub verbose: bool,
     #[arg(short = 'j', long = "json", default_value_t = false)]
     pub json: bool,

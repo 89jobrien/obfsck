@@ -16,18 +16,51 @@ Path obfuscation supports Unix, Windows drive paths, and UNC paths. Sensitive sy
 
 Preserved path segments include common roots like `home`, `usr`, `etc`, `windows`, `users`, and `programdata`.
 
-Example (Windows paths):
+## Examples
+
+### Obfuscation alert
+
+- Processed 250 records
+- Max tokens in a single record: ips=2 users=1 emails=1
 
 ```text
-Input:  C:\Users\alice\notes.txt \\server\share\docs\config.yml
-Output: C:\Users\alice\[FILE].txt \\server\share\docs\[FILE].yml
+Sample before: event_id=evt-0000 user=user0 src=10.1.1.1 dst=198.51.100.10 email=user0@corp.example host=service0.corp.example path=/var/lib/app0/env0.json
+
+Sample after : event_id=evt-0000 user=[USER-1] src=[IP-INTERNAL-1] dst=[IP-EXTERNAL-1] email=[EMAIL-1] host=[HOST-1] path=/var/lib/app0/[FILE].json
+
 ```
 
-Example (Unix paths):
+```text
+Obfuscated output: Some("incident=AUTH-48291 severity=high | actor=bob src=[IP-EXTERNAL-1] dst=[IP-INTERNAL-1] | email=[EMAIL-1] host=[HOST-1] | path=/home/bob/.aws/credentials | token=[REDACTED-GITHUB-TOKEN]")
+Obfuscated fields keys: ["file_path", "workstation", "dst_ip", "notes", "jump_host", "src_ip", "contact", "host", "actor", "command"]
+Token counts => ips: 3, users: 0, emails: 1, hosts: 4, containers: 0, secrets: 1
+```
+
+### Larger payloads
+
+- Token totals => ips: 500, users: 120, emails: 120, hostnames: 15, secrets: 700
+
+```
+--- output preview ---
+ts=2026-02-25T18:00:00Z level=info user=[USER-1] src=[IP-INTERNAL-1] dst=[IP-EXTERNAL-1] email=[EMAIL-1] host=[HOST-1] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
+ts=2026-02-25T18:01:00Z level=info user=[USER-2] src=[IP-INTERNAL-2] dst=[IP-EXTERNAL-2] email=[EMAIL-2] host=[HOST-2] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
+ts=2026-02-25T18:02:00Z level=info user=[USER-3] src=[IP-INTERNAL-3] dst=[IP-EXTERNAL-3] email=[EMAIL-3] host=[HOST-3] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
+ts=2026-02-25T18:03:00Z level=info user=[USER-4] src=[IP-INTERNAL-4] dst=[IP-EXTERNAL-4] email=[EMAIL-4] host=[HOST-4] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
+ts=2026-02-25T18:04:00Z level=info user=[USER-5] src=[IP-INTERNAL-5] dst=[IP-EXTERNAL-5] email=[EMAIL-5] host=[HOST-5] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
+ts=2026-02-25T18:05:00Z level=info user=[USER-6] src=[IP-INTERNAL-6] dst=[IP-EXTERNAL-6] email=[EMAIL-6] host=[HOST-6] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
+ts=2026-02-25T18:06:00Z level=info user=[USER-7] src=[IP-INTERNAL-7] dst=[IP-EXTERNAL-7] email=[EMAIL-7] host=[HOST-7] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
+ts=2026-02-25T18:07:00Z level=info user=[USER-8] src=[IP-INTERNAL-8] dst=[IP-EXTERNAL-8] email=[EMAIL-8] host=[HOST-8] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
+```
+
+- Mappings => ips: 160, users: 80, emails: 80, hostnames: 7, secrets: 80
 
 ```text
-Input:  /home/alice/notes.txt /opt/app/config.yml
-Output: /home/alice/[FILE].txt /opt/app/[FILE].yml
+--- output preview ---
+ts=2026-02-25T17:00:00Z level=warn user=[USER-1] src=[IP-INTERNAL-1] dst=[IP-EXTERNAL-1] email=[EMAIL-1] host=[HOST-1] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
+ts=2026-02-25T17:01:00Z level=warn user=[USER-2] src=[IP-INTERNAL-2] dst=[IP-EXTERNAL-2] email=[EMAIL-2] host=[HOST-2] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
+ts=2026-02-25T17:02:00Z level=warn user=[USER-3] src=[IP-INTERNAL-3] dst=[IP-EXTERNAL-3] email=[EMAIL-3] host=[HOST-3] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
+ts=2026-02-25T17:03:00Z level=warn user=[USER-4] src=[IP-INTERNAL-4] dst=[IP-EXTERNAL-4] email=[EMAIL-4] host=[HOST-4] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
+ts=2026-02-25T17:04:00Z level=warn user=[USER-5] src=[IP-INTERNAL-5] dst=[IP-EXTERNAL-5] email=[EMAIL-5] host=[HOST-5] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
 ```
 
 ## Benchmarks

@@ -78,3 +78,11 @@ run = "rm -f ~/logs/obfsck/*.log && echo 'Log files cleaned'"
 [tasks."logs:list"]
 description = "List all log files in ~/logs/obfsck/"
 run = "ls -lh ~/logs/obfsck/*.log 2>/dev/null || echo 'No log files found'"
+
+[tasks."logs:file"]
+description = "Run API server with file logging enabled (logs to ~/logs/obfsck/)"
+run = "LOG_DIR=~/logs/obfsck LOG_FORMAT=pretty cargo run --bin api"
+
+[tasks."logs:file-analyzer"]
+description = "Run analyzer with file logging enabled (logs to ~/logs/obfsck/)"
+run = "LOG_DIR=~/logs/obfsck LOG_FORMAT=pretty cargo run --bin analyzer -- --limit 5"

@@ -1,4 +1,4 @@
-use obfsck::{ObfuscationLevel, obfuscate_alert, obfuscate_text, secret_pattern_errors};
+use obfsck::{obfuscate_alert, obfuscate_text, secret_pattern_errors, ObfuscationLevel};
 use std::collections::HashMap;
 
 #[test]
@@ -55,11 +55,9 @@ fn obfuscate_alert_obfuscates_output_and_fields() {
     let (obf_output, obf_fields, map) =
         obfuscate_alert(output.as_deref(), Some(&fields), ObfuscationLevel::Standard);
 
-    assert!(
-        obf_output
-            .expect("output should exist")
-            .contains("[IP-EXTERNAL-1]")
-    );
+    assert!(obf_output
+        .expect("output should exist")
+        .contains("[IP-EXTERNAL-1]"));
     let obf_fields = obf_fields.expect("fields should exist");
     assert_eq!(obf_fields.get("email"), Some(&"[EMAIL-1]".to_string()));
     assert!(map.ips.contains_key("203.0.113.9"));
@@ -108,7 +106,17 @@ fn paranoid_level_obfuscates_paths_hostnames_and_high_entropy_strings() {
 
     let (out, map) = obfuscate_text(&input, ObfuscationLevel::Paranoid);
 
+    #[cfg(not(any(
+        feature = "path-policy-home-user-redact",
+        feature = "path-policy-non-allowlisted-redact"
+    )))]
     assert!(out.contains("/home/alice/[FILE].txt"));
+
+    #[cfg(feature = "path-policy-home-user-redact")]
+    assert!(out.contains("/home/[USERDIR]/[FILE].txt"));
+
+    #[cfg(feature = "path-policy-non-allowlisted-redact")]
+    assert!(out.contains("/home/[DIR]/[FILE].txt"));
     assert!(out.contains("/etc/passwd"));
     assert!(out.contains("host=[HOST-1]"));
     assert!(out.contains("localhost.localdomain"));
@@ -139,14 +147,44 @@ fn paranoid_level_obfuscates_windows_paths() {
     let input = r"C:\Users\alice\notes.txt \\server\share\docs\config.yml";
     let (out, _) = obfuscate_text(input, ObfuscationLevel::Paranoid);
 
-    assert!(
-        out.contains(r"C:\Users\alice\[FILE].txt"),
-        "windows drive path not obfuscated: {out}"
-    );
-    assert!(
-        out.contains(r"\\server\share\docs\[FILE].yml"),
-        "unc path not obfuscated: {out}"
-    );
+    #[cfg(not(any(
+        feature = "path-policy-home-user-redact",
+        feature = "path-policy-non-allowlisted-redact"
+    )))]
+    {
+        assert!(
+            out.contains(r"C:\Users\alice\[FILE].txt"),
+            "windows drive path not obfuscated: {out}"
+        );
+        assert!(
+            out.contains(r"\\server\share\docs\[FILE].yml"),
+            "unc path not obfuscated: {out}"
+        );
+    }
+
+    #[cfg(feature = "path-policy-home-user-redact")]
+    {
+        assert!(
+            out.contains(r"C:\Users\[USERDIR]\[FILE].txt"),
+            "windows drive path not obfuscated: {out}"
+        );
+        assert!(
+            out.contains(r"\\server\share\docs\[FILE].yml"),
+            "unc path not obfuscated: {out}"
+        );
+    }
+
+    #[cfg(feature = "path-policy-non-allowlisted-redact")]
+    {
+        assert!(
+            out.contains(r"C:\Users\[DIR]\[FILE].txt"),
+            "windows drive path not obfuscated: {out}"
+        );
+        assert!(
+            out.contains(r"\\server\share\[DIR]\[FILE].yml"),
+            "unc path not obfuscated: {out}"
+        );
+    }
 }
 
 #[test]

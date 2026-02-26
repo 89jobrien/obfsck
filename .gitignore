@@ -74,3 +74,4 @@ tmp/
 .vscode/
 *.swp
 *.swo
+.cache/

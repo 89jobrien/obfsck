@@ -110,8 +110,15 @@ struct AnalysisPageView<'a> {
 pub async fn run_server(host: String, port: u16) -> Result<(), ApiError> {
     let config = load_config(None)?;
     let cache_dir = std::env::var("ANALYSIS_CACHE_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("/app/cache"));
+        .map(|dir| {
+            let expanded = shellexpand::tilde(&dir);
+            PathBuf::from(expanded.as_ref())
+        })
+        .unwrap_or_else(|_| {
+            // Default to .cache/obfsck in current directory for development
+            // Production should set ANALYSIS_CACHE_DIR explicitly
+            PathBuf::from(".cache/obfsck")
+        });
     fs::create_dir_all(&cache_dir)?;
     let cache_ttl_secs = std::env::var("ANALYSIS_CACHE_TTL")
         .ok()

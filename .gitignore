@@ -75,3 +75,6 @@ tmp/
 *.swp
 *.swo
 .cache/
+
+*.md
+!README.md

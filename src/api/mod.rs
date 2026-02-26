@@ -16,6 +16,9 @@ use std::sync::Arc;
 use std::sync::OnceLock;
 use thiserror::Error;
 use tower_http::cors::CorsLayer;
+use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
+use tower_http::trace::TraceLayer;
+use tracing::{debug, error, instrument, warn};
 
 mod render;
 
@@ -132,6 +135,9 @@ pub async fn run_server(host: String, port: u16) -> Result<(), ApiError> {
         .route("/history", get(history_page))
         .route("/history/{cache_key}", get(history_detail))
         .route("/api/history", get(api_history))
+        .layer(TraceLayer::new_for_http())
+        .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
+        .layer(PropagateRequestIdLayer::x_request_id())
         .layer(CorsLayer::permissive())
         .with_state(state);
 
@@ -260,7 +266,11 @@ async fn analyze_api(
     match analyze_alert_with_config(state.config.clone(), alert.clone()).await {
         Ok(result) => {
             if payload.store.unwrap_or(false) {
-                let _ = store_analysis_with_config(state.config.clone(), result.clone()).await;
+                if let Err(e) =
+                    store_analysis_with_config(state.config.clone(), result.clone()).await
+                {
+                    warn!(error = %e, "Failed to store analysis to backend");
+                }
             }
             (
                 StatusCode::OK,
@@ -341,12 +351,16 @@ async fn analyze_page(
     };
 
     if store && result.pointer("/analysis/error").is_none() {
-        let _ = store_analysis_with_config(state.config.clone(), result.clone()).await;
+        if let Err(e) = store_analysis_with_config(state.config.clone(), result.clone()).await {
+            warn!(error = %e, "Failed to store analysis to backend");
+        }
     }
 
-    let _ = save_to_cache(
+    if let Err(e) = save_to_cache(
         &state, &cache_key, &result, &output, &rule, &priority, &hostname,
-    );
+    ) {
+        warn!(error = %e, cache_key = %cache_key, "Failed to save to cache");
+    }
 
     let analysis = result.get("analysis").cloned().unwrap_or_else(|| json!({}));
     let obfuscated_output = result
@@ -615,16 +629,21 @@ fn get_cache_key(output: &str, rule: &str) -> String {
     hex.chars().take(16).collect()
 }
 
+#[instrument(skip(config, alert), fields(has_alert = !alert.is_null()))]
 async fn analyze_alert_with_config(
     config: AnalyzerConfig,
     alert: Value,
 ) -> Result<Value, ApiError> {
+    debug!("Spawning blocking task for alert analysis");
     tokio::task::spawn_blocking(move || {
         let analyzer = AlertAnalyzer::from_config(&config)?;
         Ok::<Value, AnalyzerError>(analyzer.analyze_alert(&alert, false))
     })
     .await
-    .map_err(|e| ApiError::Join(e.to_string()))?
+    .map_err(|e| {
+        error!(error = %e, "Blocking task join error");
+        ApiError::Join(e.to_string())
+    })?
     .map_err(ApiError::from)
 }
 

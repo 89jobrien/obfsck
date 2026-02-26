@@ -13,6 +13,14 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
+#[cfg(all(
+    feature = "path-policy-home-user-redact",
+    feature = "path-policy-non-allowlisted-redact"
+))]
+compile_error!(
+    "path-policy-home-user-redact and path-policy-non-allowlisted-redact are mutually exclusive"
+);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ObfuscationLevel {
     Minimal,

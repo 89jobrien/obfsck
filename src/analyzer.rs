@@ -125,12 +125,23 @@ impl AlertAnalyzer {
                     AnalyzerError::ResponseParse(format!("strict parse failed: {strict_err}"))
                 })?;
 
-                parse_llm_response_with_ir(&self.analysis_ir, candidate, &self.analysis_output_type)
-                    .map_err(|fallback_err| {
-                        AnalyzerError::ResponseParse(format!(
-                            "strict parse failed: {strict_err}; fallback parse failed: {fallback_err}"
-                        ))
-                    })?
+                match parse_llm_response_with_ir(
+                    &self.analysis_ir,
+                    candidate,
+                    &self.analysis_output_type,
+                ) {
+                    Ok(value) => value,
+                    Err(fallback_err) => {
+                        let typed_direct = serde_json::from_str::<AnalysisOutput>(candidate)
+                            .map_err(|typed_err| {
+                                AnalyzerError::ResponseParse(format!(
+                                    "strict parse failed: {strict_err}; fallback parse failed: {fallback_err}; direct typed parse failed: {typed_err}"
+                                ))
+                            })?;
+
+                        return serde_json::to_value(typed_direct).map_err(AnalyzerError::from);
+                    }
+                }
             }
         };
 

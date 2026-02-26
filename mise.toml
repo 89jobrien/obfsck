@@ -52,3 +52,29 @@ run = "LOG_FORMAT=json RUST_LOG=obfsck=info,tower_http=debug cargo run --bin api
 [tasks."logs:trace"]
 description = "Watch API server logs with maximum verbosity"
 run = "LOG_FORMAT=pretty RUST_LOG=obfsck=trace,tower_http=trace cargo run --bin api"
+
+[tasks."logs:setup"]
+description = "Create log directory for file-based logging"
+run = "mkdir -p ~/logs/obfsck && echo 'Log directory created at ~/logs/obfsck/'"
+
+[tasks."logs:watch"]
+description = "Watch all log files in ~/logs/obfsck/"
+run = """
+if [ ! -d ~/logs/obfsck ]; then
+    echo "Log directory doesn't exist. Run: mise run logs:setup"
+    exit 1
+fi
+if ! ls ~/logs/obfsck/*.log 1> /dev/null 2>&1; then
+    echo "No log files found in ~/logs/obfsck/"
+    echo "Waiting for log files to be created..."
+fi
+tail -f ~/logs/obfsck/*.log 2>/dev/null || (echo "Waiting for logs..." && sleep infinity)
+"""
+
+[tasks."logs:clean"]
+description = "Remove all log files from ~/logs/obfsck/"
+run = "rm -f ~/logs/obfsck/*.log && echo 'Log files cleaned'"
+
+[tasks."logs:list"]
+description = "List all log files in ~/logs/obfsck/"
+run = "ls -lh ~/logs/obfsck/*.log 2>/dev/null || echo 'No log files found'"

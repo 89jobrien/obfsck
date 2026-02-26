@@ -1,0 +1,27 @@
+# Example environment variables for obfsck
+#
+# Copy this file to .envrc and customize for your environment
+# If using direnv: run `direnv allow` after creating .envrc
+
+# Logging configuration
+# ---------------------
+
+# Log output directory (logs will be written to files here)
+# export LOG_DIR=~/logs/obfsck
+
+# Log format: json (default) or pretty
+# export LOG_FORMAT=json
+
+# Log level filter (see tracing_subscriber EnvFilter syntax)
+# export RUST_LOG=obfsck=info,tower_http=debug,warn
+
+# Application configuration
+# -------------------------
+
+# LLM provider configuration
+# export ANTHROPIC_API_KEY=your-key-here
+# export OPENAI_API_KEY=your-key-here
+
+# Log backend configuration
+# export LOKI_URL=http://localhost:3100
+# export VICTORIALOGS_URL=http://localhost:9428

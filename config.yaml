@@ -1,0 +1,11 @@
+analysis:
+  enabled: true
+  provider: openai
+  obfuscation_level: standard
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    model: "gpt-5.1"
+storage:
+  backend: loki
+loki:
+  url: "http://localhost:3100"

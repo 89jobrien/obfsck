@@ -1,5 +1,76 @@
-/target
+# --- Rust ---
+/target/
+debug/
+release/
+*.rs.bk
 
+# --- Node / JavaScript / TypeScript ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm/
+.pnpm-store/
+.yarn/
+.pnp.*
+
+# --- Common web build outputs ---
+dist/
+build/
+out/
+coverage/
+.next/
+.nuxt/
+.svelte-kit/
+.astro/
+.parcel-cache/
+.turbo/
+.vercel/
+.eslintcache
+.stylelintcache
+.sass-cache/
+
+# --- PHP / Composer ---
+vendor/
+composer.phar
+.phpunit.result.cache
+
+# --- Ruby / Rails ---
+.bundle/
+log/
+tmp/pids/
+tmp/cache/
+tmp/sockets/
+public/packs/
+public/assets/
+.byebug_history
+
+# --- Python ---
+__pycache__/
 .mypy_cache/
 .pytest_cache/
-__pycache__/
+.ruff_cache/
+.tox/
+.nox/
+.venv/
+venv/
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+*.local
+
+# --- Tooling / caches ---
+.cache/
+.tmp/
+tmp/
+
+# --- IDE / OS ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo

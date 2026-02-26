@@ -1,6 +1,7 @@
 //! Obfuscator
 
 pub mod alert_analyzer;
+pub mod analysis_api;
 pub mod log_agents;
 
 use regex::{Regex, RegexBuilder};

@@ -1,5 +1,8 @@
 //! Obfuscator
 
+pub const API_DEFAULT_FILTER: &str = "obfsck=info,tower_http=debug,warn";
+pub const ANALYZER_DEFAULT_FILTER: &str = "obfsck=info,warn";
+
 pub mod analyzer;
 pub mod api;
 pub mod clients;

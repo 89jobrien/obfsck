@@ -2,8 +2,6 @@ use clap::Parser;
 use obfsck::api::run_server;
 use tracing::{error, info};
 
-const DEFAULT_FILTER: &str = "obfsck=info,tower_http=debug,warn";
-
 #[derive(Debug, Parser)]
 #[command(name = "analysis-api")]
 #[command(about = "REST API for AI-powered alert analysis")]
@@ -16,7 +14,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() {
-    obfsck::logging::init(DEFAULT_FILTER);
+    obfsck::logging::init(obfsck::API_DEFAULT_FILTER);
     let args = Args::parse();
 
     info!(
@@ -28,15 +26,5 @@ async fn main() {
     if let Err(err) = run_server(args.host, args.port).await {
         error!(error = %err, "Server error");
         std::process::exit(1);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::DEFAULT_FILTER;
-
-    #[test]
-    fn default_filter_is_expected_value() {
-        assert_eq!(DEFAULT_FILTER, "obfsck=info,tower_http=debug,warn");
     }
 }

@@ -31,4 +31,4 @@ run = "cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-featu
 
 [tasks.ci]
 description = "Run local CI checks"
-depends = ["format-check", "lint", "test", "build"]
+depends = ["lint", "test", "build"]

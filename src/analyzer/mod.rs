@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 use simplify_baml::{BamlSchema, FieldType, IR, parse_llm_response_with_ir};
 use std::collections::HashMap;
 use thiserror::Error;
-use tracing::{debug, info, warn, error, instrument};
+use tracing::{debug, error, info, instrument, warn};
 
 mod cli;
 mod config;
@@ -370,7 +370,8 @@ impl AlertAnalyzer {
         });
 
         self.log_client
-            .push(&enriched_labels, &enriched_entry.to_string(), timestamp).map_err(|e| {
+            .push(&enriched_labels, &enriched_entry.to_string(), timestamp)
+            .map_err(|e| {
                 error!(error = %e, "Failed to store analysis");
                 e
             })
@@ -400,7 +401,11 @@ impl AlertAnalyzer {
             results.push(result);
         }
 
-        info!(total = alerts.len(), stored = stored_count, "Batch analysis complete");
+        info!(
+            total = alerts.len(),
+            stored = stored_count,
+            "Batch analysis complete"
+        );
         results
     }
 }
@@ -437,7 +442,10 @@ fn build_user_prompt(
                 .map(String::as_str)
                 .unwrap_or("syscall"),
         )
-        .replace("{obfuscated_output}", obf_output.as_deref().unwrap_or_default())
+        .replace(
+            "{obfuscated_output}",
+            obf_output.as_deref().unwrap_or_default(),
+        )
         .replace(
             "{container_image}",
             obf_fields

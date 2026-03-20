@@ -1,4 +1,4 @@
-use obfsck::{obfuscate_alert, obfuscate_text, secret_pattern_errors, ObfuscationLevel};
+use obfsck::{ObfuscationLevel, obfuscate_alert, obfuscate_text, secret_pattern_errors};
 use std::collections::HashMap;
 
 #[test]
@@ -55,9 +55,11 @@ fn obfuscate_alert_obfuscates_output_and_fields() {
     let (obf_output, obf_fields, map) =
         obfuscate_alert(output.as_deref(), Some(&fields), ObfuscationLevel::Standard);
 
-    assert!(obf_output
-        .expect("output should exist")
-        .contains("[IP-EXTERNAL-1]"));
+    assert!(
+        obf_output
+            .expect("output should exist")
+            .contains("[IP-EXTERNAL-1]")
+    );
     let obf_fields = obf_fields.expect("fields should exist");
     assert_eq!(obf_fields.get("email"), Some(&"[EMAIL-1]".to_string()));
     assert!(map.ips.contains_key("203.0.113.9"));

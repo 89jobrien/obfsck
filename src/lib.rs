@@ -1,12 +1,19 @@
 //! Obfuscator
 
+#[cfg(feature = "analyzer")]
 pub const API_DEFAULT_FILTER: &str = "obfsck=info,tower_http=debug,warn";
+#[cfg(feature = "analyzer")]
 pub const ANALYZER_DEFAULT_FILTER: &str = "obfsck=info,warn";
 
+#[cfg(feature = "analyzer")]
 pub mod analyzer;
+#[cfg(feature = "analyzer")]
 pub mod api;
+#[cfg(feature = "analyzer")]
 pub mod clients;
+#[cfg(feature = "analyzer")]
 pub mod logging;
+#[cfg(feature = "analyzer")]
 pub mod schema;
 
 mod helpers;

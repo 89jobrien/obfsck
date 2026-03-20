@@ -1,5 +1,5 @@
 use clap::Parser;
-use obfsck::analyzer::{run_from_args, CliArgs};
+use obfsck::analyzer::{CliArgs, run_from_args};
 use tracing::error;
 
 fn main() {

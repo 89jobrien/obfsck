@@ -15,7 +15,11 @@ pub(super) fn parse_alert_value(raw: &str) -> Value {
     json!({ "output": raw })
 }
 
-pub(super) fn with_metadata(mut alert: Value, labels: Map<String, Value>, ts: DateTime<Utc>) -> Value {
+pub(super) fn with_metadata(
+    mut alert: Value,
+    labels: Map<String, Value>,
+    ts: DateTime<Utc>,
+) -> Value {
     if let Some(obj) = alert.as_object_mut() {
         obj.insert("_labels".to_string(), Value::Object(labels));
         obj.insert("_timestamp".to_string(), Value::String(ts.to_rfc3339()));

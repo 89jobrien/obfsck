@@ -5,31 +5,63 @@ edition = "2024"
 
 [dependencies]
 regex = "1"
-chrono = { version = "0.4", features = ["clock", "serde"] }
-clap = { version = "4", features = ["derive"] }
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
 thiserror = "2"
-axum = "0.8"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
-tower-http = { version = "0.6", features = ["cors", "trace", "request-id"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
-tracing-appender = "0.2"
-shellexpand = "3"
-sha2 = "0.10"
-simplify_baml = "0.2.0"
-simplify_baml_macros = "0.2.0"
+
+# Optional deps gated behind "analyzer" feature
+axum = { version = "0.8", optional = true }
+chrono = { version = "0.4", features = ["clock", "serde"], optional = true }
+clap = { version = "4", features = ["derive"], optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"], optional = true }
+serde_yaml = { version = "0.9", optional = true }
+sha2 = { version = "0.10", optional = true }
+shellexpand = { version = "3", optional = true }
+simplify_baml = { version = "0.2.0", optional = true }
+simplify_baml_macros = { version = "0.2.0", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"], optional = true }
+tower-http = { version = "0.6", features = ["cors", "trace", "request-id"], optional = true }
+tracing-appender = { version = "0.2", optional = true }
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"], optional = true }
 
 [features]
+default = ["analyzer"]
+analyzer = [
+    "axum",
+    "chrono",
+    "clap",
+    "reqwest",
+    "serde_yaml",
+    "sha2",
+    "shellexpand",
+    "simplify_baml",
+    "simplify_baml_macros",
+    "tokio",
+    "tower-http",
+    "tracing-appender",
+    "tracing-subscriber",
+]
 legacy-user-scan = []
 path-policy-home-user-redact = []
 path-policy-non-allowlisted-redact = []
 
 [dev-dependencies]
 criterion = "0.5"
+
+[[bin]]
+name = "analyzer"
+path = "src/bin/analyzer.rs"
+required-features = ["analyzer"]
+
+[[bin]]
+name = "api"
+path = "src/bin/api.rs"
+required-features = ["analyzer"]
+
+[[example]]
+name = "inspect_schema"
+required-features = ["analyzer"]
 
 [[bench]]
 name = "user_obfuscation"

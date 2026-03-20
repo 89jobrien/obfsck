@@ -3,7 +3,7 @@ use super::http::BlockingHttp;
 use super::{LogClient, Result};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 use std::collections::HashMap;
 use tracing::{info, instrument};
 

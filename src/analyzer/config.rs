@@ -4,7 +4,7 @@ use serde_json::Value;
 use std::env;
 use std::fs;
 use std::path::Path;
-use tracing::{debug, warn, instrument};
+use tracing::{debug, instrument, warn};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisConfig {

@@ -1,3 +1,5 @@
+#![cfg(feature = "analyzer")]
+
 #[test]
 fn api_default_filter_is_expected_value() {
     assert_eq!(

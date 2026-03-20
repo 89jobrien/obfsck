@@ -1,3 +1,5 @@
+#![cfg(feature = "analyzer")]
+
 use obfsck::api::{get_cache_key, normalize_output, parse_boolish};
 
 #[test]

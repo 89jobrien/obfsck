@@ -1,5 +1,7 @@
-use obfsck::schema::{analysis_ir, AnalysisOutput};
-use simplify_baml::{parse_llm_response_with_ir, BamlSchema, FieldType};
+#![cfg(feature = "analyzer")]
+
+use obfsck::schema::{AnalysisOutput, analysis_ir};
+use simplify_baml::{BamlSchema, FieldType, parse_llm_response_with_ir};
 
 #[test]
 fn test_baml_schema_parses_valid_response() {
@@ -15,7 +17,8 @@ fn test_baml_schema_parses_valid_response() {
     );
 
     let parsed = result.unwrap();
-    let typed: Result<AnalysisOutput, _> = serde_json::from_value(serde_json::to_value(parsed).unwrap());
+    let typed: Result<AnalysisOutput, _> =
+        serde_json::from_value(serde_json::to_value(parsed).unwrap());
     assert!(typed.is_ok(), "Failed to deserialize to AnalysisOutput");
 
     let analysis = typed.unwrap();
@@ -68,7 +71,8 @@ fn test_baml_schema_handles_missing_fields() {
 #[test]
 fn test_baml_schema_ignores_extra_fields() {
     let sample = include_str!("fixtures/sample_llm_response.json");
-    let with_extra = sample.trim_end_matches('}').to_string() + r#", "extra_field": "should_be_ignored"}"#;
+    let with_extra =
+        sample.trim_end_matches('}').to_string() + r#", "extra_field": "should_be_ignored"}"#;
 
     let ir = analysis_ir();
     let output_type = FieldType::Class(AnalysisOutput::schema_name().to_string());
@@ -83,6 +87,10 @@ fn test_baml_schema_ignores_extra_fields() {
     );
 
     let parsed = result.unwrap();
-    let typed: Result<AnalysisOutput, _> = serde_json::from_value(serde_json::to_value(parsed).unwrap());
-    assert!(typed.is_ok(), "Should deserialize successfully, ignoring extra fields");
+    let typed: Result<AnalysisOutput, _> =
+        serde_json::from_value(serde_json::to_value(parsed).unwrap());
+    assert!(
+        typed.is_ok(),
+        "Should deserialize successfully, ignoring extra fields"
+    );
 }

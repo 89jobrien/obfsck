@@ -13,7 +13,10 @@ fn main() {
         println!("Class: {}", class.name);
         println!("  Fields:");
         for field in &class.fields {
-            println!("    - {}: {:?} (optional: {})", field.name, field.field_type, field.optional);
+            println!(
+                "    - {}: {:?} (optional: {})",
+                field.name, field.field_type, field.optional
+            );
         }
         println!();
     }

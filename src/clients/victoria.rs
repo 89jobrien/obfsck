@@ -4,7 +4,7 @@ use super::{LogClient, Result};
 use chrono::{DateTime, Utc};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
-use tracing::{info, warn, instrument};
+use tracing::{info, instrument, warn};
 
 pub struct VictoriaLogsClient {
     http: BlockingHttp,

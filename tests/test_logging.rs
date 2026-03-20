@@ -1,3 +1,5 @@
+#![cfg(feature = "analyzer")]
+
 use obfsck::logging::{LogFormat, LogFormat::*};
 
 #[test]

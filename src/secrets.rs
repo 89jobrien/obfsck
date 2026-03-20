@@ -125,7 +125,7 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
         name: "telegram_bot_token",
         pattern: r"\b[0-9]{8,10}:[A-Za-z0-9_-]{35}\b",
         label: "TELEGRAM-BOT",
-        paranoid_only: false,
+        paranoid_only: true,
     },
     SecretPatternDef {
         name: "stripe_secret_key",
@@ -137,12 +137,6 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
         name: "stripe_publishable_key",
         pattern: r"\bpk_(?:test|live)_[A-Za-z0-9]{24,}\b",
         label: "STRIPE-KEY",
-        paranoid_only: false,
-    },
-    SecretPatternDef {
-        name: "stripe_restricted_key",
-        pattern: r"\brk_(?:test|live)_[A-Za-z0-9]{24,}\b",
-        label: "STRIPE-RESTRICTED",
         paranoid_only: false,
     },
     SecretPatternDef {
@@ -197,7 +191,7 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
         name: "heroku_api_key",
         pattern: r"\b[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b",
         label: "HEROKU-KEY",
-        paranoid_only: false,
+        paranoid_only: true,
     },
     SecretPatternDef {
         name: "digitalocean_pat",
@@ -305,7 +299,7 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
         name: "ssh_public_key",
         pattern: r"ssh-(?:rsa|dss|ed25519|ecdsa)\s+[A-Za-z0-9+/]+={0,2}",
         label: "SSH-PUBLIC-KEY",
-        paranoid_only: false,
+        paranoid_only: true,
     },
     SecretPatternDef {
         name: "anthropic_api_key",

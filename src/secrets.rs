@@ -233,7 +233,7 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
         name: "pagerduty_api_key",
         pattern: r"\b[A-Za-z0-9+/]{20}\b",
         label: "PAGERDUTY-KEY",
-        paranoid_only: false,
+        paranoid_only: true,
     },
     SecretPatternDef {
         name: "postgres_uri",
@@ -305,6 +305,18 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
         name: "ssh_public_key",
         pattern: r"ssh-(?:rsa|dss|ed25519|ecdsa)\s+[A-Za-z0-9+/]+={0,2}",
         label: "SSH-PUBLIC-KEY",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "anthropic_api_key",
+        pattern: r"\bsk-ant-(?:api\d{2}-)?[A-Za-z0-9_-]{32,}\b",
+        label: "ANTHROPIC-KEY",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "openai_api_key",
+        pattern: r"\bsk-(?:proj-)?[A-Za-z0-9_-]{32,}\b",
+        label: "OPENAI-KEY",
         paranoid_only: false,
     },
     SecretPatternDef {

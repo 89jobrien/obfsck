@@ -48,6 +48,14 @@ path-policy-non-allowlisted-redact = []
 
 [dev-dependencies]
 criterion = "0.5"
+regex = "1"
+serde_yaml = "0.9"
+serde = { version = "1", features = ["derive"] }
+
+[[bin]]
+name = "redact"
+path = "src/bin/redact.rs"
+required-features = ["analyzer"]
 
 [[bin]]
 name = "analyzer"

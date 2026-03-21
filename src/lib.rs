@@ -601,3 +601,30 @@ fn high_entropy_candidate_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"\b[A-Za-z0-9+/=_-]{20,}\b").expect("entropy candidate regex"))
 }
+
+pub mod yaml_config {
+    use serde::Deserialize;
+    use std::collections::HashMap;
+
+    #[derive(Deserialize)]
+    pub struct SecretsConfig {
+        pub groups: HashMap<String, Group>,
+        #[serde(default)]
+        pub custom: Vec<PatternDef>,
+    }
+
+    #[derive(Deserialize)]
+    pub struct Group {
+        pub enabled: bool,
+        pub patterns: Vec<PatternDef>,
+    }
+
+    #[derive(Deserialize)]
+    pub struct PatternDef {
+        pub name: String,
+        pub pattern: String,
+        pub label: String,
+        #[serde(default)]
+        pub paranoid_only: bool,
+    }
+}

@@ -1,8 +1,7 @@
 use clap::Parser;
+use obfsck::yaml_config::SecretsConfig;
 use obfsck::{ObfuscationLevel, obfuscate_text};
 use regex::{Regex, RegexBuilder};
-use serde::Deserialize;
-use std::collections::HashMap;
 use std::io::{self, Read};
 
 // Path relative to this source file (src/bin/ → ../../config/)
@@ -19,28 +18,6 @@ struct Args {
     /// Lookup order: explicit path → ~/.config/obfsck/secrets.yaml → bundled config.
     #[arg(short, long)]
     config: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct SecretsConfig {
-    groups: HashMap<String, Group>,
-    #[serde(default)]
-    custom: Vec<PatternDef>,
-}
-
-#[derive(Deserialize)]
-struct Group {
-    enabled: bool,
-    patterns: Vec<PatternDef>,
-}
-
-#[derive(Deserialize)]
-struct PatternDef {
-    name: String,
-    pattern: String,
-    label: String,
-    #[serde(default)]
-    paranoid_only: bool,
 }
 
 fn main() {
@@ -76,9 +53,10 @@ fn main() {
         .collect();
 
     let mut input = String::new();
-    io::stdin()
-        .read_to_string(&mut input)
-        .expect("failed to read stdin");
+    if let Err(e) = io::stdin().read_to_string(&mut input) {
+        eprintln!("Failed to read stdin: {e}");
+        std::process::exit(1);
+    }
 
     // Apply YAML secret patterns first.
     // Then call obfuscate_text for structural obfuscation (IPs, emails, hostnames).

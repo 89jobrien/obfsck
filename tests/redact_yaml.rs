@@ -1,29 +1,6 @@
 use obfsck::ObfuscationLevel;
+use obfsck::yaml_config::SecretsConfig;
 use regex::{Regex, RegexBuilder};
-use serde::Deserialize;
-use std::collections::HashMap;
-
-#[derive(Deserialize)]
-struct SecretsConfig {
-    groups: HashMap<String, Group>,
-    #[serde(default)]
-    custom: Vec<PatternDef>,
-}
-
-#[derive(Deserialize)]
-struct Group {
-    enabled: bool,
-    patterns: Vec<PatternDef>,
-}
-
-#[derive(Deserialize)]
-struct PatternDef {
-    name: String,
-    pattern: String,
-    label: String,
-    #[serde(default)]
-    paranoid_only: bool,
-}
 
 fn apply_yaml_patterns(yaml: &str, input: &str, level: ObfuscationLevel) -> String {
     let config: SecretsConfig = serde_yaml::from_str(yaml).unwrap();

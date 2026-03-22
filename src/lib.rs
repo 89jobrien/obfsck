@@ -603,12 +603,12 @@ fn high_entropy_candidate_re() -> &'static Regex {
 }
 
 pub mod yaml_config {
+    use indexmap::IndexMap;
     use serde::Deserialize;
-    use std::collections::HashMap;
 
     #[derive(Deserialize)]
     pub struct SecretsConfig {
-        pub groups: HashMap<String, Group>,
+        pub groups: IndexMap<String, Group>,
         #[serde(default)]
         pub custom: Vec<PatternDef>,
     }

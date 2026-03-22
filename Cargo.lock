@@ -1393,6 +1393,7 @@ dependencies = [
  "chrono",
  "clap",
  "criterion",
+ "indexmap 2.13.0",
  "regex",
  "reqwest",
  "serde",

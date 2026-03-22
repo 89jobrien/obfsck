@@ -43,10 +43,12 @@ fn main() {
         .chain(config.custom.iter())
         .filter(|p| !p.paranoid_only || is_paranoid)
         .filter_map(|p| {
+            // Silently skip invalid patterns — Rust's regex crate doesn't support
+            // lookaheads/lookbehinds; bad patterns in user config should not produce
+            // stderr noise that leaks through hook runners.
             RegexBuilder::new(&p.pattern)
                 .case_insensitive(true)
                 .build()
-                .map_err(|e| eprintln!("Bad pattern '{}': {e}", p.name))
                 .ok()
                 .map(|re| (re, format!("[REDACTED-{}]", p.label)))
         })

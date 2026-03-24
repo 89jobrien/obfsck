@@ -1,0 +1,43 @@
+title: "Structural Obfuscation"
+description: "IPs, emails, containers, users (standard+) · hostnames, paths, high-entropy (paranoid)"
+level: standard
+examples:
+  - label: "Internal IPv4 (standard)"
+    type: kv
+    level: standard
+    input: "Connected to db at 192.168.10.50:5432"
+
+  - label: "External IPv4 (standard)"
+    type: kv
+    level: standard
+    input: "Outbound request to 8.8.8.8"
+
+  - label: "Email address (standard)"
+    type: kv
+    level: standard
+    input: "Sending invoice to alice@example.com"
+
+  - label: "Docker container ID (standard)"
+    type: kv
+    level: standard
+    input: "Container a1b2c3d4e5f6 restarted"
+
+  - label: "Username (standard)"
+    type: kv
+    level: standard
+    input: "user=alice authenticated successfully"
+
+  - label: "Filesystem path (paranoid)"
+    type: kv
+    level: paranoid
+    input: "Reading config from /home/alice/.config/myapp/config.json"
+
+  - label: "Hostname (paranoid)"
+    type: kv
+    level: paranoid
+    input: "Resolved prod-db-01.internal.example.com"
+
+  - label: "High-entropy string (paranoid)"
+    type: kv
+    level: paranoid
+    input: "session_id=aB3kL9mNpQrStUvWxYzAbCdEfGhIjKlMnOpQrStUv"

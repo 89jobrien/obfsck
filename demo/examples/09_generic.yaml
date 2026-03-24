@@ -1,0 +1,23 @@
+title: "Generic Secrets"
+description: "JWT tokens, private keys, bearer/basic auth headers, password fields"
+level: minimal
+examples:
+  - label: "JWT token"
+    type: kv
+    input: "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+
+  - label: "Basic auth header"
+    type: kv
+    input: "Authorization: Basic dXNlcjpteXNlY3JldHBhc3N3b3Jk"
+
+  - label: "Password field (config file)"
+    type: kv
+    input: 'password = "s3cr3t-Database-P4ss!"'
+
+  - label: "Private key header"
+    type: kv
+    input: "-----BEGIN RSA PRIVATE KEY-----"
+
+  - label: "Bearer token"
+    type: kv
+    input: "Authorization: Bearer ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno"

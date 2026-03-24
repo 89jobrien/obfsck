@@ -1,0 +1,15 @@
+title: "Package Managers"
+description: "npm, PyPI, and NuGet publish tokens"
+level: minimal
+examples:
+  - label: "npm token"
+    type: kv
+    input: "NPM_TOKEN=npm_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"
+
+  - label: "PyPI token"
+    type: kv
+    input: "PYPI_TOKEN=pypi-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDE"
+
+  - label: "NuGet API key"
+    type: kv
+    input: "NUGET_API_KEY=oy2ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopq"

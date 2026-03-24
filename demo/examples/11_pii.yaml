@@ -1,0 +1,30 @@
+title: "PII (Personally Identifiable Information)"
+description: "SSN, credit card, phone, IBAN, passport, driver's license — group disabled by default"
+level: standard
+disabled: true
+examples:
+  - label: "US Social Security Number"
+    type: kv
+    input: "ssn: 123-45-6789"
+
+  - label: "Credit card number (Visa)"
+    type: kv
+    input: "card_number: 4111111111111111"
+
+  - label: "US phone number"
+    type: kv
+    input: "phone: (555) 123-4567"
+
+  - label: "IBAN"
+    type: kv
+    input: "iban: GB29NWBK60161331926819"
+
+  - label: "Passport number (paranoid_only)"
+    type: kv
+    level: paranoid
+    input: "passport: AB1234567"
+
+  - label: "US driver's license (paranoid_only)"
+    type: kv
+    level: paranoid
+    input: "drivers_license: A1234567"

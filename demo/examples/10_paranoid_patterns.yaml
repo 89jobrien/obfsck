@@ -1,0 +1,47 @@
+title: "Paranoid-Only Patterns"
+description: "Secrets only matched at --level paranoid (paranoid_only: true across all enabled groups)"
+level: paranoid
+examples:
+  - label: "Telegram bot token (communication group)"
+    type: kv
+    input: "TELEGRAM_BOT_TOKEN=1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi"
+
+  - label: "SSH public key (generic group)"
+    type: kv
+    input: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3xyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij alice@laptop"
+
+  - label: "AWS secret access key (paranoid group)"
+    type: kv
+    input: "AWS_SECRET_ACCESS_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+
+  - label: "Datadog API key — 32 hex (paranoid group)"
+    type: kv
+    input: "DD_API_KEY=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+  - label: "Datadog app key — 40 hex (paranoid group)"
+    type: kv
+    input: "DD_APP_KEY=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+
+  - label: "Azure client secret — 34 chars (paranoid group)"
+    type: kv
+    input: "AZURE_CLIENT_SECRET=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh"
+
+  - label: "Twilio auth token — 32 hex (paranoid group)"
+    type: kv
+    input: "TWILIO_AUTH_TOKEN=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+  - label: "Cloudflare API key — 37 chars (paranoid group)"
+    type: kv
+    input: "CF_API_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijk"
+
+  - label: "Heroku API key — UUID format (paranoid group)"
+    type: kv
+    input: "HEROKU_API_KEY=a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4"
+
+  - label: "PagerDuty API key — 20 chars (paranoid group)"
+    type: kv
+    input: "PAGERDUTY_KEY=ABCDEFGHIJKLMNOPQRST"
+
+  - label: "Base64 secret blob (paranoid group)"
+    type: kv
+    input: "SESSION_SECRET=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst"

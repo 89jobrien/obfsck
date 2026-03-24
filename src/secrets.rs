@@ -279,7 +279,7 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
     },
     SecretPatternDef {
         name: "password_field",
-        pattern: r#"(?:password|passwd|pwd|secret_key|auth_key|private_key|encryption_key)\s*[=:]\s*["']?[^\s"']{8,}["']?"#,
+        pattern: r#"\b(?:password|passwd|pwd|secret_key|auth_key|private_key|encryption_key)\b\s*[=:]\s*["']?[^\s"']{8,}["']?"#,
         label: "PASSWORD",
         paranoid_only: false,
     },
@@ -291,8 +291,32 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
     },
     SecretPatternDef {
         name: "bearer_token",
-        pattern: r"\bBearer\s+[A-Za-z0-9_.-]+\b",
+        pattern: r"\bBearer\s+[A-Za-z0-9_.-]{20,}\b",
         label: "BEARER-TOKEN",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "onepassword_ref",
+        pattern: r"\bop://[A-Za-z0-9_-]+/[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+\b",
+        label: "1PASSWORD-REF",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "onepassword_service_account",
+        pattern: r"\bops_eyJ[A-Za-z0-9_.-]{50,}",
+        label: "1PASSWORD-SA-TOKEN",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "bw_session",
+        pattern: r"\bBW_SESSION=[A-Za-z0-9+/]{40,}={0,2}",
+        label: "BW-SESSION",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "bws_access_token",
+        pattern: r"\b0\.[A-Za-z0-9]{20,}\.[A-Za-z0-9]{20,}",
+        label: "BWS-TOKEN",
         paranoid_only: false,
     },
     SecretPatternDef {

@@ -64,6 +64,7 @@ No `pyproject.toml` needed. `uv run demo/demo.py` handles dependency installatio
 title: "AI APIs"
 description: "API keys for AI services — matched at all levels"
 level: minimal          # redact level for all examples in this file
+disabled: false         # optional; true = group off by default, show notice (default: false)
 examples:
   - label: "Anthropic key"
     type: kv            # single-line → side-by-side table row

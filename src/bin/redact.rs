@@ -2,14 +2,25 @@ use clap::Parser;
 use obfsck::yaml_config::SecretsConfig;
 use obfsck::{ObfuscationLevel, obfuscate_text};
 use regex::{Regex, RegexBuilder};
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
+use std::path::PathBuf;
 
 // Path relative to this source file (src/bin/ → ../../config/)
 static BUNDLED_CONFIG: &str = include_str!("../../config/secrets.yaml");
 
 #[derive(Parser)]
-#[command(about = "Redact secrets and PII from stdin")]
+#[command(
+    about = "Redact secrets and PII from a file or stdin. Output goes to stdout unless -o is given."
+)]
+#[command(override_usage = "redact [OPTIONS] [INPUT]\n       cat file | redact [OPTIONS]")]
 struct Args {
+    /// Input file to redact. Reads from stdin if omitted.
+    input: Option<PathBuf>,
+
+    /// Write redacted output to this file instead of stdout.
+    #[arg(short, long)]
+    output: Option<PathBuf>,
+
     /// Obfuscation level: minimal, standard, paranoid
     #[arg(short, long, default_value = "minimal")]
     level: String,
@@ -54,11 +65,7 @@ fn main() {
         })
         .collect();
 
-    let mut input = String::new();
-    if let Err(e) = io::stdin().read_to_string(&mut input) {
-        eprintln!("Failed to read stdin: {e}");
-        std::process::exit(1);
-    }
+    let input = read_input(args.input.as_deref());
 
     // Apply YAML secret patterns first.
     // Then call obfuscate_text for structural obfuscation (IPs, emails, hostnames).
@@ -69,7 +76,41 @@ fn main() {
         text = re.replace_all(&text, replacement.as_str()).into_owned();
     }
     let (out, _) = obfuscate_text(&text, level);
-    print!("{}", out);
+
+    write_output(&out, args.output.as_deref());
+}
+
+fn read_input(path: Option<&std::path::Path>) -> String {
+    match path {
+        Some(p) => std::fs::read_to_string(p).unwrap_or_else(|e| {
+            eprintln!("Cannot read '{}': {e}", p.display());
+            std::process::exit(1);
+        }),
+        None => {
+            let mut buf = String::new();
+            io::stdin().read_to_string(&mut buf).unwrap_or_else(|e| {
+                eprintln!("Failed to read stdin: {e}");
+                std::process::exit(1);
+            });
+            buf
+        }
+    }
+}
+
+fn write_output(text: &str, path: Option<&std::path::Path>) {
+    match path {
+        Some(p) => {
+            let mut f = std::fs::File::create(p).unwrap_or_else(|e| {
+                eprintln!("Cannot create '{}': {e}", p.display());
+                std::process::exit(1);
+            });
+            f.write_all(text.as_bytes()).unwrap_or_else(|e| {
+                eprintln!("Failed to write '{}': {e}", p.display());
+                std::process::exit(1);
+            });
+        }
+        None => print!("{text}"),
+    }
 }
 
 fn load_config(explicit_path: Option<&str>) -> String {

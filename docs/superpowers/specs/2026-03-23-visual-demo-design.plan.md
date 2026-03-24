@@ -212,11 +212,11 @@ Level summary printed as a legend above the table:
 
 ### `10_paranoid_patterns.yaml` — paranoid-only secret patterns
 
-All examples use `level: paranoid`. Covers patterns from `config/secrets.yaml` groups where `paranoid_only: true`: AWS secret key, Datadog API/app keys, Azure client secret, Twilio auth token, base64 blobs, Cloudflare API key, Heroku API key, PagerDuty key, Telegram bot token, SSH public key.
+All examples use `level: paranoid`. Covers all patterns across all **enabled** groups in `config/secrets.yaml` where `paranoid_only: true`, except those already in `11_pii.yaml` (passport, drivers_license_us). This spans multiple groups — for example, `telegram_bot_token` lives in the `communication` group and `ssh_public_key` in the `generic` group, but both are included here because they carry `paranoid_only: true`.
 
 ### `12_structural.yaml` — structural obfuscation features
 
-Uses per-example level overrides to demonstrate the level at which each feature activates:
+All structural features require `standard` or higher; `minimal` activates no structural features. Uses per-example level overrides to demonstrate the level at which each feature activates:
 
 - IPs (internal/external), emails, containers, users → `level: standard`
 - Paths, hostnames, high-entropy strings → `level: paranoid`
@@ -224,3 +224,5 @@ Uses per-example level overrides to demonstrate the level at which each feature 
 ### `11_pii.yaml` — PII patterns (disabled by default)
 
 Sets `disabled: true` at file scope. Examples show SSN, credit card, phone, IBAN, passport, driver's license inputs. Output will be unredacted (pass-through) unless the user enables the group. The disabled-group notice is shown beneath the panel.
+
+The `disabled: true` field is fixture-static and reflects the default config state. The demo does not inspect the live `config/secrets.yaml` at runtime — so if a user has enabled the `pii` group locally, the notice still appears. This is acceptable for a demo tool.

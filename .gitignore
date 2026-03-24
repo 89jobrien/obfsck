@@ -70,6 +70,7 @@ venv/
 .cache/
 .tmp/
 tmp/
+scratch/
 
 # --- IDE / OS ---
 .DS_Store

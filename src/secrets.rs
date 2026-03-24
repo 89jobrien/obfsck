@@ -285,7 +285,7 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
     },
     SecretPatternDef {
         name: "basic_auth",
-        pattern: r"\bBasic\s+[A-Za-z0-9+/]+=*\b",
+        pattern: r"\bBasic\s+[A-Za-z0-9+/]{20,}={0,2}",
         label: "BASIC-AUTH",
         paranoid_only: false,
     },

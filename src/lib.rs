@@ -172,13 +172,16 @@ impl Obfuscator {
         s = Cow::Owned(self.obfuscate_ips(s.as_ref()));
         s = Cow::Owned(self.obfuscate_emails(s.as_ref()));
         s = Cow::Owned(self.obfuscate_containers(s.as_ref()));
-        s = Cow::Owned(self.obfuscate_users(s.as_ref()));
 
         if self.level == ObfuscationLevel::Paranoid {
+            // Paths first so user_re can cleanly redact the username segment
+            // without the path processor later stripping its trailing slash.
             s = Cow::Owned(self.obfuscate_paths(s.as_ref()));
             s = Cow::Owned(self.obfuscate_hostnames(s.as_ref()));
             s = Cow::Owned(self.obfuscate_high_entropy(s.as_ref()));
         }
+
+        s = Cow::Owned(self.obfuscate_users(s.as_ref()));
 
         s.into_owned()
     }
@@ -312,9 +315,6 @@ impl Obfuscator {
                 | "git"
                 | "dev"
                 | "devloop"
-                | "user"
-                | "alice"
-                | "bob"
         )
     }
 

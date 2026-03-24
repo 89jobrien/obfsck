@@ -112,7 +112,7 @@ fn paranoid_level_obfuscates_paths_hostnames_and_high_entropy_strings() {
         feature = "path-policy-home-user-redact",
         feature = "path-policy-non-allowlisted-redact"
     )))]
-    assert!(out.contains("/home/alice/[FILE].txt"));
+    assert!(out.contains("/home/[USER-1]/[FILE].txt"), "got: {out}");
 
     #[cfg(feature = "path-policy-home-user-redact")]
     assert!(out.contains("/home/[USERDIR]/[FILE].txt"));

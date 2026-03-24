@@ -300,7 +300,21 @@ impl Obfuscator {
     fn is_system_user(user: &str) -> bool {
         matches!(
             user.to_ascii_lowercase().as_str(),
-            "root" | "nobody" | "daemon" | "www-data" | "nginx" | "postgres" | "mysql" | "redis"
+            "root"
+                | "nobody"
+                | "daemon"
+                | "www-data"
+                | "nginx"
+                | "postgres"
+                | "mysql"
+                | "redis"
+                | "vscode"
+                | "git"
+                | "dev"
+                | "devloop"
+                | "user"
+                | "alice"
+                | "bob"
         )
     }
 
@@ -598,7 +612,8 @@ fn user_res() -> &'static [Regex] {
 fn user_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"(?i)(user=|uid=|username=|--username\s+|by user )(\w+)").expect("user regex")
+        Regex::new(r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)(\w+)")
+            .expect("user regex")
     })
 }
 

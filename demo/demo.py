@@ -45,6 +45,31 @@ class Fixture:
     examples: list[Example]
 
 
+def load_fixture(path: Path) -> Fixture:
+    raw = yaml.safe_load(path.read_text())
+    examples = [
+        Example(
+            label=ex["label"],
+            type=ex["type"],
+            input=ex["input"],
+            level=ex.get("level"),
+        )
+        for ex in raw.get("examples", [])
+    ]
+    return Fixture(
+        title=raw["title"],
+        description=raw["description"],
+        level=raw.get("level", "standard"),
+        disabled=raw.get("disabled", False),
+        examples=examples,
+    )
+
+
+def load_all_fixtures() -> list[Fixture]:
+    paths = sorted(EXAMPLES_DIR.glob("*.yaml"))
+    return [load_fixture(p) for p in paths]
+
+
 def check_binary() -> None:
     if not BINARY.exists():
         console.print(

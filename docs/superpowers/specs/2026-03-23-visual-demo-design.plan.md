@@ -15,7 +15,7 @@ uv run demo/demo.py [FILE] [--level minimal|standard|paranoid]
 
 - No `FILE` → runs full showcase (all example groups, in order)
 - `FILE` → skips showcase; pipes file through `target/release/redact` at the given level and shows before/after
-- `--level` defaults to `standard`
+- `--level` defaults to `standard` — intentionally richer than the binary's own default (`minimal`) so the showcase is more illustrative out of the box
 - Designed to be safe in a for-loop: `for f in logs/*.log; do uv run demo/demo.py $f; done`
 - In file mode: no banner, clean output per invocation
 
@@ -35,10 +35,15 @@ demo/
     07_package_managers.yaml
     08_monitoring.yaml
     09_generic.yaml             # JWT, private keys, bearer tokens, passwords
-    10_pii.yaml                 # SSN, credit card, phone — note: group disabled by default
-    11_structural.yaml          # IPs, emails, containers, users, hostnames, paths
-    12_log_block.yaml           # Realistic multi-line log with mixed secrets
+    10_paranoid_patterns.yaml   # paranoid_only: true patterns from config/secrets.yaml
+    11_pii.yaml                 # SSN, credit card, phone — note: group disabled by default
+    12_structural.yaml          # IPs, emails, containers, users, hostnames, paths
+    13_log_block.yaml           # Realistic multi-line log with mixed secrets
 ```
+
+Note: there are two distinct uses of "paranoid" in this codebase:
+- `paranoid_only: true` in `config/secrets.yaml` — pattern-matched secrets gated behind `--level paranoid` (e.g. AWS secret key, Datadog API key, base64 blobs). Covered in `10_paranoid_patterns.yaml`.
+- `ObfuscationLevel::Paranoid` structural features — paths, hostnames, high-entropy strings. Covered in `12_structural.yaml` with per-example level overrides.
 
 ## PEP 723 Header
 
@@ -80,6 +85,8 @@ examples:
 - `type: kv` — rendered as a row in a two-column rich Table (Original | Redacted)
 - `type: block` — rendered as two stacked rich Panels (Input / Redacted)
 - `level` can be set at file scope or overridden per example
+- If a file has only `kv` examples, the block section is omitted entirely (no empty panels)
+- If a file has only `block` examples, the kv table is omitted entirely (no empty table)
 
 ## Rich Rendering Layout
 
@@ -109,8 +116,19 @@ examples:
 
 - `[REDACTED-*]` tokens rendered in **bold red** in all views
 - Each group rendered as a rich `Panel` with title + description as subtitle
-- kv examples grouped into a single `Table` per group file
-- block examples rendered as individual `Panel` pairs below the table
+- kv examples grouped into a single `Table` per group file, rendered before block examples
+- kv table uses two equal-width flexible columns; each cell truncated with `…` if it exceeds its column width. Rich handles responsive resizing — no fixed widths.
+- block examples rendered as individual `Panel` pairs (Input / Redacted) below the table
+
+### Disabled-group notice (pii group)
+
+When a fixture file sets `disabled: true` at the file scope, the demo renders the examples but adds a caption beneath the panel:
+
+```
+  ⚠  This group is disabled by default. Enable it in config/secrets.yaml under groups.pii.
+```
+
+This makes clear that identical before/after output is expected behaviour, not a bug.
 
 ### File mode
 
@@ -129,33 +147,80 @@ No banner. One rule showing filename and level, then the panels.
 
 ## Redact Invocation
 
-The script shells out to `target/release/redact`:
+The script resolves the binary path relative to its own location (`demo/../target/release/redact`). If the binary does not exist, it prints a human-readable error and exits with code 1:
+
+```
+Error: binary not found at target/release/redact
+Run `cargo build --release` first.
+```
+
+Subprocess call:
 
 ```python
 import subprocess
+from pathlib import Path
+import sys
+
+BINARY = Path(__file__).parent.parent / "target" / "release" / "redact"
 
 def redact(text: str, level: str) -> str:
+    if not BINARY.exists():
+        print(f"Error: binary not found at {BINARY}\nRun `cargo build --release` first.", file=sys.stderr)
+        sys.exit(1)
     result = subprocess.run(
-        ["target/release/redact", "--level", level],
+        [str(BINARY), "--level", level],
         input=text,
         capture_output=True,
         text=True,
     )
+    if result.returncode != 0:
+        print(f"Error: redact exited with code {result.returncode}\n{result.stderr}", file=sys.stderr)
+        sys.exit(1)
     return result.stdout
 ```
 
-The binary is expected at `target/release/redact` relative to the repo root. The script resolves this relative to its own location (`demo/../target/release/redact`).
-
 ## Obfuscation Level Coverage
 
-`00_levels.yaml` shows the same realistic log input processed at all three levels, with a brief explanation of what each level covers:
+### `00_levels.yaml` — three-level comparison
 
+Shows the same realistic log line processed at all three levels. Rendered as three consecutive `kv` rows with per-example level overrides, grouped under a single explanatory Panel:
+
+```yaml
+title: "Obfuscation Levels"
+description: "Same input at each level — showing what each adds"
+examples:
+  - label: "minimal  (secrets only)"
+    type: kv
+    level: minimal
+    input: "user=alice ip=10.0.0.5 token=sk-ant-api03-xxx"
+
+  - label: "standard (+IPs, emails, containers, users)"
+    type: kv
+    level: standard
+    input: "user=alice ip=10.0.0.5 token=sk-ant-api03-xxx"
+
+  - label: "paranoid (+paths, hostnames, high-entropy)"
+    type: kv
+    level: paranoid
+    input: "user=alice ip=10.0.0.5 token=sk-ant-api03-xxx"
+```
+
+Level summary printed as a legend above the table:
 - **minimal** — secrets patterns only (YAML config groups)
 - **standard** — + IPs, emails, containers, users
-- **paranoid** — + paths, hostnames, high-entropy strings
+- **paranoid** — + paths, hostnames, high-entropy strings; also unlocks `paranoid_only: true` patterns
 
-## Notes
+### `10_paranoid_patterns.yaml` — paranoid-only secret patterns
 
-- `10_pii.yaml` includes a note that the `pii` group is disabled by default in `config/secrets.yaml` and must be enabled manually
-- `00_levels.yaml` uses `standard` level but overrides per-example to show all three
-- Long values in kv table cells are truncated with `…` to fit terminal width
+All examples use `level: paranoid`. Covers patterns from `config/secrets.yaml` groups where `paranoid_only: true`: AWS secret key, Datadog API/app keys, Azure client secret, Twilio auth token, base64 blobs, Cloudflare API key, Heroku API key, PagerDuty key, Telegram bot token, SSH public key.
+
+### `12_structural.yaml` — structural obfuscation features
+
+Uses per-example level overrides to demonstrate the level at which each feature activates:
+
+- IPs (internal/external), emails, containers, users → `level: standard`
+- Paths, hostnames, high-entropy strings → `level: paranoid`
+
+### `11_pii.yaml` — PII patterns (disabled by default)
+
+Sets `disabled: true` at file scope. Examples show SSN, credit card, phone, IBAN, passport, driver's license inputs. Output will be unredacted (pass-through) unless the user enables the group. The disabled-group notice is shown beneath the panel.

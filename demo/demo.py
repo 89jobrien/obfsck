@@ -101,6 +101,59 @@ def highlight_redacted(text: str) -> Text:
     return result
 
 
+def render_kv_table(examples: list[Example], file_level: str) -> Table:
+    table = Table(show_header=True, header_style="bold", expand=True, show_lines=False)
+    table.add_column("Original", ratio=1, overflow="fold")
+    table.add_column("Redacted", ratio=1, overflow="fold")
+    for ex in examples:
+        level = ex.level or file_level
+        original = ex.input.strip()
+        redacted_str = redact(original, level).strip()
+        label_cell = Text(f"[{ex.label}]\n", style="dim") + Text(original)
+        redacted_cell = Text(f"[{ex.label}]\n", style="dim") + highlight_redacted(redacted_str)
+        table.add_row(label_cell, redacted_cell)
+    return table
+
+
+def render_block_pair(ex: Example, file_level: str) -> None:
+    level = ex.level or file_level
+    original = ex.input.rstrip("\n")
+    redacted_str = redact(ex.input, level).rstrip("\n")
+    console.print(Panel(original, title=f"[bold]{ex.label}[/bold] — Input", border_style="dim"))
+    console.print(
+        Panel(
+            highlight_redacted(redacted_str),
+            title=f"[bold]{ex.label}[/bold] — Redacted",
+            border_style="red",
+        )
+    )
+
+
+def render_fixture(fixture: Fixture) -> None:
+    console.print(Rule(f"[bold]{fixture.title}[/bold]  [dim]{fixture.description}[/dim]"))
+
+    if fixture.disabled:
+        console.print(
+            Panel(
+                "[yellow]⚠  This group is disabled by default.[/yellow]\n"
+                "Enable it in [bold]config/secrets.yaml[/bold] under the relevant group.\n"
+                "Examples below show pass-through (no redaction) until enabled.",
+                border_style="yellow",
+            )
+        )
+
+    kv_examples = [e for e in fixture.examples if e.type == "kv"]
+    block_examples = [e for e in fixture.examples if e.type == "block"]
+
+    if kv_examples:
+        console.print(render_kv_table(kv_examples, fixture.level))
+
+    for ex in block_examples:
+        render_block_pair(ex, fixture.level)
+
+    console.print()
+
+
 def check_binary() -> None:
     if not BINARY.exists():
         console.print(

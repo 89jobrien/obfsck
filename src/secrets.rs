@@ -297,8 +297,20 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
     },
     SecretPatternDef {
         name: "onepassword_ref",
-        pattern: r"\bop://[A-Za-z0-9_-]+/[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+\b",
+        pattern: r"\bop://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_.-]+)*\b",
         label: "1PASSWORD-REF",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "onepassword_domain",
+        pattern: r"\b[A-Za-z0-9-]+\.1password\.com\b",
+        label: "1PASSWORD-DOMAIN",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "tailscale_host",
+        pattern: r"\b[A-Za-z0-9-]+\.ts\.net\b",
+        label: "TAILSCALE-HOST",
         paranoid_only: false,
     },
     SecretPatternDef {

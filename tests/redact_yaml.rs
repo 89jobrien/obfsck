@@ -50,17 +50,17 @@ fn test_openai_key_redacted() {
 }
 
 #[test]
-fn test_pii_disabled_by_default() {
+fn test_pii_redacted_at_standard() {
     let yaml = include_str!("../config/secrets.yaml");
     let input = "ssn=123-45-6789 card=4111111111111111";
-    let result = apply_yaml_patterns(yaml, input, ObfuscationLevel::Minimal);
+    let result = apply_yaml_patterns(yaml, input, ObfuscationLevel::Standard);
     assert!(
-        result.contains("123-45-6789"),
-        "SSN should not be redacted (pii off): {result}"
+        result.contains("[REDACTED-SSN]"),
+        "SSN should be redacted at standard: {result}"
     );
     assert!(
-        result.contains("4111111111111111"),
-        "CC should not be redacted (pii off): {result}"
+        result.contains("[REDACTED-CREDIT-CARD]"),
+        "CC should be redacted at standard: {result}"
     );
 }
 

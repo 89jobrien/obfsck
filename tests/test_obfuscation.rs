@@ -122,7 +122,11 @@ fn paranoid_level_obfuscates_paths_hostnames_and_high_entropy_strings() {
     assert!(out.contains("/etc/passwd"));
     assert!(out.contains("host=[HOST-1]"));
     assert!(out.contains("localhost.localdomain"));
-    assert!(out.contains("[REDACTED-HIGH-ENTROPY]"));
+    // token= now caught by password_field before high-entropy scan
+    assert!(
+        out.contains("[REDACTED-HIGH-ENTROPY]") || out.contains("[REDACTED-PASSWORD]"),
+        "entropy string should be redacted: {out}"
+    );
     assert_eq!(
         map.hostnames.get("api.example.com"),
         Some(&"[HOST-1]".to_string())

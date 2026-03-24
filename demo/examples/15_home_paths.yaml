@@ -1,0 +1,29 @@
+title: "Home Directory & User Paths"
+description: "Unix /home/ and /Users/ paths redact the username segment at standard level"
+level: standard
+examples:
+  - label: "macOS home path (username in path)"
+    type: kv
+    input: "config_file: /Users/alice/.config/app/settings.json"
+
+  - label: "Linux home path"
+    type: kv
+    input: "Reading /home/bob/.ssh/authorized_keys"
+
+  - label: "Path in log line"
+    type: kv
+    input: "2024-01-15 ERROR Failed to open /home/charlie/app/data/cache.db: permission denied"
+
+  - label: "SSH known_hosts"
+    type: kv
+    input: "Loading /Users/dave/.ssh/known_hosts"
+
+  - label: "Full path obfuscation (paranoid)"
+    type: kv
+    level: paranoid
+    input: "Wrote report to /home/alice/documents/q4-report.pdf"
+
+  - label: "Sensitive system path preserved"
+    type: kv
+    level: paranoid
+    input: "Reading /etc/passwd for user lookup"

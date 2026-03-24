@@ -1,7 +1,6 @@
 title: "PII (Personally Identifiable Information)"
-description: "SSN, credit card, phone, IBAN, passport, driver's license — group disabled by default"
+description: "SSN, credit card, phone, full names, commit authorship — enabled at standard and above"
 level: standard
-disabled: true
 examples:
   - label: "US Social Security Number"
     type: kv
@@ -15,8 +14,21 @@ examples:
     type: kv
     input: "phone: (555) 123-4567"
 
-  - label: "IBAN"
+  - label: "Full name in config context"
     type: kv
+    input: "author: Alice Johnson"
+
+  - label: "Full name in key=value context"
+    type: kv
+    input: "name=John Smith"
+
+  - label: "Co-Authored-By git trailer"
+    type: kv
+    input: "Co-Authored-By: Alice Johnson <alice@example.com>"
+
+  - label: "IBAN (paranoid_only)"
+    type: kv
+    level: paranoid
     input: "iban: GB29NWBK60161331926819"
 
   - label: "Passport number (paranoid_only)"

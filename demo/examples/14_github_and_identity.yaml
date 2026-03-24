@@ -1,0 +1,23 @@
+title: "GitHub URLs & Identity Patterns"
+description: "GitHub user and repo URLs, commit authorship trailers — caught at minimal level"
+level: minimal
+examples:
+  - label: "GitHub repo URL (user + repo)"
+    type: kv
+    input: "Opened by github.com/alice-dev/my-private-project"
+
+  - label: "GitHub repo with path"
+    type: kv
+    input: "source: github.com/org/repo/blob/main/config/secrets.yaml"
+
+  - label: "Co-Authored-By trailer (full name)"
+    type: kv
+    input: "Co-Authored-By: Alice Johnson <alice@example.com>"
+
+  - label: "Author metadata field"
+    type: kv
+    input: "author: Alice Johnson"
+
+  - label: "Name key=value"
+    type: kv
+    input: "name=John Smith"

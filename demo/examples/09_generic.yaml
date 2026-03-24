@@ -14,6 +14,14 @@ examples:
     type: kv
     input: 'password = "s3cr3t-Database-P4ss!"'
 
+  - label: "Secret key in env"
+    type: kv
+    input: 'SECRET_KEY=xK9mL2pQrStUvWxYzAbCdEfGhIj'
+
+  - label: "API token in env"
+    type: kv
+    input: 'TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abc'
+
   - label: "Private key header"
     type: kv
     input: "-----BEGIN RSA PRIVATE KEY-----"
@@ -22,13 +30,21 @@ examples:
     type: kv
     input: "Authorization: Bearer ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno"
 
-  - label: "1Password reference"
+  - label: "1Password vault reference"
     type: kv
     input: "DB_PASSWORD=op://Production/postgres-prod/password"
 
   - label: "1Password service account token"
     type: kv
     input: "OP_SERVICE_ACCOUNT_TOKEN=ops_eyJhbGciOiJFUzI1NiIsImtpZCI6Im9wc19rZXlfMDEifQ.eyJzdWIiOiJ1c2VyXzAxSjhYWVoifQ.abc123"
+
+  - label: "1Password domain (leaks vault org)"
+    type: kv
+    input: "vault_url: my-company.1password.com"
+
+  - label: "Tailscale hostname"
+    type: kv
+    input: "ssh ubuntu@dev-box.ts.net"
 
   - label: "Bitwarden session token"
     type: kv

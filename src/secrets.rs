@@ -225,7 +225,7 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
     },
     SecretPatternDef {
         name: "pagerduty_api_key",
-        pattern: r"\b[A-Za-z0-9+/]{20}\b",
+        pattern: r"\b[A-Za-z0-9+]{20}\b",
         label: "PAGERDUTY-KEY",
         paranoid_only: true,
     },
@@ -279,8 +279,20 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
     },
     SecretPatternDef {
         name: "password_field",
-        pattern: r#"\b(?:password|passwd|pwd|secret_key|auth_key|private_key|encryption_key)\b\s*[=:]\s*["']?[^\s"']{8,}["']?"#,
+        pattern: r#"\b(?:password|passwd|pwd|secret|secret_key|token|api_key|auth_key|private_key|encryption_key)\b\s*[=:]\s*["']?[^\s"']{8,}["']?"#,
         label: "PASSWORD",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "github_user_url",
+        pattern: r"\bgithub\.com/([A-Za-z0-9_-]+)(?:/[A-Za-z0-9_.-]+)+",
+        label: "GITHUB-URL",
+        paranoid_only: false,
+    },
+    SecretPatternDef {
+        name: "co_authored_by",
+        pattern: r"Co-Authored-By:\s+[A-Z][A-Za-z'-]+ [A-Z][A-Za-z'-]+",
+        label: "PII-NAME",
         paranoid_only: false,
     },
     SecretPatternDef {

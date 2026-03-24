@@ -1,5 +1,5 @@
 title: "Generic Secrets"
-description: "JWT tokens, private keys, bearer/basic auth headers, password fields"
+description: "JWT tokens, private keys, bearer/basic auth headers, password fields, 1Password and Bitwarden tokens"
 level: minimal
 examples:
   - label: "JWT token"
@@ -21,3 +21,19 @@ examples:
   - label: "Bearer token"
     type: kv
     input: "Authorization: Bearer ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno"
+
+  - label: "1Password reference"
+    type: kv
+    input: "DB_PASSWORD=op://Production/postgres-prod/password"
+
+  - label: "1Password service account token"
+    type: kv
+    input: "OP_SERVICE_ACCOUNT_TOKEN=ops_eyJhbGciOiJFUzI1NiIsImtpZCI6Im9wc19rZXlfMDEifQ.eyJzdWIiOiJ1c2VyXzAxSjhYWVoifQ.abc123"
+
+  - label: "Bitwarden session token"
+    type: kv
+    input: "BW_SESSION=T3BlblNlc2FtZW9wZW5zZXNhbWVvcGVuc2VzYW1lb3BlbnNlc2FtZW9wZW5z"
+
+  - label: "Bitwarden Secrets access token"
+    type: kv
+    input: "BWS_ACCESS_TOKEN=0.ec29a6d4f8a94b2c8d1e3f6a7b8c9d0e.f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2"

@@ -38,7 +38,7 @@ Several fixture inputs require exact character counts to match their regex. Thes
 
 | Pattern | Key format | Notes |
 |---|---|---|
-| `anthropic_api_key` | `sk-ant-api03-` + 32+ chars | ≥32 alphanum after prefix |
+| `anthropic_api_key` | `sk-ant-api03-` + 32+ chars | The optional `(?:api\d{2}-)` group counts toward the 32+ total, so the suffix after `api03-` can be 31 chars |
 | `google_api_key` | `AIza` + exactly 35 chars | `[0-9A-Za-z_-]{35}` |
 | `aws_access_key` | `AKIA` + exactly 16 uppercase alphanum | |
 | `digitalocean_pat` | `dop_v1_` + exactly 64 lowercase hex | `[a-f0-9]{64}` |
@@ -538,6 +538,10 @@ examples:
   - label: "Azure SAS token"
     type: kv
     input: "AZ_SAS=sig=ABCDEFGabcdefg123456&se=9999999999&sv=20210101&sp=r&sr=b"
+
+  - label: "Cloudflare Origin CA key"
+    type: kv
+    input: "CF_ORIGIN_CA=v1.0-a1b2c3d4e5f6a1b2c3d4e5f6-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1"
 ```
 
 - [ ] **Step 4: Create `03_version_control.yaml`**
@@ -617,6 +621,10 @@ examples:
     type: kv
     input: "MAILCHIMP_KEY=abcdef1234567890abcdef1234567890-us12"
 
+  - label: "Twilio API key"
+    type: kv
+    input: "TWILIO_API_KEY=SKa1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
   - label: "Mailgun API key"
     type: kv
     input: "MAILGUN_API_KEY=key-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
@@ -685,6 +693,10 @@ examples:
   - label: "PyPI token"
     type: kv
     input: "PYPI_TOKEN=pypi-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDE"
+
+  - label: "NuGet API key"
+    type: kv
+    input: "NUGET_API_KEY=oy2ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopq"
 ```
 
 - [ ] **Step 2: Create `08_monitoring.yaml`**

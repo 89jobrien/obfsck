@@ -1,0 +1,42 @@
+title: "Maestro Session"
+description: "API server startup, OAuth login, and K8s session lifecycle logs from the Maestro dev platform"
+level: standard
+examples:
+  - label: "API server startup with credentials"
+    type: block
+    input: |
+      2026-03-24T09:14:02Z INFO  maestro_api: starting server port=8080 environment=production
+      2026-03-24T09:14:02Z INFO  maestro_api: vertex project=toptal-maestro region=us-east5 k8s_namespace=team-maestro
+      2026-03-24T09:14:02Z DEBUG maestro_api: OAUTH_CLIENT_ID=742981234567-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
+      2026-03-24T09:14:02Z DEBUG maestro_api: OAUTH_CLIENT_SECRET=GOCspx-ABCDEFabcdefGHIJKLmnopqrstuv
+      2026-03-24T09:14:02Z DEBUG maestro_api: SLACK_BOT_TOKEN=xoxb-1234567890-1234567890123-ABCDEFabcdefGHIJKLghijkl
+      2026-03-24T09:14:02Z DEBUG maestro_api: SLACK_APP_TOKEN=xapp-1-A1234567890-1234567890123-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab
+      2026-03-24T09:14:02Z INFO  maestro_api: database connected cloud_sql=toptal-maestro:us-east1:maestro-db url=postgres://maestro:s3cr3tpassword@10.128.0.3:5432/maestro
+      2026-03-24T09:14:03Z INFO  maestro_api: redis connected host=10.128.0.5 port=6379
+
+  - label: "Google OAuth login and JWT issuance"
+    type: block
+    input: |
+      2026-03-24T09:22:17Z INFO  maestro_api::routes::auth: POST /auth/login ip=203.0.113.42
+      2026-03-24T09:22:17Z INFO  maestro_api::routes::auth: login initiated session_id=9f2e1a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b
+      2026-03-24T09:22:31Z INFO  maestro_api::routes::auth: login completed user=alice.johnson@toptal.com
+      2026-03-24T09:22:31Z DEBUG maestro_api::routes::auth: stored refresh_token=1//0GBcdEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqrstuvwxyz0123456789ABCDEF scopes=["email","profile","openid"]
+      2026-03-24T09:22:31Z DEBUG maestro_api::routes::auth: issued jwt=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTI5ODc2NTQzMjE5ODc2NTQzMjEiLCJlbWFpbCI6ImFsaWNlLmpvaG5zb25AdG9wdGFsLmNvbSIsImlhdCI6MTc0MjgxMjE1MX0.SXhhbXBsZVNpZ25hdHVyZUZha2VGb3JEZW1v
+
+  - label: "K8s session creation"
+    type: block
+    input: |
+      2026-03-24T09:23:05Z INFO  maestro_api::routes::sessions: POST /sessions user=alice.johnson@toptal.com project=frontend-redesign
+      2026-03-24T09:23:05Z INFO  maestro_api::routes::sessions: creating pod session=maestro-frontend-redesign-claude-7a3f9e12 namespace=team-maestro
+      2026-03-24T09:23:05Z DEBUG maestro_api::routes::sessions: gcp_service_account=maestro-session@toptal-maestro.iam.gserviceaccount.com
+      2026-03-24T09:23:05Z DEBUG maestro_api::routes::sessions: wif_pool=projects/123456789012/locations/global/workloadIdentityPools/maestro-wif-pool
+      2026-03-24T09:23:07Z INFO  maestro_api::routes::sessions: pod scheduled node=gke-maestro-prod-n2d-pool-1-abc12345 pod_ip=10.4.3.87
+      2026-03-24T09:23:12Z INFO  maestro_api::routes::sessions: session ready elapsed_ms=7312
+
+  - label: "Jira OAuth token storage"
+    type: block
+    input: |
+      2026-03-24T09:24:00Z INFO  maestro_api::routes::jira: GET /auth/jira/status user=alice.johnson@toptal.com
+      2026-03-24T09:24:00Z DEBUG maestro_api::routes::jira: cloud_id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d site_url=https://toptal.atlassian.net email=alice.johnson@toptal.com display_name=Alice Johnson
+      2026-03-24T09:24:00Z DEBUG maestro_api::routes::jira: refresh_token=ATatt3xFfGF0RVRSa2s1OWJ2V0xBNFhjT0lOQUtZeHBnS1pxMURKSHVkQ0RhbXdSUFRv scopes=["read:jira-work","offline_access"]
+      2026-03-24T09:24:01Z INFO  maestro_api::routes::jira: token refreshed user=alice.johnson@toptal.com

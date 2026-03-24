@@ -154,6 +154,36 @@ def render_fixture(fixture: Fixture) -> None:
     console.print()
 
 
+BANNER = """\
+[bold]obfsck[/bold] — redact secrets & PII before LLM analysis
+[dim]Levels:[/dim]  [bold]minimal[/bold] secrets only  ·  \
+[bold]standard[/bold] + IPs, emails, containers, users  ·  \
+[bold]paranoid[/bold] + paths, hostnames, high-entropy"""
+
+
+def showcase_mode() -> None:
+    console.print(Rule("[bold cyan]obfsck demo[/bold cyan]"))
+    console.print(Panel(BANNER, border_style="cyan"))
+    console.print()
+    fixtures = load_all_fixtures()
+    for fixture in fixtures:
+        render_fixture(fixture)
+
+
+def file_mode(path: Path, level: str) -> None:
+    text = path.read_text()
+    redacted_str = redact(text, level)
+    console.print(Rule(f"[bold]{path.name}[/bold]  [dim](level: {level})[/dim]"))
+    console.print(Panel(text.rstrip("\n"), title="Input", border_style="dim"))
+    console.print(
+        Panel(
+            highlight_redacted(redacted_str.rstrip("\n")),
+            title="Redacted",
+            border_style="red",
+        )
+    )
+
+
 def check_binary() -> None:
     if not BINARY.exists():
         console.print(
@@ -182,7 +212,14 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     check_binary()
-    # wired in Task 5
+    if args.file:
+        path = Path(args.file)
+        if not path.exists():
+            console.print(f"[bold red]Error:[/bold red] file not found: {args.file}")
+            sys.exit(1)
+        file_mode(path, args.level)
+    else:
+        showcase_mode()
 
 
 if __name__ == "__main__":

@@ -38,7 +38,7 @@ Several fixture inputs require exact character counts to match their regex. Thes
 
 | Pattern | Key format | Notes |
 |---|---|---|
-| `anthropic_api_key` | `sk-ant-api03-` + 32+ chars | The optional `(?:api\d{2}-)` group counts toward the 32+ total, so the suffix after `api03-` can be 31 chars |
+| `anthropic_api_key` | `sk-ant-api03-` + 32+ chars | The regex backtracks past the optional `(?:api\d{2}-)` group, folding `api03-` into the `{32,}` segment — so 26+ chars after `api03-` is sufficient |
 | `google_api_key` | `AIza` + exactly 35 chars | `[0-9A-Za-z_-]{35}` |
 | `aws_access_key` | `AKIA` + exactly 16 uppercase alphanum | |
 | `digitalocean_pat` | `dop_v1_` + exactly 64 lowercase hex | `[a-f0-9]{64}` |
@@ -541,7 +541,7 @@ examples:
 
   - label: "Cloudflare Origin CA key"
     type: kv
-    input: "CF_ORIGIN_CA=v1.0-a1b2c3d4e5f6a1b2c3d4e5f6-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1"
+    input: "CF_ORIGIN_CA=v1.0-a1b2c3d4e5f6a1b2c3d4e5f6-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1a1b2c3d4e5f6"
 ```
 
 - [ ] **Step 4: Create `03_version_control.yaml`**

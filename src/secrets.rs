@@ -323,7 +323,7 @@ pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
         name: "ssh_public_key",
         pattern: r"ssh-(?:rsa|dss|ed25519|ecdsa)\s+[A-Za-z0-9+/]+={0,2}",
         label: "SSH-PUBLIC-KEY",
-        paranoid_only: true,
+        paranoid_only: false,
     },
     SecretPatternDef {
         name: "anthropic_api_key",

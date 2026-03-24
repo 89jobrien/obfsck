@@ -1,6 +1,11 @@
 [tools]
 rust = "stable"
 
+[tasks.demo]
+description = "Run the visual demo (builds release binary first)"
+run = "cargo build --release && uv run demo/demo.py"
+
+
 [tasks.check]
 description = "Type-check the project"
 run = "cargo check"

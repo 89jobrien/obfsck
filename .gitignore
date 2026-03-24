@@ -78,4 +78,5 @@ tmp/
 
 *.md
 !README.md
+!*.plan.md
 .envrc

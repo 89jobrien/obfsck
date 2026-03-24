@@ -70,6 +70,37 @@ def load_all_fixtures() -> list[Fixture]:
     return [load_fixture(p) for p in paths]
 
 
+def redact(text: str, level: str) -> str:
+    result = subprocess.run(
+        [str(BINARY), "--level", level],
+        input=text,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        console.print(
+            f"[bold red]Error:[/bold red] redact exited {result.returncode}\n{result.stderr}"
+        )
+        sys.exit(1)
+    return result.stdout
+
+
+_REDACTED_RE = re.compile(r"\[REDACTED[^\]]*\]")
+
+
+def highlight_redacted(text: str) -> Text:
+    result = Text()
+    last = 0
+    for m in _REDACTED_RE.finditer(text):
+        if m.start() > last:
+            result.append(text[last : m.start()])
+        result.append(m.group(), style="bold red")
+        last = m.end()
+    if last < len(text):
+        result.append(text[last:])
+    return result
+
+
 def check_binary() -> None:
     if not BINARY.exists():
         console.print(

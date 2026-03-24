@@ -1,0 +1,18 @@
+title: "Obfuscation Levels"
+description: "Same input at each level — shows what each level adds"
+level: minimal
+examples:
+  - label: "minimal  (secrets only)"
+    type: kv
+    level: minimal
+    input: "user=alice ip=192.168.1.100 config=/home/alice/.config/app.json token=sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZabcde"
+
+  - label: "standard (+IPs, emails, containers, users)"
+    type: kv
+    level: standard
+    input: "user=alice ip=192.168.1.100 config=/home/alice/.config/app.json token=sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZabcde"
+
+  - label: "paranoid (+paths, hostnames, high-entropy, paranoid_only patterns)"
+    type: kv
+    level: paranoid
+    input: "user=alice ip=192.168.1.100 config=/home/alice/.config/app.json token=sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZabcde"

@@ -1,0 +1,23 @@
+title: "Cloud Providers"
+description: "AWS, GCP, Azure, DigitalOcean, Cloudflare credentials"
+level: minimal
+examples:
+  - label: "AWS access key"
+    type: kv
+    input: "AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"
+
+  - label: "GCP service account"
+    type: kv
+    input: "service_account=deploy-bot@my-project-123.iam.gserviceaccount.com"
+
+  - label: "DigitalOcean personal access token"
+    type: kv
+    input: "DO_TOKEN=dop_v1_abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+
+  - label: "Azure SAS token"
+    type: kv
+    input: "AZ_SAS=sig=ABCDEFGabcdefg123456&se=9999999999&sv=20210101&sp=r&sr=b"
+
+  - label: "Cloudflare Origin CA key"
+    type: kv
+    input: "CF_ORIGIN_CA=v1.0-a1b2c3d4e5f6a1b2c3d4e5f6-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1a1b2c3d4e5f6"

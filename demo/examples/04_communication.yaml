@@ -1,0 +1,19 @@
+title: "Communication"
+description: "Slack, Discord webhook and bot tokens"
+level: minimal
+examples:
+  - label: "Slack bot token"
+    type: kv
+    input: "SLACK_BOT_TOKEN=xoxb-1234567890-1234567890123-ABCDEFGHIJKLMNOPQRSTUVWx"
+
+  - label: "Slack webhook"
+    type: kv
+    input: "SLACK_WEBHOOK=https://hooks.slack.com/services/TABCDEFGH/BABCDEFGH/ABCDEFGHIJKLMNOPQRSTUVWxy"
+
+  - label: "Discord bot token"
+    type: kv
+    input: "DISCORD_TOKEN=MTIABCDEFGHIJKLMNOPQRSTUVw.ABCDEf.ABCDEFGHIJKLMNOPQRSTUVWXYZa"
+
+  - label: "Discord webhook"
+    type: kv
+    input: "DISCORD_WEBHOOK=https://discord.com/api/webhooks/123456789012345678/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"

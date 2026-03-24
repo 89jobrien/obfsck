@@ -1,0 +1,27 @@
+title: "AI APIs"
+description: "API keys for AI services — matched at all levels"
+level: minimal
+examples:
+  - label: "Anthropic API key"
+    type: kv
+    input: "ANTHROPIC_API_KEY=sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZabcde"
+
+  - label: "OpenAI API key"
+    type: kv
+    input: "OPENAI_API_KEY=sk-proj-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+
+  - label: "Groq API key"
+    type: kv
+    input: "GROQ_API_KEY=gsk_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+
+  - label: "HuggingFace token"
+    type: kv
+    input: "HF_TOKEN=hf_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"
+
+  - label: "Replicate API key"
+    type: kv
+    input: "REPLICATE_API_KEY=r8_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+
+  - label: "Google API key"
+    type: kv
+    input: "GOOGLE_API_KEY=AIzaABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi"

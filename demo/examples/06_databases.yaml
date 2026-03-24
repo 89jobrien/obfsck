@@ -1,0 +1,19 @@
+title: "Database URIs"
+description: "Connection strings containing embedded credentials"
+level: minimal
+examples:
+  - label: "PostgreSQL URI"
+    type: kv
+    input: "DATABASE_URL=postgres://alice:s3cr3tpassword@db.internal.example.com/myapp"
+
+  - label: "MySQL URI"
+    type: kv
+    input: "DATABASE_URL=mysql://root:supersecret123@10.0.0.5/production"
+
+  - label: "MongoDB URI"
+    type: kv
+    input: "MONGO_URI=mongodb+srv://appuser:M0ng0P4ss@cluster0.abc12.mongodb.net/mydb"
+
+  - label: "Redis URI"
+    type: kv
+    input: "REDIS_URL=redis://:redispassword123@redis.internal.example.com:6379"

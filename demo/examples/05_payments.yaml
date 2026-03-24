@@ -1,0 +1,27 @@
+title: "Payments & Messaging"
+description: "Stripe, Twilio, SendGrid, Mailchimp, Mailgun API keys"
+level: minimal
+examples:
+  - label: "Stripe secret key (live)"
+    type: kv
+    input: "STRIPE_API_KEY=sk_live_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+
+  - label: "Stripe secret key (test)"
+    type: kv
+    input: "STRIPE_API_KEY=sk_test_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+
+  - label: "Twilio API key"
+    type: kv
+    input: "TWILIO_API_KEY=SKa1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+  - label: "SendGrid API key"
+    type: kv
+    input: "SENDGRID_API_KEY=SG.ABCDEFGHIJKLMNOPQRSTUV.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopq"
+
+  - label: "Mailchimp API key"
+    type: kv
+    input: "MAILCHIMP_KEY=abcdef1234567890abcdef1234567890-us12"
+
+  - label: "Mailgun API key"
+    type: kv
+    input: "MAILGUN_API_KEY=key-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"

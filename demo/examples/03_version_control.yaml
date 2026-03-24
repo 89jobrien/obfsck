@@ -1,0 +1,19 @@
+title: "Version Control"
+description: "GitHub and GitLab access tokens"
+level: minimal
+examples:
+  - label: "GitHub PAT (classic)"
+    type: kv
+    input: "GITHUB_TOKEN=ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno"
+
+  - label: "GitHub fine-grained PAT"
+    type: kv
+    input: "GITHUB_TOKEN=github_pat_ABCDEFGHIJKLMNOPQRSTUV_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567"
+
+  - label: "GitLab PAT"
+    type: kv
+    input: "GITLAB_TOKEN=glpat-ABCDEFGHIJKLMNOPQRSTUVWXYZabcd"
+
+  - label: "GitLab pipeline token"
+    type: kv
+    input: "CI_JOB_TOKEN=glptt-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"

@@ -1,0 +1,27 @@
+# PII fixture — exercises patterns gated at min_level: standard
+# All values are synthetic test data. PII must pass through unchanged at minimal.
+
+# Full names in config/commit contexts
+author: Jane Smith
+name=John Doe
+[REDACTED-PII-NAME] <alice@example.com>
+
+# US Social Security Number
+ssn: 123-45-6789
+
+# US phone numbers
+phone: (415) 555-1234
+call_us: (555) 123-4567
+
+# Credit card (Visa test number)
+card_number: 4111111111111111
+
+# Email and IP — structural, standard+
+contact: user@example.com
+server: 192.168.1.100
+outbound: 8.8.8.8
+
+# Innocent lines that must survive all levels
+report_date: 2026-03-25
+status: active
+environment: staging

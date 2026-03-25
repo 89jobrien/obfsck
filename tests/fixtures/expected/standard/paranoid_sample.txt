@@ -1,0 +1,23 @@
+# Paranoid fixture — exercises paranoid_only patterns and structural patterns that only fire at paranoid
+# These must NOT be redacted at minimal or standard.
+
+# paranoid_only PII
+iban: GB29NWBK60161331926819
+passport: AB1234567
+drivers_license: A1234567
+
+# paranoid_only secrets
+TELEGRAM_BOT_TOKEN=1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi
+AWS_SECRET_ACCESS_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
+DD_API_KEY=[CONTAINER-2]
+AZURE_CLIENT_SECRET=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh
+HEROKU_API_KEY=[CONTAINER-1]
+
+# Structural patterns that only fire at paranoid
+Reading config from /home/[USER-1]/.config/myapp/config.json
+Resolved prod-db-01.internal.example.com
+session_id=aB3kL9mNpQrStUvWxYzAbCdEfGhIjKlMnOpQrStUv
+
+# Innocent lines
+log_level = "info"
+retry_count = 3

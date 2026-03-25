@@ -1,0 +1,26 @@
+# Mixed fixture — combines secrets, PII, paranoid patterns, and innocent text
+# Tests that each level only redacts what it should.
+
+# Secrets (redacted at all levels)
+ANTHROPIC_API_KEY=[REDACTED-ANTHROPIC-KEY]
+GITHUB_TOKEN=[REDACTED-GITHUB-TOKEN]
+[REDACTED-PASSWORD]
+
+# PII (redacted at standard+, must pass through at minimal)
+[REDACTED-PII-NAME]
+ssn: [REDACTED-SSN]
+phone: ([REDACTED-PHONE]
+card_number: [REDACTED-CREDIT-CARD]
+contact: [EMAIL-1]
+server: [IP-INTERNAL-1]
+
+# Paranoid-only (redacted only at paranoid)
+iban: [REDACTED-IBAN]
+AWS_SECRET_ACCESS_KEY=[REDACTED-AWS-SECRET]
+Reading config from /home/[USER-1]/.config/myapp/[FILE].json
+
+# Innocent context — must survive all levels
+service = "billing"
+version = "[HOST-1]"
+log_level = "warn"
+region = "eu-west-1"

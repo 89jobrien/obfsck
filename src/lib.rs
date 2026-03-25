@@ -644,6 +644,14 @@ pub mod yaml_config {
     use indexmap::IndexMap;
     use serde::Deserialize;
 
+    #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+    #[serde(rename_all = "lowercase")]
+    pub enum MinLevel {
+        Minimal,
+        Standard,
+        Paranoid,
+    }
+
     #[derive(Deserialize)]
     pub struct SecretsConfig {
         pub groups: IndexMap<String, Group>,
@@ -654,7 +662,26 @@ pub mod yaml_config {
     #[derive(Deserialize)]
     pub struct Group {
         pub enabled: bool,
+        #[serde(default)]
+        pub min_level: Option<MinLevel>,
         pub patterns: Vec<PatternDef>,
+    }
+
+    impl Group {
+        /// Returns true if this group should run at the given obfuscation level.
+        pub fn applies_at(&self, level: super::ObfuscationLevel) -> bool {
+            if !self.enabled {
+                return false;
+            }
+            match self.min_level {
+                None | Some(MinLevel::Minimal) => true,
+                Some(MinLevel::Standard) => matches!(
+                    level,
+                    super::ObfuscationLevel::Standard | super::ObfuscationLevel::Paranoid
+                ),
+                Some(MinLevel::Paranoid) => level == super::ObfuscationLevel::Paranoid,
+            }
+        }
     }
 
     #[derive(Deserialize)]

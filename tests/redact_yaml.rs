@@ -9,7 +9,7 @@ fn apply_yaml_patterns(yaml: &str, input: &str, level: ObfuscationLevel) -> Stri
     let patterns: Vec<(Regex, String)> = config
         .groups
         .values()
-        .filter(|g| g.enabled)
+        .filter(|g| g.applies_at(level))
         .flat_map(|g| g.patterns.iter())
         .chain(config.custom.iter())
         .filter(|p| !p.paranoid_only || is_paranoid)
@@ -103,6 +103,22 @@ custom:
     assert!(
         result.contains("[REDACTED-INTERNAL-TOKEN]"),
         "got: {result}"
+    );
+}
+
+#[test]
+fn test_pii_not_applied_at_minimal() {
+    let yaml = include_str!("../config/secrets.yaml");
+    // SSN and CC are PII-group patterns — must NOT fire at minimal level
+    let input = "ssn=123-45-6789 card=4111111111111111";
+    let result = apply_yaml_patterns(yaml, input, ObfuscationLevel::Minimal);
+    assert!(
+        result.contains("123-45-6789"),
+        "PII (SSN) should NOT be redacted at minimal: {result}"
+    );
+    assert!(
+        result.contains("4111111111111111"),
+        "PII (CC) should NOT be redacted at minimal: {result}"
     );
 }
 

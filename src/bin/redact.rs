@@ -49,7 +49,7 @@ fn main() {
     let patterns: Vec<(Regex, String)> = config
         .groups
         .values()
-        .filter(|g| g.enabled)
+        .filter(|g| g.applies_at(level))
         .flat_map(|g| g.patterns.iter())
         .chain(config.custom.iter())
         .filter(|p| !p.paranoid_only || is_paranoid)

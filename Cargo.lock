@@ -1403,12 +1403,14 @@ dependencies = [
  "shellexpand",
  "simplify_baml",
  "simplify_baml_macros",
+ "tempfile",
  "thiserror 2.0.18",
  "tokio",
  "tower-http",
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
+ "walkdir",
 ]
 
 [[package]]

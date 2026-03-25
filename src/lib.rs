@@ -500,11 +500,11 @@ struct SecretPattern {
     re: Regex,
 }
 
-struct SecretPatternDef {
-    name: &'static str,
-    pattern: &'static str,
-    label: &'static str,
-    paranoid_only: bool,
+pub struct SecretPatternDef {
+    pub name: &'static str,
+    pub pattern: &'static str,
+    pub label: &'static str,
+    pub paranoid_only: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

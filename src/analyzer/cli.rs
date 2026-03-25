@@ -150,8 +150,8 @@ fn print_analysis(result: &Value, verbose: bool) {
         .unwrap_or("N/A");
     println!("summary: {summary}");
 
-    if verbose {
-        if let Some(mapping) = result.get("obfuscation_mapping").and_then(Value::as_object) {
+    if verbose
+        && let Some(mapping) = result.get("obfuscation_mapping").and_then(Value::as_object) {
             let ips = mapping
                 .get("ips")
                 .and_then(Value::as_object)
@@ -183,7 +183,6 @@ fn print_analysis(result: &Value, verbose: bool) {
                 users, emails, hostnames, containers, "Obfuscation token summary"
             );
         }
-    }
 
     println!("======================================================================");
 }

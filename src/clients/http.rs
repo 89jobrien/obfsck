@@ -42,9 +42,8 @@ impl BlockingHttp {
                 e
             })?
             .error_for_status()
-            .map_err(|e| {
+            .inspect_err(|e| {
                 error!(status = ?e.status(), "HTTP error status");
-                e
             })?;
 
         response.json().map_err(|e| {
@@ -66,9 +65,8 @@ impl BlockingHttp {
                 e
             })?
             .error_for_status()
-            .map_err(|e| {
+            .inspect_err(|e| {
                 error!(status = ?e.status(), "HTTP error status");
-                e
             })?;
 
         Ok(response.bytes()?.to_vec())
@@ -86,9 +84,8 @@ impl BlockingHttp {
                 e
             })?
             .error_for_status()
-            .map_err(|e| {
+            .inspect_err(|e| {
                 error!(status = ?e.status(), "HTTP error status");
-                e
             })?;
         Ok(())
     }
@@ -106,9 +103,8 @@ impl BlockingHttp {
                 e
             })?
             .error_for_status()
-            .map_err(|e| {
+            .inspect_err(|e| {
                 error!(status = ?e.status(), "HTTP error status");
-                e
             })?;
         Ok(())
     }

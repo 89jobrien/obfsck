@@ -272,13 +272,12 @@ async fn analyze_api(
 
     match analyze_alert_with_config(state.config.clone(), alert.clone()).await {
         Ok(result) => {
-            if payload.store.unwrap_or(false) {
-                if let Err(e) =
+            if payload.store.unwrap_or(false)
+                && let Err(e) =
                     store_analysis_with_config(state.config.clone(), result.clone()).await
                 {
                     warn!(error = %e, "Failed to store analysis to backend");
                 }
-            }
             (
                 StatusCode::OK,
                 Json(json!({
@@ -357,11 +356,10 @@ async fn analyze_page(
         }
     };
 
-    if store && result.pointer("/analysis/error").is_none() {
-        if let Err(e) = store_analysis_with_config(state.config.clone(), result.clone()).await {
+    if store && result.pointer("/analysis/error").is_none()
+        && let Err(e) = store_analysis_with_config(state.config.clone(), result.clone()).await {
             warn!(error = %e, "Failed to store analysis to backend");
         }
-    }
 
     if let Err(e) = save_to_cache(
         &state, &cache_key, &result, &output, &rule, &priority, &hostname,

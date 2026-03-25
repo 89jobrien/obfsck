@@ -28,11 +28,17 @@ run = "cargo fmt --all -- --check"
 
 [tasks.lint]
 description = "Run clippy with warnings denied"
-run = "cargo clippy --all-targets --all-features -- -D warnings"
+run = """
+cargo clippy --all-targets --features analyzer,legacy-user-scan,path-policy-home-user-redact -- -D warnings
+cargo clippy --all-targets --features analyzer,legacy-user-scan,path-policy-non-allowlisted-redact -- -D warnings
+"""
 
 [tasks.fix]
 description = "Apply automatic clippy fixes"
-run = "cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-features"
+run = """
+cargo clippy --fix --allow-dirty --allow-staged --all-targets --features analyzer,legacy-user-scan,path-policy-home-user-redact
+cargo clippy --fix --allow-dirty --allow-staged --all-targets --features analyzer,legacy-user-scan,path-policy-non-allowlisted-redact
+"""
 
 [tasks.ci]
 description = "Run local CI checks"

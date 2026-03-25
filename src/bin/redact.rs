@@ -1,8 +1,9 @@
 use clap::Parser;
 use obfsck::yaml_config::SecretsConfig;
-use obfsck::{ObfuscationLevel, obfuscate_text};
+use obfsck::{ObfuscationLevel, Obfuscator};
 use regex::{Regex, RegexBuilder};
-use std::io::{self, Read, Write};
+use std::collections::HashMap;
+use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::path::PathBuf;
 
 // Path relative to this source file (src/bin/ → ../../config/)
@@ -101,69 +102,82 @@ fn main() {
         })
         .collect();
 
-    let input = read_input(args.input.as_deref());
+    // Obfuscator persists token mappings across lines — same user/IP/host gets
+    // the same stable token throughout the entire input.
+    let mut obfuscator = Obfuscator::new(level);
 
-    // Apply YAML secret patterns first.
-    // Then call obfuscate_text for structural obfuscation (IPs, emails, hostnames).
-    // obfuscate_text also runs secrets.rs patterns — harmless double-application since
-    // [REDACTED-X] tokens won't match secret regexes.
-    let mut audit_counts: Vec<(String, usize)> = Vec::new();
-    let mut text = input;
-    for (re, replacement) in &patterns {
-        let count = re.find_iter(&text).count();
-        if count > 0 {
-            audit_counts.push((replacement.clone(), count));
+    // Audit counts accumulated across all lines.
+    let mut audit_counts: HashMap<String, usize> = HashMap::new();
+
+    let reader = open_reader(args.input.as_deref());
+    let writer = open_writer(args.output.as_deref());
+    let mut writer = BufWriter::new(writer);
+
+    for line in reader.lines() {
+        let line = line.unwrap_or_else(|e| {
+            eprintln!("Failed to read input: {e}");
+            std::process::exit(1);
+        });
+
+        // Apply YAML secret patterns first (compiled once above, reused per line).
+        let mut text = line;
+        for (re, replacement) in &patterns {
+            if args.audit {
+                let count = re.find_iter(&text).count();
+                if count > 0 {
+                    *audit_counts.entry(replacement.clone()).or_insert(0) += count;
+                }
+            }
+            text = re.replace_all(&text, replacement.as_str()).into_owned();
         }
-        text = re.replace_all(&text, replacement.as_str()).into_owned();
+
+        // Structural obfuscation (IPs, emails, hostnames, etc.).
+        let out = obfuscator.obfuscate(&text);
+
+        writeln!(writer, "{out}").unwrap_or_else(|e| {
+            eprintln!("Failed to write output: {e}");
+            std::process::exit(1);
+        });
     }
 
     if args.audit {
-        let total: usize = audit_counts.iter().map(|(_, c)| c).sum();
+        let total: usize = audit_counts.values().sum();
         eprintln!(
             "Audit report: {} pattern type(s), {} total match(es)",
             audit_counts.len(),
             total
         );
-        for (label, count) in &audit_counts {
+        let mut sorted: Vec<_> = audit_counts.iter().collect();
+        sorted.sort_by_key(|(label, _)| label.as_str());
+        for (label, count) in sorted {
             eprintln!("  {:<35} {}", label, count);
         }
     }
-
-    let (out, _) = obfuscate_text(&text, level);
-
-    write_output(&out, args.output.as_deref());
 }
 
-fn read_input(path: Option<&std::path::Path>) -> String {
+fn open_reader(path: Option<&std::path::Path>) -> Box<dyn BufRead> {
     match path {
-        Some(p) => std::fs::read_to_string(p).unwrap_or_else(|e| {
-            eprintln!("Cannot read '{}': {e}", p.display());
-            std::process::exit(1);
-        }),
-        None => {
-            let mut buf = String::new();
-            io::stdin().read_to_string(&mut buf).unwrap_or_else(|e| {
-                eprintln!("Failed to read stdin: {e}");
+        Some(p) => {
+            let f = std::fs::File::open(p).unwrap_or_else(|e| {
+                eprintln!("Cannot read '{}': {e}", p.display());
                 std::process::exit(1);
             });
-            buf
+            Box::new(BufReader::new(f))
         }
+        None => Box::new(BufReader::new(io::stdin())),
     }
 }
 
-fn write_output(text: &str, path: Option<&std::path::Path>) {
+fn open_writer(path: Option<&std::path::Path>) -> Box<dyn Write> {
     match path {
         Some(p) => {
-            let mut f = std::fs::File::create(p).unwrap_or_else(|e| {
+            let f = std::fs::File::create(p).unwrap_or_else(|e| {
                 eprintln!("Cannot create '{}': {e}", p.display());
                 std::process::exit(1);
             });
-            f.write_all(text.as_bytes()).unwrap_or_else(|e| {
-                eprintln!("Failed to write '{}': {e}", p.display());
-                std::process::exit(1);
-            });
+            Box::new(f)
         }
-        None => print!("{text}"),
+        None => Box::new(io::stdout()),
     }
 }
 

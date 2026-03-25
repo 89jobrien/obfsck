@@ -9,9 +9,9 @@ drivers_license: A1234567
 # paranoid_only secrets
 TELEGRAM_BOT_TOKEN=1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi
 AWS_SECRET_ACCESS_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
-DD_API_KEY=[CONTAINER-2]
+DD_API_KEY=[CONTAINER-1]
 AZURE_CLIENT_SECRET=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh
-HEROKU_API_KEY=[CONTAINER-1]
+HEROKU_API_KEY=[CONTAINER-2]
 
 # Structural patterns that only fire at paranoid
 Reading config from /home/[USER-1]/.config/myapp/config.json

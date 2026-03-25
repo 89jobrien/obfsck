@@ -272,32 +272,18 @@ impl Obfuscator {
     }
 
     fn obfuscate_containers(&mut self, text: &str) -> String {
-        // Match full UUIDs first so they get one token instead of matching by hex segment.
-        let s = if uuid_re().is_match(text) {
-            let counters = &mut self.counters;
-            let containers = &mut self.map.containers;
-            uuid_re()
-                .replace_all(text, |caps: &regex::Captures<'_>| {
-                    get_or_create_token(counters, TokenCategory::Container, &caps[0], containers)
-                })
-                .into_owned()
-        } else {
-            text.to_string()
-        };
-
-        if !container_id_re().is_match(&s) {
-            return s;
+        // Single pass: UUID alternative takes priority over plain hex due to leftmost
+        // alternation — a UUID is matched whole rather than as individual hex segments.
+        let re = container_combined_re();
+        if !re.is_match(text) {
+            return text.to_string();
         }
-
         let counters = &mut self.counters;
         let containers = &mut self.map.containers;
-
-        container_id_re()
-            .replace_all(&s, |caps: &regex::Captures<'_>| {
-                let cid = &caps[0];
-                get_or_create_token(counters, TokenCategory::Container, cid, containers)
-            })
-            .into_owned()
+        re.replace_all(text, |caps: &regex::Captures<'_>| {
+            get_or_create_token(counters, TokenCategory::Container, &caps[0], containers)
+        })
+        .into_owned()
     }
 
     fn is_system_user(user: &str) -> bool {
@@ -579,17 +565,16 @@ fn email_re() -> &'static Regex {
     })
 }
 
-fn uuid_re() -> &'static Regex {
+fn container_combined_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"\b[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b")
-            .expect("uuid regex")
+        // UUID alternative first — dashes prevent overlap with plain hex segments.
+        // Both alternatives are matched in a single pass over the text.
+        Regex::new(
+            r"\b(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{12,64})\b",
+        )
+        .expect("container combined regex")
     })
-}
-
-fn container_id_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"\b[a-f0-9]{12,64}\b").expect("container id regex"))
 }
 
 #[cfg(feature = "legacy-user-scan")]

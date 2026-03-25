@@ -612,8 +612,10 @@ fn user_res() -> &'static [Regex] {
 fn user_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)(\w+)")
-            .expect("user regex")
+        Regex::new(
+            r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)([A-Za-z0-9._-]+)",
+        )
+        .expect("user regex")
     })
 }
 

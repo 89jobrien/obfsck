@@ -202,6 +202,28 @@ fn paranoid_level_preserves_sensitive_windows_paths() {
 }
 
 #[test]
+fn user_re_matches_dotted_username() {
+    // /Users/john.smith should redact john.smith as a username
+    let input = "session started /Users/john.smith/.config";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
+    assert!(
+        map.users.contains_key("john.smith"),
+        "dotted username not captured; map={map:?}\nout={out}"
+    );
+}
+
+#[test]
+fn user_re_matches_hyphenated_username() {
+    // /home/deploy-user paths should redact deploy-user
+    let input = "running as /home/deploy-user process";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
+    assert!(
+        map.users.contains_key("deploy-user"),
+        "hyphenated username not captured; map={map:?}\nout={out}"
+    );
+}
+
+#[test]
 fn secret_pattern_definitions_compile() {
     let errors = secret_pattern_errors();
     assert!(

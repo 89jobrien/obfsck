@@ -86,6 +86,66 @@ ts=2026-02-25T17:03:00Z level=warn user=[USER-4] src=[IP-INTERNAL-4] dst=[IP-EXT
 ts=2026-02-25T17:04:00Z level=warn user=[USER-5] src=[IP-INTERNAL-5] dst=[IP-EXTERNAL-5] email=[EMAIL-5] host=[HOST-5] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
 ```
 
+## redact CLI
+
+Redact secrets and PII from a file or stdin.
+
+```bash
+# Stdin → stdout (default level: minimal — secrets only)
+echo "key=sk-ant-api03-ABCDEF..." | redact
+
+# File input
+redact path/to/logfile.txt
+
+# Write to output file
+redact input.txt --output redacted.txt
+
+# Increase level
+redact input.txt --level standard   # + IPs, emails, usernames, PII
+redact input.txt --level paranoid   # + paths, hostnames, high-entropy strings
+
+# Custom secrets config (overrides bundled config)
+redact input.txt --config ~/.config/obfsck/secrets.yaml
+```
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--level <minimal\|standard\|paranoid>` | `minimal` | Obfuscation level |
+| `--output <file>` / `-o` | stdout | Write redacted output to file |
+| `--config <path>` / `-c` | bundled | Path to secrets YAML config |
+
+### What each level redacts
+
+| Pattern category | minimal | standard | paranoid |
+|-----------------|---------|----------|----------|
+| API keys, tokens, passwords | ✓ | ✓ | ✓ |
+| IPs, emails, container IDs, usernames | — | ✓ | ✓ |
+| PII (names, SSN, phone, credit card) | — | ✓ | ✓ |
+| Paths, hostnames, high-entropy strings | — | — | ✓ |
+| Paranoid-only PII (IBAN, passport, DL) | — | — | ✓ |
+
+**`standard` is the privacy-forward default for sharing logs externally.** `minimal` is safe for internal tooling where structural identifiers are useful.
+
+### Custom config
+
+The bundled `config/secrets.yaml` covers common secret patterns grouped by category (`ai_apis`, `cloud`, `pii`, `paranoid`, etc.). Each group supports:
+
+```yaml
+groups:
+  my_group:
+    enabled: true
+    min_level: standard   # omit to apply at all levels
+    patterns:
+      - name: my_token
+        pattern: '\bTOK_[A-Za-z0-9]{32}\b'
+        label: MY-TOKEN
+        paranoid_only: false  # true = only fires at paranoid
+```
+
+Lookup order: `--config` flag → `~/.config/obfsck/secrets.yaml` → bundled config.
+
 ## Benchmarks
 
 Run benchmarks with Criterion:

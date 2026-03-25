@@ -83,6 +83,128 @@ fn nonexistent_input_file_exits_nonzero() {
 }
 
 // =============================================================================
+// File I/O failure modes
+// =============================================================================
+
+/// Unreadable input file exits nonzero and emits an error message to stderr.
+#[test]
+#[cfg(unix)]
+fn unreadable_input_file_exits_nonzero() {
+    use std::os::unix::fs::PermissionsExt;
+
+    // Skip if running as root — root ignores file permissions.
+    if unsafe { libc::geteuid() } == 0 {
+        return;
+    }
+
+    let f = temp_file_with("secret=AKIA1234567890ABCDEF\n");
+    std::fs::set_permissions(f.path(), std::fs::Permissions::from_mode(0o000)).expect("chmod 000");
+
+    let out = redact_bin().arg(f.path()).output().expect("run redact");
+
+    // Restore perms so NamedTempFile can clean up.
+    let _ = std::fs::set_permissions(f.path(), std::fs::Permissions::from_mode(0o600));
+
+    assert!(
+        !out.status.success(),
+        "should exit nonzero for unreadable file"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("Cannot read") || stderr.contains("Permission denied"),
+        "expected error message in stderr: {stderr}"
+    );
+}
+
+/// Unwritable output path exits nonzero and emits an error to stderr.
+#[test]
+#[cfg(unix)]
+fn unwritable_output_file_exits_nonzero() {
+    use std::os::unix::fs::PermissionsExt;
+
+    if unsafe { libc::geteuid() } == 0 {
+        return;
+    }
+
+    let input = temp_file_with("aws_key=AKIA1234567890ABCDEF\n");
+    let out_file = tempfile::NamedTempFile::new().expect("out temp file");
+    std::fs::set_permissions(out_file.path(), std::fs::Permissions::from_mode(0o000))
+        .expect("chmod 000");
+
+    let result = redact_bin()
+        .arg(input.path())
+        .arg("--output")
+        .arg(out_file.path())
+        .output()
+        .expect("run redact");
+
+    let _ = std::fs::set_permissions(out_file.path(), std::fs::Permissions::from_mode(0o600));
+
+    assert!(
+        !result.status.success(),
+        "should exit nonzero for unwritable output"
+    );
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("Cannot create") || stderr.contains("Permission denied"),
+        "expected error message in stderr: {stderr}"
+    );
+}
+
+/// Binary/invalid UTF-8 input exits nonzero — read_to_string fails on non-UTF-8.
+#[test]
+fn binary_input_file_exits_nonzero() {
+    use std::io::Write;
+
+    let mut f = tempfile::NamedTempFile::new().expect("temp file");
+    // Write bytes that are not valid UTF-8.
+    f.write_all(&[0x80, 0xFF, 0x00, 0xC0, 0xAF])
+        .expect("write binary");
+
+    let out = redact_bin().arg(f.path()).output().expect("run redact");
+
+    assert!(
+        !out.status.success(),
+        "should exit nonzero for binary input"
+    );
+}
+
+/// stdin → stdout pipeline: redact reads from stdin and writes to stdout.
+#[test]
+fn stdin_to_stdout_pipeline() {
+    use std::process::Stdio;
+
+    // Use a bare token (no `token=` prefix) so the password_field pattern
+    // doesn't shadow the more specific GitHub token pattern.
+    let input = "ghp_abcdefghijklmnopqrstuvwxyz1234567890\n";
+    let mut child = redact_bin()
+        .args(["--level", "minimal"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("spawn redact");
+
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(input.as_bytes())
+        .expect("write stdin");
+
+    let out = child.wait_with_output().expect("wait");
+    assert!(out.status.success(), "pipeline failed: {:?}", out.status);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("[REDACTED-GITHUB-TOKEN]"),
+        "token not redacted in pipeline: {stdout}"
+    );
+    assert!(
+        !stdout.contains("ghp_"),
+        "token leaked in pipeline: {stdout}"
+    );
+}
+
+// =============================================================================
 // PII level-gating invariants
 //
 // The `pii` group in config/secrets.yaml has `min_level: standard`.

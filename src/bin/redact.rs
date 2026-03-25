@@ -29,6 +29,10 @@ struct Args {
     /// Lookup order: explicit path → ~/.config/obfsck/secrets.yaml → bundled config.
     #[arg(short, long)]
     config: Option<String>,
+
+    /// Print a per-pattern match report to stderr. Output is still written to stdout.
+    #[arg(long)]
+    audit: bool,
 }
 
 fn main() {
@@ -71,10 +75,28 @@ fn main() {
     // Then call obfuscate_text for structural obfuscation (IPs, emails, hostnames).
     // obfuscate_text also runs secrets.rs patterns — harmless double-application since
     // [REDACTED-X] tokens won't match secret regexes.
+    let mut audit_counts: Vec<(String, usize)> = Vec::new();
     let mut text = input;
     for (re, replacement) in &patterns {
+        let count = re.find_iter(&text).count();
+        if count > 0 {
+            audit_counts.push((replacement.clone(), count));
+        }
         text = re.replace_all(&text, replacement.as_str()).into_owned();
     }
+
+    if args.audit {
+        let total: usize = audit_counts.iter().map(|(_, c)| c).sum();
+        eprintln!(
+            "Audit report: {} pattern type(s), {} total match(es)",
+            audit_counts.len(),
+            total
+        );
+        for (label, count) in &audit_counts {
+            eprintln!("  {:<35} {}", label, count);
+        }
+    }
+
     let (out, _) = obfuscate_text(&text, level);
 
     write_output(&out, args.output.as_deref());

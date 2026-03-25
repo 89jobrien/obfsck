@@ -231,3 +231,18 @@ fn secret_pattern_definitions_compile() {
         "secret pattern compile errors: {errors:?}"
     );
 }
+
+#[test]
+fn user_re_does_not_capture_trailing_dot() {
+    // Sentence-final period should not be included in the username
+    let input = "started by /Users/joe.";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
+    assert!(
+        map.users.contains_key("joe"),
+        "expected 'joe' in users map, got: {map:?}\nout={out}"
+    );
+    assert!(
+        !map.users.contains_key("joe."),
+        "trailing dot was incorrectly absorbed into username: {map:?}"
+    );
+}

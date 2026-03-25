@@ -33,21 +33,53 @@ struct Args {
     /// Print a per-pattern match report to stderr. Output is still written to stdout.
     #[arg(long)]
     audit: bool,
+
+    /// Preset profile: default, pii, full, paranoid
+    #[arg(long, default_value = "default")]
+    profile: String,
+}
+
+fn apply_profile(config: &mut SecretsConfig, profile: &str, level: &mut ObfuscationLevel) {
+    match profile {
+        "pii" => {
+            if let Some(g) = config.groups.get_mut("pii") {
+                g.enabled = true;
+            }
+            // pii group has min_level: standard — bump if currently minimal
+            if *level == ObfuscationLevel::Minimal {
+                *level = ObfuscationLevel::Standard;
+            }
+        }
+        "full" => {
+            for g in config.groups.values_mut() {
+                g.enabled = true;
+            }
+        }
+        "paranoid" => {
+            for g in config.groups.values_mut() {
+                g.enabled = true;
+            }
+            *level = ObfuscationLevel::Paranoid;
+        }
+        _ => {} // "default": use config as-is
+    }
 }
 
 fn main() {
     let args = Args::parse();
 
-    let level = ObfuscationLevel::parse(&args.level).unwrap_or_else(|| {
+    let mut level = ObfuscationLevel::parse(&args.level).unwrap_or_else(|| {
         eprintln!("Unknown level '{}', using minimal", args.level);
         ObfuscationLevel::Minimal
     });
 
     let yaml = load_config(args.config.as_deref());
-    let config: SecretsConfig = serde_yaml::from_str(&yaml).unwrap_or_else(|e| {
+    let mut config: SecretsConfig = serde_yaml::from_str(&yaml).unwrap_or_else(|e| {
         eprintln!("Failed to parse secrets config: {e}");
         std::process::exit(1);
     });
+
+    apply_profile(&mut config, &args.profile, &mut level);
 
     let is_paranoid = level == ObfuscationLevel::Paranoid;
     let patterns: Vec<(Regex, String)> = config

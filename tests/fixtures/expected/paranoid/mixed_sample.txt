@@ -4,7 +4,7 @@
 # Secrets (redacted at all levels)
 ANTHROPIC_API_KEY=[REDACTED-ANTHROPIC-KEY]
 GITHUB_TOKEN=[REDACTED-GITHUB-TOKEN]
-[REDACTED-PASSWORD]
+password = "s3cr3t-Database-P4ss!"
 
 # PII (redacted at standard+, must pass through at minimal)
 [REDACTED-PII-NAME]

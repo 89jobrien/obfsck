@@ -25,6 +25,8 @@ struct PatternEntry {
     pattern: String,
     label: String,
     paranoid_only: bool,
+    /// Inherited from the group's min_level in the YAML (overrides paranoid_only when set).
+    min_level: Option<String>,
 }
 
 /// Minimal line-by-line parser for config/secrets.yaml.
@@ -32,6 +34,8 @@ struct PatternEntry {
 fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
     let mut patterns: Vec<PatternEntry> = Vec::new();
     let mut current: Option<PatternEntry> = None;
+    // Track the current group's min_level (set when we see `min_level:` outside a pattern entry).
+    let mut current_group_min_level: Option<String> = None;
 
     for raw_line in yaml.lines() {
         let line = strip_inline_comment(raw_line);
@@ -39,6 +43,36 @@ fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
 
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
+        }
+
+        // Detect group-level min_level (indented, not inside a pattern list item).
+        // Pattern items start with "- name:"; group fields are bare "key: value".
+        if trimmed.starts_with("min_level:") && !trimmed.starts_with("- ") {
+            if current.is_none() {
+                // We're at group level, not inside a pattern entry.
+                let val = trimmed.trim_start_matches("min_level:").trim().to_string();
+                current_group_min_level = Some(val);
+                continue;
+            }
+        }
+
+        // A new group starts at a top-level key (indented by exactly 2 spaces in the file).
+        // Heuristic: a line whose raw form starts with exactly 2 spaces followed by a word char
+        // and ends with ':' signals a new group key. Reset group state.
+        {
+            let raw = raw_line;
+            let indent = raw.len() - raw.trim_start().len();
+            let content = raw.trim();
+            if indent == 2 && content.ends_with(':') && !content.starts_with('-') {
+                // New group — flush current entry and reset group min_level.
+                if let Some(prev) = current.take() {
+                    if !prev.name.is_empty() {
+                        patterns.push(prev);
+                    }
+                }
+                current_group_min_level = None;
+                continue;
+            }
         }
 
         if trimmed.starts_with("- name:") {
@@ -49,6 +83,7 @@ fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
             }
             let mut entry = PatternEntry::default();
             entry.name = extract_scalar(trimmed, "- name:").to_string();
+            entry.min_level = current_group_min_level.clone();
             current = Some(entry);
             continue;
         }
@@ -142,12 +177,19 @@ fn emit_rust(patterns: &[PatternEntry]) -> String {
         let pattern_escaped = p.pattern.replace('\\', "\\\\").replace('"', "\\\"");
         let name_escaped = p.name.replace('\\', "\\\\").replace('"', "\\\"");
         let label_escaped = p.label.replace('\\', "\\\\").replace('"', "\\\"");
+        let min_level_expr = match p.min_level.as_deref() {
+            Some("standard") => "Some(ObfuscationLevel::Standard)",
+            Some("paranoid") => "Some(ObfuscationLevel::Paranoid)",
+            Some("minimal") | None => "None",
+            Some(other) => panic!("build.rs: unknown min_level value '{other}'"),
+        };
         out.push_str(&format!(
-            "    SecretPatternDef {{\n        name: \"{name}\",\n        pattern: \"{pattern}\",\n        label: \"{label}\",\n        paranoid_only: {paranoid_only},\n    }},\n",
+            "    SecretPatternDef {{\n        name: \"{name}\",\n        pattern: \"{pattern}\",\n        label: \"{label}\",\n        paranoid_only: {paranoid_only},\n        min_level: {min_level},\n    }},\n",
             name = name_escaped,
             pattern = pattern_escaped,
             label = label_escaped,
             paranoid_only = p.paranoid_only,
+            min_level = min_level_expr,
         ));
     }
 

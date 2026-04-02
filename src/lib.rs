@@ -414,7 +414,14 @@ impl Obfuscator {
     fn obfuscate_secrets(&mut self, text: &str) -> String {
         let mut s: Cow<'_, str> = Cow::Borrowed(text);
         for pat in secret_patterns() {
-            if pat.paranoid_only && self.level != ObfuscationLevel::Paranoid {
+            let applies = match pat.min_level {
+                None | Some(ObfuscationLevel::Minimal) => true,
+                Some(ObfuscationLevel::Standard) => {
+                    matches!(self.level, ObfuscationLevel::Standard | ObfuscationLevel::Paranoid)
+                }
+                Some(ObfuscationLevel::Paranoid) => self.level == ObfuscationLevel::Paranoid,
+            };
+            if !applies {
                 continue;
             }
             if !pat.re.is_match(s.as_ref()) {
@@ -482,7 +489,7 @@ pub fn obfuscate_alert(
 
 struct SecretPattern {
     label: &'static str,
-    paranoid_only: bool,
+    min_level: Option<ObfuscationLevel>,
     re: Regex,
 }
 
@@ -491,6 +498,7 @@ pub struct SecretPatternDef {
     pub pattern: &'static str,
     pub label: &'static str,
     pub paranoid_only: bool,
+    pub min_level: Option<ObfuscationLevel>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -499,7 +507,11 @@ pub struct SecretPatternError {
     pub error: String,
 }
 
-mod secrets;
+mod secrets {
+    use super::ObfuscationLevel;
+    use super::SecretPatternDef;
+    include!(concat!(env!("OUT_DIR"), "/secrets.rs"));
+}
 pub use secrets::SECRET_PATTERN_DEFS;
 
 fn secret_patterns() -> &'static [SecretPattern] {
@@ -520,9 +532,15 @@ fn secret_patterns() -> &'static [SecretPattern] {
                     }
                 };
 
+                // Derive min_level: paranoid_only=true overrides YAML min_level to Paranoid
+                let min_level = if d.paranoid_only {
+                    Some(ObfuscationLevel::Paranoid)
+                } else {
+                    d.min_level
+                };
                 Some(SecretPattern {
                     label: d.label,
-                    paranoid_only: d.paranoid_only,
+                    min_level,
                     re,
                 })
             })

@@ -124,6 +124,9 @@ fn try_extract(trimmed: &str, key: &str) -> Option<String> {
         }
         return Some(out);
     }
+    // Double-quoted values: trim wrapping quotes only.
+    // Assumption: double-quoted values in config/secrets.yaml do not use \" escapes.
+    // The raw content (e.g. \\b) is passed through and double-escaped by emit_rust.
     Some(rest.trim_matches('"').to_string())
 }
 
@@ -137,11 +140,13 @@ fn emit_rust(patterns: &[PatternEntry]) -> String {
 
     for p in patterns {
         let pattern_escaped = p.pattern.replace('\\', "\\\\").replace('"', "\\\"");
+        let name_escaped = p.name.replace('\\', "\\\\").replace('"', "\\\"");
+        let label_escaped = p.label.replace('\\', "\\\\").replace('"', "\\\"");
         out.push_str(&format!(
             "    SecretPatternDef {{\n        name: \"{name}\",\n        pattern: \"{pattern}\",\n        label: \"{label}\",\n        paranoid_only: {paranoid_only},\n    }},\n",
-            name = p.name,
+            name = name_escaped,
             pattern = pattern_escaped,
-            label = p.label,
+            label = label_escaped,
             paranoid_only = p.paranoid_only,
         ));
     }

@@ -1,6 +1,6 @@
 use super::SecretPatternDef;
 
-pub(crate) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
+pub const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
     SecretPatternDef {
         name: "aws_access_key",
         pattern: r"\b(?:A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|APKA|AROA|ASCA|ASIA)[A-Z0-9]{16}\b",

@@ -500,7 +500,7 @@ pub struct SecretPatternError {
 }
 
 mod secrets;
-use secrets::SECRET_PATTERN_DEFS;
+pub use secrets::SECRET_PATTERN_DEFS;
 
 fn secret_patterns() -> &'static [SecretPattern] {
     static PATS: OnceLock<Vec<SecretPattern>> = OnceLock::new();

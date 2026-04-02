@@ -47,43 +47,35 @@ fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
 
         // Detect group-level min_level (indented, not inside a pattern list item).
         // Pattern items start with "- name:"; group fields are bare "key: value".
-        if trimmed.starts_with("min_level:") && !trimmed.starts_with("- ") {
-            if current.is_none() {
-                // We're at group level, not inside a pattern entry.
-                let val = trimmed.trim_start_matches("min_level:").trim().to_string();
-                current_group_min_level = Some(val);
-                continue;
-            }
+        if trimmed.starts_with("min_level:") && !trimmed.starts_with("- ") && current.is_none() {
+            // We're at group level, not inside a pattern entry.
+            let val = trimmed.strip_prefix("min_level:").unwrap_or("").trim().to_string();
+            current_group_min_level = Some(val);
+            continue;
         }
 
         // A new group starts at a top-level key (indented by exactly 2 spaces in the file).
         // Heuristic: a line whose raw form starts with exactly 2 spaces followed by a word char
         // and ends with ':' signals a new group key. Reset group state.
-        {
-            let raw = raw_line;
-            let indent = raw.len() - raw.trim_start().len();
-            let content = raw.trim();
-            if indent == 2 && content.ends_with(':') && !content.starts_with('-') {
-                // New group — flush current entry and reset group min_level.
-                if let Some(prev) = current.take() {
-                    if !prev.name.is_empty() {
-                        patterns.push(prev);
-                    }
-                }
-                current_group_min_level = None;
-                continue;
+        let indent = raw_line.len() - raw_line.trim_start().len();
+        if indent == 2 && trimmed.ends_with(':') && !trimmed.starts_with('-') {
+            // New group — flush current entry and reset group min_level.
+            if let Some(prev) = current.take().filter(|p| !p.name.is_empty()) {
+                patterns.push(prev);
             }
+            current_group_min_level = None;
+            continue;
         }
 
         if trimmed.starts_with("- name:") {
-            if let Some(prev) = current.take() {
-                if !prev.name.is_empty() {
-                    patterns.push(prev);
-                }
+            if let Some(prev) = current.take().filter(|p| !p.name.is_empty()) {
+                patterns.push(prev);
             }
-            let mut entry = PatternEntry::default();
-            entry.name = extract_scalar(trimmed, "- name:").to_string();
-            entry.min_level = current_group_min_level.clone();
+            let entry = PatternEntry {
+                name: extract_scalar(trimmed, "- name:").to_string(),
+                min_level: current_group_min_level.clone(),
+                ..PatternEntry::default()
+            };
             current = Some(entry);
             continue;
         }
@@ -100,10 +92,8 @@ fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
         }
     }
 
-    if let Some(last) = current {
-        if !last.name.is_empty() {
-            patterns.push(last);
-        }
+    if let Some(last) = current.filter(|p| !p.name.is_empty()) {
+        patterns.push(last);
     }
 
     patterns
@@ -135,12 +125,9 @@ fn extract_scalar<'a>(line: &'a str, prefix: &str) -> &'a str {
 
 /// Try to extract a value for `key:` from a trimmed line, handling single-quoted strings.
 fn try_extract(trimmed: &str, key: &str) -> Option<String> {
-    if !trimmed.starts_with(key) {
-        return None;
-    }
-    let rest = trimmed[key.len()..].trim();
+    let rest = trimmed.strip_prefix(key)?.trim();
     if rest.starts_with('\'') {
-        let inner = &rest[1..];
+        let inner = rest.strip_prefix('\'').unwrap_or(rest);
         let mut out = String::new();
         let mut chars = inner.chars().peekable();
         loop {

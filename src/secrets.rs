@@ -281,11 +281,11 @@ pub(crate) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
         name: "password_field",
         pattern: r#"\b(?:password|passwd|pwd|secret|secret_key|token|api_key|auth_key|private_key|encryption_key)\b\s*[=:]\s*["']?[^\s"']{8,}["']?"#,
         label: "PASSWORD",
-        paranoid_only: false,
+        paranoid_only: true,
     },
     SecretPatternDef {
         name: "github_user_url",
-        pattern: r"\bgithub\.com/([A-Za-z0-9_-]+)(?:/[A-Za-z0-9_.-]+)+",
+        pattern: r"https?://github\.com/([A-Za-z0-9_-]+)(?:/[A-Za-z0-9_.-]+)+",
         label: "GITHUB-URL",
         paranoid_only: false,
     },

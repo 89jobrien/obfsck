@@ -4,7 +4,7 @@
 # Full names in config/commit contexts
 author: Jane Smith
 name=John Doe
-[REDACTED-PII-NAME] <alice@example.com>
+Co-Authored-By: Alice Johnson <alice@example.com>
 
 # US Social Security Number
 ssn: 123-45-6789

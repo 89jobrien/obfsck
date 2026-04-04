@@ -38,6 +38,12 @@ struct Args {
     /// Preset profile: default, pii, full, paranoid
     #[arg(long, default_value = "default")]
     profile: String,
+
+    /// Enable or disable PII redaction (email, IP, names, SSN, etc.).
+    /// Secrets (API keys, tokens) are always redacted regardless of this flag.
+    /// Accepted values: on, off, true, false, yes, no, 1, 0.
+    #[arg(long, default_value = "on")]
+    pii: String,
 }
 
 fn apply_profile(config: &mut SecretsConfig, profile: &str, level: &mut ObfuscationLevel) {
@@ -80,7 +86,24 @@ fn main() {
         std::process::exit(1);
     });
 
+    let pii_enabled = !matches!(
+        args.pii.to_ascii_lowercase().as_str(),
+        "off" | "false" | "no" | "0"
+    );
+
     apply_profile(&mut config, &args.profile, &mut level);
+
+    // When PII is disabled, skip YAML groups whose min_level is standard (PII groups).
+    if !pii_enabled {
+        for group in config.groups.values_mut() {
+            if matches!(
+                group.min_level,
+                Some(obfsck::yaml_config::MinLevel::Standard)
+            ) {
+                group.enabled = false;
+            }
+        }
+    }
 
     let is_paranoid = level == ObfuscationLevel::Paranoid;
     let patterns: Vec<(Regex, String)> = config
@@ -104,7 +127,7 @@ fn main() {
 
     // Obfuscator persists token mappings across lines — same user/IP/host gets
     // the same stable token throughout the entire input.
-    let mut obfuscator = Obfuscator::new(level);
+    let mut obfuscator = Obfuscator::new(level).with_pii(pii_enabled);
 
     // Audit counts accumulated across all lines.
     let mut audit_counts: HashMap<String, usize> = HashMap::new();

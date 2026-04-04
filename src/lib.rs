@@ -136,6 +136,9 @@ impl Counters {
 
 pub struct Obfuscator {
     level: ObfuscationLevel,
+    /// When false, structural PII (emails, IPs, users) is skipped even at
+    /// standard/paranoid. Secrets are unaffected. Mirrors the `--pii off` CLI flag.
+    pii: bool,
     map: ObfuscationMap,
     counters: Counters,
 }
@@ -144,9 +147,16 @@ impl Obfuscator {
     pub fn new(level: ObfuscationLevel) -> Self {
         Self {
             level,
+            pii: true,
             map: ObfuscationMap::default(),
             counters: Counters::default(),
         }
+    }
+
+    /// Disable PII redaction (structural emails, IPs, users). Secrets are unaffected.
+    pub fn with_pii(mut self, pii: bool) -> Self {
+        self.pii = pii;
+        self
     }
 
     pub fn level(&self) -> ObfuscationLevel {
@@ -165,7 +175,7 @@ impl Obfuscator {
         let mut s: Cow<'_, str> = Cow::Borrowed(text);
 
         s = Cow::Owned(self.obfuscate_secrets(s.as_ref()));
-        if self.level == ObfuscationLevel::Minimal {
+        if self.level == ObfuscationLevel::Minimal || !self.pii {
             return s.into_owned();
         }
 
@@ -417,7 +427,12 @@ impl Obfuscator {
             let applies = match pat.min_level {
                 None | Some(ObfuscationLevel::Minimal) => true,
                 Some(ObfuscationLevel::Standard) => {
-                    matches!(self.level, ObfuscationLevel::Standard | ObfuscationLevel::Paranoid)
+                    // Standard-gated patterns are PII. Skip when pii=false.
+                    self.pii
+                        && matches!(
+                            self.level,
+                            ObfuscationLevel::Standard | ObfuscationLevel::Paranoid
+                        )
                 }
                 Some(ObfuscationLevel::Paranoid) => self.level == ObfuscationLevel::Paranoid,
             };

@@ -6,26 +6,28 @@ items:
   doob_uuid: 4f2cb306-3048-4e97-a0db-db82ee51a056
   name: pii-off-flag
   priority: P1
-  status: open
+  status: done
   title: --pii off flag and explicit level-gating tests for minimal invariant
   description: |
     Add a --pii off CLI flag to redact.rs so agents/callers can suppress PII redaction explicitly. Also add tests that assert the minimal invariant (PII untouched at minimal) is enforced structurally, not just by convention.
   files:
   - src/bin/redact.rs
   - src/lib.rs
-  - tests/golden_tests.rs
+  - tests/test_redact_cli.rs
   extra: []
+  completed: 2026-04-04
 - id: obfsck-2
   doob_uuid: f5e92edc-5450-498d-be37-7e022938ec6c
   name: username-regex-fix
   priority: P1
-  status: open
+  status: done
   title: Fix username regex \w+ → [A-Za-z0-9._-]+
   description: |
     The current username pattern uses \w+ which matches underscores and Unicode. Narrow to [A-Za-z0-9._-]+ to reduce false positives on non-username tokens.
   files:
-  - config/secrets.yaml
+  - src/lib.rs
   extra: []
+  completed: 2026-04-04
 - id: obfsck-3
   doob_uuid: c9411edc-f868-4183-899f-55d7e31db152
   name: redact-cli-file-io-tests
@@ -72,6 +74,11 @@ items:
   extra: []
   completed: 2026-04-04
 log:
+- date: 2026-04-04
+  summary: Implemented --pii off flag (obfsck-1) and narrowed legacy username regex (obfsck-2); 82 tests passing
+  commits:
+  - 64dd987
+  - 59fba0d
 - date: 2026-04-04
   summary: Added Justfile with agent recipes and mise run codegen task; verified clean build and 78 passing tests
   commits:

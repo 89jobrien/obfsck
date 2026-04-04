@@ -1,0 +1,82 @@
+project: obfsck
+id: obfsck
+updated: 2026-04-04
+items:
+- id: obfsck-1
+  doob_uuid: 4f2cb306-3048-4e97-a0db-db82ee51a056
+  name: pii-off-flag
+  priority: P1
+  status: open
+  title: --pii off flag and explicit level-gating tests for minimal invariant
+  description: |
+    Add a --pii off CLI flag to redact.rs so agents/callers can suppress PII redaction explicitly. Also add tests that assert the minimal invariant (PII untouched at minimal) is enforced structurally, not just by convention.
+  files:
+  - src/bin/redact.rs
+  - src/lib.rs
+  - tests/golden_tests.rs
+  extra: []
+- id: obfsck-2
+  doob_uuid: f5e92edc-5450-498d-be37-7e022938ec6c
+  name: username-regex-fix
+  priority: P1
+  status: open
+  title: Fix username regex \w+ → [A-Za-z0-9._-]+
+  description: |
+    The current username pattern uses \w+ which matches underscores and Unicode. Narrow to [A-Za-z0-9._-]+ to reduce false positives on non-username tokens.
+  files:
+  - config/secrets.yaml
+  extra: []
+- id: obfsck-3
+  doob_uuid: c9411edc-f868-4183-899f-55d7e31db152
+  name: redact-cli-file-io-tests
+  priority: P2
+  status: open
+  title: Integration tests for redact CLI file I/O (-o flag and file input)
+  description: |
+    tests/test_redact_cli.rs covers stdin but not the file→file path. Add tests for: input file arg, -o output flag, and combined file→file usage.
+  files:
+  - tests/test_redact_cli.rs
+  extra: []
+- id: obfsck-4
+  doob_uuid: e6e2fbdc-75f3-44bd-b2c3-687b02021d8e
+  name: narrow-secret-scanning-ignores
+  priority: P2
+  status: open
+  title: Narrow GitHub secret-scanning ignore rules
+  description: |
+    Current .gitignore or secret-scanning config may be overly broad. Audit and tighten the rules so only test fixture patterns are excluded, not real patterns.
+  files: []
+  extra: []
+- id: obfsck-5
+  doob_uuid: 1822caa8-05b4-48f2-9cf1-23285efe69c2
+  name: justfile-agent-recipes
+  priority: P2
+  status: done
+  title: Add Justfile with AI-agent-oriented recipes
+  description: |
+    Create a Justfile covering check, build, test, lint, golden regen, level-invariant probes, and ad-hoc redact invocations for agent use.
+  files:
+  - Justfile
+  extra: []
+  completed: 2026-04-04
+- id: obfsck-6
+  doob_uuid: d83a3a4a-70a5-4550-a6c0-e4d466d1a19b
+  name: mise-codegen-task
+  priority: P2
+  status: done
+  title: Add mise run codegen task for build.rs visibility
+  description: |
+    Add an explicit mise task that runs cargo build -p obfsck to surface codegen output, making the build.rs → secrets.rs pipeline discoverable.
+  files:
+  - mise.toml
+  extra: []
+  completed: 2026-04-04
+log:
+- date: 2026-04-04
+  summary: Added Justfile with agent recipes and mise run codegen task; verified clean build and 78 passing tests
+  commits:
+  - 93c9db7
+  - dd85041
+- date: 2026-04-04
+  summary: Verified codegen pipeline on clean checkout (cargo clean && cargo build, 214 crates); confirmed 17 golden tests pass
+  commits: []

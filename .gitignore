@@ -84,3 +84,8 @@ scratch/
 !README.md
 !*.plan.md
 .envrc
+*.local.md
+!CLAUDE.md
+.remember/logs/autonomous/*
+!Handoff.*
+.ctx/

@@ -14,6 +14,10 @@ run = "cargo check"
 description = "Build the project"
 run = "cargo build"
 
+[tasks.codegen]
+description = "Regenerate src/secrets.rs from config/secrets.yaml via build.rs"
+run = "cargo build -p obfsck 2>&1 | grep -E 'Compiling|Finished|error' || true"
+
 [tasks.test]
 description = "Run all tests"
 run = "cargo test"

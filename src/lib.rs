@@ -615,10 +615,10 @@ fn user_res() -> &'static [Regex] {
     static RES: OnceLock<Vec<Regex>> = OnceLock::new();
     RES.get_or_init(|| {
         [
-            r"(?i)(user=)(\w+)",
+            r"(?i)(user=)([A-Za-z0-9._-]+)",
             r"(?i)(uid=)(\d+)",
-            r"(?i)(User )(\w+)",
-            r"(?i)(by user )(\w+)",
+            r"(?i)(User )([A-Za-z0-9._-]+)",
+            r"(?i)(by user )([A-Za-z0-9._-]+)",
         ]
         .into_iter()
         .map(|p| Regex::new(p).expect("user regex"))

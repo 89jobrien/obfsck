@@ -1,6 +1,6 @@
 project: obfsck
 id: obfsck
-updated: 2026-04-04
+updated: 2026-04-05
 items:
 - id: obfsck-1
   doob_uuid: 4f2cb306-3048-4e97-a0db-db82ee51a056
@@ -32,23 +32,26 @@ items:
   doob_uuid: c9411edc-f868-4183-899f-55d7e31db152
   name: redact-cli-file-io-tests
   priority: P2
-  status: open
+  status: done
   title: Integration tests for redact CLI file I/O (-o flag and file input)
   description: |
     tests/test_redact_cli.rs covers stdin but not the file→file path. Add tests for: input file arg, -o output flag, and combined file→file usage.
   files:
   - tests/test_redact_cli.rs
   extra: []
+  completed: 2026-04-05
 - id: obfsck-4
   doob_uuid: e6e2fbdc-75f3-44bd-b2c3-687b02021d8e
   name: narrow-secret-scanning-ignores
   priority: P2
-  status: open
+  status: done
   title: Narrow GitHub secret-scanning ignore rules
   description: |
     Current .gitignore or secret-scanning config may be overly broad. Audit and tighten the rules so only test fixture patterns are excluded, not real patterns.
-  files: []
+  files:
+  - .github/secret_scanning.yml
   extra: []
+  completed: 2026-04-05
 - id: obfsck-5
   doob_uuid: 1822caa8-05b4-48f2-9cf1-23285efe69c2
   name: justfile-agent-recipes
@@ -74,6 +77,9 @@ items:
   extra: []
   completed: 2026-04-04
 log:
+- date: 2026-04-05
+  summary: Closed obfsck-3 (file I/O tests already existed) and obfsck-4 (tightened secret_scanning.yml — removed 4 stale paths, added 4 fixture paths); all items done
+  commits: []
 - date: 2026-04-04
   summary: Implemented --pii off flag (obfsck-1) and narrowed legacy username regex (obfsck-2); 82 tests passing
   commits:

@@ -74,6 +74,25 @@ fmt:
     cargo fmt --all
 
 # ---------------------------------------------------------------------------
+# Gates (mirrors minibox pattern)
+# ---------------------------------------------------------------------------
+
+# Pre-commit gate: fmt-check + lint
+pre-commit: fmt-check lint
+
+# Pre-push gate: fmt-check + lint + test
+prepush: fmt-check lint test
+
+# Wire .git/hooks to call just — run once after cloning
+init:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    printf '#!/bin/sh\necho "Running pre-commit checks..."\njust pre-commit\n' > .git/hooks/pre-commit
+    printf '#!/bin/sh\necho "Running pre-push checks..."\njust prepush\n' > .git/hooks/pre-push
+    chmod +x .git/hooks/pre-commit .git/hooks/pre-push
+    echo "hooks wired: .git/hooks/pre-commit + pre-push → just"
+
+# ---------------------------------------------------------------------------
 # CI gate
 # ---------------------------------------------------------------------------
 

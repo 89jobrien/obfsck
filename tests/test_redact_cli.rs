@@ -222,6 +222,7 @@ fn pii_input() -> String {
 }
 
 /// Path to the pii_sample fixture.
+#[allow(dead_code)]
 fn pii_fixture_path() -> String {
     let manifest = env!("CARGO_MANIFEST_DIR");
     format!("{manifest}/tests/fixtures/inputs/pii_sample.txt")

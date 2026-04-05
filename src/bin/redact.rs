@@ -44,6 +44,15 @@ struct Args {
     /// Accepted values: on, off, true, false, yes, no, 1, 0.
     #[arg(long, default_value = "on")]
     pii: String,
+
+    /// Values to never redact, even if they match a pattern. Repeatable.
+    /// Also loaded from ~/.config/obfsck/allowlist (one entry per line).
+    #[arg(long = "allowlist", value_name = "VALUE")]
+    allowlist: Vec<String>,
+
+    /// File containing allowlist entries, one per line.
+    #[arg(long = "allowlist-file", value_name = "PATH")]
+    allowlist_file: Option<PathBuf>,
 }
 
 fn apply_profile(config: &mut SecretsConfig, profile: &str, level: &mut ObfuscationLevel) {
@@ -125,9 +134,38 @@ fn main() {
         })
         .collect();
 
+    // Build allowlist: CLI flags + allowlist-file + ~/.config/obfsck/allowlist
+    let mut allowlist = args.allowlist;
+    if let Some(path) = &args.allowlist_file {
+        match std::fs::read_to_string(path) {
+            Ok(content) => allowlist.extend(
+                content
+                    .lines()
+                    .map(|l| l.trim().to_string())
+                    .filter(|l| !l.is_empty() && !l.starts_with('#')),
+            ),
+            Err(e) => {
+                eprintln!("Cannot read allowlist-file '{}': {e}", path.display());
+                std::process::exit(1);
+            }
+        }
+    }
+    let user_allowlist = shellexpand::tilde("~/.config/obfsck/allowlist").into_owned();
+    if let Ok(content) = std::fs::read_to_string(&user_allowlist) {
+        allowlist.extend(
+            content
+                .lines()
+                .map(|l| l.trim().to_string())
+                .filter(|l| !l.is_empty() && !l.starts_with('#')),
+        );
+    }
+    let allowlist_set: std::collections::HashSet<String> = allowlist.into_iter().collect();
+
     // Obfuscator persists token mappings across lines — same user/IP/host gets
     // the same stable token throughout the entire input.
-    let mut obfuscator = Obfuscator::new(level).with_pii(pii_enabled);
+    let mut obfuscator = Obfuscator::new(level)
+        .with_pii(pii_enabled)
+        .with_allowlist(allowlist_set.iter().cloned().collect());
 
     // Audit counts accumulated across all lines.
     let mut audit_counts: HashMap<String, usize> = HashMap::new();
@@ -146,12 +184,24 @@ fn main() {
         let mut text = line;
         for (re, replacement) in &patterns {
             if args.audit {
-                let count = re.find_iter(&text).count();
+                let count = re
+                    .find_iter(&text)
+                    .filter(|m| !allowlist_set.contains(m.as_str()))
+                    .count();
                 if count > 0 {
                     *audit_counts.entry(replacement.clone()).or_insert(0) += count;
                 }
             }
-            text = re.replace_all(&text, replacement.as_str()).into_owned();
+            text = re
+                .replace_all(&text, |caps: &regex::Captures<'_>| {
+                    let matched = &caps[0];
+                    if allowlist_set.contains(matched) {
+                        matched.to_string()
+                    } else {
+                        replacement.clone()
+                    }
+                })
+                .into_owned();
         }
 
         // Structural obfuscation (IPs, emails, hostnames, etc.).

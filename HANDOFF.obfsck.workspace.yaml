@@ -1,7 +1,42 @@
 project: obfsck
 id: obfsck
-updated: 2026-04-05
+updated: 2026-04-06
 items:
+- id: obfsck-7
+  name: path-traversal-api
+  priority: P0
+  status: open
+  title: Path traversal in history_detail — URL param used raw in cache_file()
+  description: |
+    The history_detail handler passes the URL parameter directly into cache_file()
+    without sanitization, allowing arbitrary file reads via ../../etc/passwd style paths.
+    Validate and canonicalize before any filesystem access.
+  files:
+  - src/api/
+  extra: []
+- id: obfsck-8
+  name: yaml-parser-silent-drop
+  priority: P1
+  status: open
+  title: build.rs custom YAML parser silently drops all patterns on indentation mismatch
+  description: |
+    The hand-rolled YAML parser in build.rs silently produces an empty pattern list
+    if secrets.yaml has unexpected indentation. Add a parse error and fail the build
+    loudly rather than emitting zero patterns.
+  files:
+  - build.rs
+  extra: []
+- id: obfsck-9
+  name: allowlist-bypass
+  priority: P1
+  status: open
+  title: obfuscate_high_entropy() ignores the runtime allowlist
+  description: |
+    High-entropy token redaction bypasses the allowlist check, silently overriding
+    user exemptions. Thread the allowlist through to the entropy pass.
+  files:
+  - src/lib.rs
+  extra: []
 - id: obfsck-1
   doob_uuid: 4f2cb306-3048-4e97-a0db-db82ee51a056
   name: pii-off-flag
@@ -77,6 +112,11 @@ items:
   extra: []
   completed: 2026-04-04
 log:
+- date: 2026-04-06
+  summary: devkit council sweep — 9 issues filed. Critical: path traversal in API (P0),
+    silent YAML pattern loss in build.rs (P1), allowlist bypass in high-entropy pass (P1).
+    Added obfsck-7/8/9 to HANDOFF.
+  commits: []
 - date: 2026-04-05
   summary: Closed obfsck-3 (file I/O tests already existed) and obfsck-4 (tightened secret_scanning.yml — removed 4 stale paths, added 4 fixture paths); all items done
   commits: []

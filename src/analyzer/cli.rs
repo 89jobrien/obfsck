@@ -150,39 +150,38 @@ fn print_analysis(result: &Value, verbose: bool) {
         .unwrap_or("N/A");
     println!("summary: {summary}");
 
-    if verbose
-        && let Some(mapping) = result.get("obfuscation_mapping").and_then(Value::as_object) {
-            let ips = mapping
-                .get("ips")
-                .and_then(Value::as_object)
-                .map(|m| m.len())
-                .unwrap_or(0);
-            let users = mapping
-                .get("users")
-                .and_then(Value::as_object)
-                .map(|m| m.len())
-                .unwrap_or(0);
-            let emails = mapping
-                .get("emails")
-                .and_then(Value::as_object)
-                .map(|m| m.len())
-                .unwrap_or(0);
-            let hostnames = mapping
-                .get("hostnames")
-                .and_then(Value::as_object)
-                .map(|m| m.len())
-                .unwrap_or(0);
-            let containers = mapping
-                .get("containers")
-                .and_then(Value::as_object)
-                .map(|m| m.len())
-                .unwrap_or(0);
+    if verbose && let Some(mapping) = result.get("obfuscation_mapping").and_then(Value::as_object) {
+        let ips = mapping
+            .get("ips")
+            .and_then(Value::as_object)
+            .map(|m| m.len())
+            .unwrap_or(0);
+        let users = mapping
+            .get("users")
+            .and_then(Value::as_object)
+            .map(|m| m.len())
+            .unwrap_or(0);
+        let emails = mapping
+            .get("emails")
+            .and_then(Value::as_object)
+            .map(|m| m.len())
+            .unwrap_or(0);
+        let hostnames = mapping
+            .get("hostnames")
+            .and_then(Value::as_object)
+            .map(|m| m.len())
+            .unwrap_or(0);
+        let containers = mapping
+            .get("containers")
+            .and_then(Value::as_object)
+            .map(|m| m.len())
+            .unwrap_or(0);
 
-            debug!(
-                ips,
-                users, emails, hostnames, containers, "Obfuscation token summary"
-            );
-        }
+        debug!(
+            ips,
+            users, emails, hostnames, containers, "Obfuscation token summary"
+        );
+    }
 
     println!("======================================================================");
 }

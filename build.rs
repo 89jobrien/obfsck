@@ -8,8 +8,7 @@ fn main() {
     println!("cargo:rerun-if-changed=config/secrets.yaml");
 
     let yaml_path = PathBuf::from("config/secrets.yaml");
-    let yaml = fs::read_to_string(&yaml_path)
-        .expect("build.rs: cannot read config/secrets.yaml");
+    let yaml = fs::read_to_string(&yaml_path).expect("build.rs: cannot read config/secrets.yaml");
 
     let patterns = parse_patterns(&yaml);
     let code = emit_rust(&patterns);
@@ -49,7 +48,11 @@ fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
         // Pattern items start with "- name:"; group fields are bare "key: value".
         if trimmed.starts_with("min_level:") && !trimmed.starts_with("- ") && current.is_none() {
             // We're at group level, not inside a pattern entry.
-            let val = trimmed.strip_prefix("min_level:").unwrap_or("").trim().to_string();
+            let val = trimmed
+                .strip_prefix("min_level:")
+                .unwrap_or("")
+                .trim()
+                .to_string();
             current_group_min_level = Some(val);
             continue;
         }

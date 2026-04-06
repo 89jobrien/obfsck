@@ -139,6 +139,8 @@ pub struct Obfuscator {
     /// When false, structural PII (emails, IPs, users) is skipped even at
     /// standard/paranoid. Secrets are unaffected. Mirrors the `--pii off` CLI flag.
     pii: bool,
+    /// Values in this set are never redacted even when they match a pattern.
+    allowlist: HashSet<String>,
     map: ObfuscationMap,
     counters: Counters,
 }
@@ -148,6 +150,7 @@ impl Obfuscator {
         Self {
             level,
             pii: true,
+            allowlist: HashSet::new(),
             map: ObfuscationMap::default(),
             counters: Counters::default(),
         }
@@ -156,6 +159,12 @@ impl Obfuscator {
     /// Disable PII redaction (structural emails, IPs, users). Secrets are unaffected.
     pub fn with_pii(mut self, pii: bool) -> Self {
         self.pii = pii;
+        self
+    }
+
+    /// Values in this list will never be redacted even when they match a pattern.
+    pub fn with_allowlist(mut self, entries: Vec<String>) -> Self {
+        self.allowlist = entries.into_iter().collect();
         self
     }
 
@@ -239,6 +248,9 @@ impl Obfuscator {
             let replaced = ipv4_re()
                 .replace_all(s.as_ref(), |caps: &regex::Captures<'_>| {
                     let ip = &caps[0];
+                    if self.allowlist.contains(ip) {
+                        return ip.to_string();
+                    }
                     let cat = if Self::is_private_ipv4(ip) {
                         TokenCategory::IpInternal
                     } else {
@@ -256,6 +268,9 @@ impl Obfuscator {
             let replaced = ipv6_re()
                 .replace_all(s.as_ref(), |caps: &regex::Captures<'_>| {
                     let ip = &caps[0];
+                    if self.allowlist.contains(ip) {
+                        return ip.to_string();
+                    }
                     get_or_create_token(counters, TokenCategory::IpExternal, ip, ips)
                 })
                 .into_owned();
@@ -276,6 +291,9 @@ impl Obfuscator {
         email_re()
             .replace_all(text, |caps: &regex::Captures<'_>| {
                 let email = &caps[0];
+                if self.allowlist.contains(email) {
+                    return email.to_string();
+                }
                 get_or_create_token(counters, TokenCategory::Email, email, emails)
             })
             .into_owned()
@@ -291,7 +309,11 @@ impl Obfuscator {
         let counters = &mut self.counters;
         let containers = &mut self.map.containers;
         re.replace_all(text, |caps: &regex::Captures<'_>| {
-            get_or_create_token(counters, TokenCategory::Container, &caps[0], containers)
+            let id = &caps[0];
+            if self.allowlist.contains(id) {
+                return id.to_string();
+            }
+            get_or_create_token(counters, TokenCategory::Container, id, containers)
         })
         .into_owned()
     }
@@ -447,6 +469,9 @@ impl Obfuscator {
                 .re
                 .replace_all(s.as_ref(), |caps: &regex::Captures<'_>| {
                     let m = &caps[0];
+                    if self.allowlist.contains(m) {
+                        return m.to_string();
+                    }
                     let mut truncated = m.chars().take(20).collect::<String>();
                     truncated.push_str("...");
                     self.map.secrets.insert(truncated);

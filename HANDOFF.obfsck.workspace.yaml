@@ -1,6 +1,6 @@
 project: obfsck
 id: obfsck
-updated: 2026-04-06
+updated: 2026-04-07
 items:
 - id: obfsck-7
   name: path-traversal-api
@@ -37,6 +37,24 @@ items:
   files:
   - src/lib.rs
   extra: []
+- id: obfsck-10
+  name: ci-standardize
+  priority: P2
+  status: done
+  title: Standardize CI — ci.yml, nightly.yml, deny.toml, git hooks
+  description: |
+    Add canonical three-tier CI (compile-check → test + audit + machete), nightly geiger
+    unsafe audit, deny.toml, and git hooks via Justfile. Fixed: missing license field,
+    rustls-webpki RUSTSEC-2026-0049 (cargo update), quinn-proto RUSTSEC-2026-0037
+    (cargo update), machete false positives for feature-gated deps (simplify_baml_macros,
+    walkdir). All CI jobs green.
+  files:
+  - .github/workflows/ci.yml
+  - .github/workflows/nightly.yml
+  - Cargo.toml
+  - Cargo.lock
+  extra: []
+  completed: 2026-04-07
 - id: obfsck-1
   doob_uuid: 4f2cb306-3048-4e97-a0db-db82ee51a056
   name: pii-off-flag
@@ -69,8 +87,6 @@ items:
   priority: P2
   status: done
   title: Integration tests for redact CLI file I/O (-o flag and file input)
-  description: |
-    tests/test_redact_cli.rs covers stdin but not the file→file path. Add tests for: input file arg, -o output flag, and combined file→file usage.
   files:
   - tests/test_redact_cli.rs
   extra: []
@@ -81,8 +97,6 @@ items:
   priority: P2
   status: done
   title: Narrow GitHub secret-scanning ignore rules
-  description: |
-    Current .gitignore or secret-scanning config may be overly broad. Audit and tighten the rules so only test fixture patterns are excluded, not real patterns.
   files:
   - .github/secret_scanning.yml
   extra: []
@@ -93,8 +107,6 @@ items:
   priority: P2
   status: done
   title: Add Justfile with AI-agent-oriented recipes
-  description: |
-    Create a Justfile covering check, build, test, lint, golden regen, level-invariant probes, and ad-hoc redact invocations for agent use.
   files:
   - Justfile
   extra: []
@@ -105,13 +117,20 @@ items:
   priority: P2
   status: done
   title: Add mise run codegen task for build.rs visibility
-  description: |
-    Add an explicit mise task that runs cargo build -p obfsck to surface codegen output, making the build.rs → secrets.rs pipeline discoverable.
   files:
   - mise.toml
   extra: []
   completed: 2026-04-04
 log:
+- date: 2026-04-07
+  summary: Standardized CI — ci.yml, nightly.yml, deny.toml, git hooks. Fixed license
+    field, updated rustls-webpki + quinn-proto, machete ignore for feature-gated deps.
+    All CI jobs green.
+  commits:
+  - 2dfe210
+  - b2f21e5
+  - 2ca5ff7
+  - f7f0c74
 - date: 2026-04-06
   summary: devkit council sweep — 9 issues filed. Critical: path traversal in API (P0),
     silent YAML pattern loss in build.rs (P1), allowlist bypass in high-entropy pass (P1).
@@ -130,6 +149,3 @@ log:
   commits:
   - 93c9db7
   - dd85041
-- date: 2026-04-04
-  summary: Verified codegen pipeline on clean checkout (cargo clean && cargo build, 214 crates); confirmed 17 golden tests pass
-  commits: []

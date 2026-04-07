@@ -92,6 +92,14 @@ init:
     chmod +x .git/hooks/pre-commit .git/hooks/pre-push
     echo "hooks wired: .git/hooks/pre-commit + pre-push → just"
 
+# Install all git hooks (pre-commit, pre-push, commit-msg)
+install-hooks:
+    #!/usr/bin/env sh
+    printf '#!/bin/sh\njust pre-commit\n' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+    printf '#!/bin/sh\njust prepush\n' > .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+    printf '#!/bin/sh\ncommit_regex="^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\\(.+\\))?: .+"\nif ! grep -qE "$commit_regex" "$1"; then\n  echo "warning: commit message does not follow conventional commits (non-blocking)"\nfi\n' > .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg
+    echo "hooks installed: pre-commit, pre-push, commit-msg"
+
 # ---------------------------------------------------------------------------
 # CI gate
 # ---------------------------------------------------------------------------

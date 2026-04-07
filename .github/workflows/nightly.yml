@@ -1,0 +1,28 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  geiger:
+    name: Unsafe Audit (geiger)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo install cargo-geiger --locked
+      - run: cargo geiger --workspace 2>&1 | tee geiger-report.txt
+      - run: |
+          echo "## Geiger Unsafe Audit" >> $GITHUB_STEP_SUMMARY
+          cat geiger-report.txt >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: geiger-report
+          path: geiger-report.txt
+          retention-days: 30

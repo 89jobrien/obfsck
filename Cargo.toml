@@ -77,6 +77,10 @@ required-features = ["analyzer"]
 name = "inspect_schema"
 required-features = ["analyzer"]
 
+[package.metadata.cargo-machete]
+# These are feature-gated under "analyzer" — machete runs without features and flags them as unused
+ignored = ["simplify_baml_macros", "walkdir"]
+
 [[bench]]
 name = "user_obfuscation"
 harness = false

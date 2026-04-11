@@ -125,6 +125,7 @@ items:
   name: mcp-server-mode
   priority: P2
   status: open
+  unblocks: [coursers-11]
   title: Add MCP server mode — expose audit and generate-filters tools
   description: |
     coursers-11 depends on this. Expose two MCP tools via a server subcommand:

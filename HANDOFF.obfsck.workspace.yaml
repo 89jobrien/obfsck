@@ -121,6 +121,21 @@ items:
   - mise.toml
   extra: []
   completed: 2026-04-04
+- id: obfsck-11
+  name: mcp-server-mode
+  priority: P2
+  status: open
+  title: Add MCP server mode — expose audit and generate-filters tools
+  description: |
+    coursers-11 depends on this. Expose two MCP tools via a server subcommand:
+    audit (pipe content, return hits) and generate-filters (given examples,
+    suggest .ctx/obfsck-filters.yaml patterns). mcpipe maps the server automatically.
+  files:
+  - src/bin/redact.rs
+  extra:
+  - date: 2026-04-11
+    type: note
+    note: "required by coursers-11 — crs discover will call mcpipe -> obfsck MCP to generate project-local filters"
 log:
 - date: 2026-04-07
   summary: Standardized CI — ci.yml, nightly.yml, deny.toml, git hooks. Fixed license

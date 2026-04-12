@@ -74,7 +74,7 @@ path = "src/bin/api.rs"
 required-features = ["analyzer"]
 
 [[bin]]
-name = "mcp"
+name = "obfsck-mcp"
 path = "src/bin/mcp.rs"
 required-features = ["analyzer"]
 

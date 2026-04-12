@@ -146,9 +146,12 @@ log:
   summary: Implemented obfsck-11 — MCP server mode. Added src/mcp/ (Auditor/FilterSuggester
     ports, ObfsckAuditor/PatternSuggester adapters, JSON-RPC dispatch), obfsck-mcp binary
     (stdio line loop), 14 tests. Renamed binary mcp -> obfsck-mcp for PATH discovery.
+    Added session learnings to CLAUDE.md.
   commits:
   - da19143
   - 59cf099
+  - 9349b9b
+  - 5661dbc
 - date: 2026-04-07
   summary: Standardized CI — ci.yml, nightly.yml, deny.toml, git hooks. Fixed license
     field, updated rustls-webpki + quinn-proto, machete ignore for feature-gated deps.

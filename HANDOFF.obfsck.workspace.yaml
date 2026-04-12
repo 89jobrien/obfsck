@@ -3,6 +3,7 @@ id: obfsck
 updated: 2026-04-11
 items:
 - id: obfsck-7
+  doob_uuid: 84883c25-8fcf-4ff1-b0b2-346c925066a7
   name: path-traversal-api
   priority: P0
   status: open
@@ -15,6 +16,7 @@ items:
   - src/api/
   extra: []
 - id: obfsck-8
+  doob_uuid: 6756ef2a-744b-4d0c-8234-2fbe415e604d
   name: yaml-parser-silent-drop
   priority: P1
   status: open
@@ -27,6 +29,7 @@ items:
   - build.rs
   extra: []
 - id: obfsck-9
+  doob_uuid: d7ca5656-2e42-4446-b557-3061f030cffc
   name: allowlist-bypass
   priority: P1
   status: open
@@ -38,6 +41,7 @@ items:
   - src/lib.rs
   extra: []
 - id: obfsck-10
+  doob_uuid: e6d4cd9b-997b-46fb-96af-f734fcd22421
   name: ci-standardize
   priority: P2
   status: done
@@ -122,11 +126,10 @@ items:
   extra: []
   completed: 2026-04-04
 - id: obfsck-11
+  doob_uuid: 5f9a2a44-8d98-498d-859c-314dcd2fca6a
   name: mcp-server-mode
   priority: P2
   status: done
-  completed: 2026-04-11
-  unblocks: [coursers-11]
   title: Add MCP server mode — expose audit and generate-filters tools
   description: |
     coursers-11 depends on this. Expose two MCP tools via a server subcommand:
@@ -140,31 +143,25 @@ items:
   extra:
   - date: 2026-04-11
     type: note
-    note: "required by coursers-11 — crs discover will call mcpipe -> obfsck MCP to generate project-local filters"
+    note: required by coursers-11 — crs discover will call mcpipe -> obfsck MCP to generate project-local filters
+  completed: 2026-04-11
 log:
 - date: 2026-04-11
-  summary: Implemented obfsck-11 — MCP server mode. Added src/mcp/ (Auditor/FilterSuggester
-    ports, ObfsckAuditor/PatternSuggester adapters, JSON-RPC dispatch), obfsck-mcp binary
-    (stdio line loop), 14 tests. Renamed binary mcp -> obfsck-mcp for PATH discovery.
-    Added session learnings to CLAUDE.md.
+  summary: Implemented obfsck-11 — MCP server mode. Added src/mcp/ (Auditor/FilterSuggester ports, ObfsckAuditor/PatternSuggester adapters, JSON-RPC dispatch), obfsck-mcp binary (stdio line loop), 14 tests. Renamed binary mcp -> obfsck-mcp for PATH discovery. Added session learnings to CLAUDE.md.
   commits:
   - da19143
   - 59cf099
   - 9349b9b
   - 5661dbc
 - date: 2026-04-07
-  summary: Standardized CI — ci.yml, nightly.yml, deny.toml, git hooks. Fixed license
-    field, updated rustls-webpki + quinn-proto, machete ignore for feature-gated deps.
-    All CI jobs green.
+  summary: Standardized CI — ci.yml, nightly.yml, deny.toml, git hooks. Fixed license field, updated rustls-webpki + quinn-proto, machete ignore for feature-gated deps. All CI jobs green.
   commits:
   - 2dfe210
   - b2f21e5
   - 2ca5ff7
   - f7f0c74
 - date: 2026-04-06
-  summary: "devkit council sweep — 9 issues filed. Critical: path traversal in API (P0),\
-    \ silent YAML pattern loss in build.rs (P1), allowlist bypass in high-entropy pass (P1).\
-    \ Added obfsck-7/8/9 to HANDOFF."
+  summary: 'devkit council sweep — 9 issues filed. Critical: path traversal in API (P0), silent YAML pattern loss in build.rs (P1), allowlist bypass in high-entropy pass (P1). Added obfsck-7/8/9 to HANDOFF.'
   commits: []
 - date: 2026-04-05
   summary: Closed obfsck-3 (file I/O tests already existed) and obfsck-4 (tightened secret_scanning.yml — removed 4 stale paths, added 4 fixture paths); all items done

@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "nu /Users/joe/dev/obfsck/scripts/preflight.nu"
+          }
+        ]
+      }
+    ]
+  }
+}

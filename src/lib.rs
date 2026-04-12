@@ -8,6 +8,8 @@ pub const ANALYZER_DEFAULT_FILTER: &str = "obfsck=info,warn";
 #[cfg(feature = "analyzer")]
 pub mod analyzer;
 #[cfg(feature = "analyzer")]
+pub mod mcp;
+#[cfg(feature = "analyzer")]
 pub mod api;
 #[cfg(feature = "analyzer")]
 pub mod clients;

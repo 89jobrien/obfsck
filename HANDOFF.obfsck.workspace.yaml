@@ -145,6 +145,72 @@ items:
     type: note
     note: required by coursers-11 — crs discover will call mcpipe -> obfsck MCP to generate project-local filters
   completed: 2026-04-11
+- id: obfsck-12
+  name: extract-json-overlapping
+  priority: P1
+  status: open
+  title: '[bug] extract_json_object() can return overlapping/nested JSON'
+  description: "GH #9: When parsing JSON objects from text, overlapping matches are returned. Use a single-pass state machine or maintain a stack of unmatched braces."
+  files: []
+  extra:
+  - type: github-issue
+    number: 9
+    url: "https://github.com/89jobrien/obfsck/issues/9"
+- id: obfsck-13
+  name: obfuscate-paths-tests
+  priority: P2
+  status: open
+  title: '[enhancement] No tests for obfuscate_paths() behavior'
+  description: "GH #8: Add unit tests covering path component redaction, relative vs absolute paths, symlink targets, and Windows-style paths."
+  files: []
+  extra:
+  - type: github-issue
+    number: 8
+    url: "https://github.com/89jobrien/obfsck/issues/8"
+- id: obfsck-14
+  name: cache-writes-on-hit
+  priority: P1
+  status: open
+  title: '[bug] get_cached_analysis() writes to disk on every cache hit — TOCTOU'
+  description: "GH #6: Cache lookup calls write_to_disk even on hits. Causes TOCTOU race if multiple processes check same alert simultaneously. Skip write on cache hit."
+  files: []
+  extra:
+  - type: github-issue
+    number: 6
+    url: "https://github.com/89jobrien/obfsck/issues/6"
+- id: obfsck-15
+  name: duplicate-analyzer-construction
+  priority: P2
+  status: open
+  title: '[enhancement] store_analysis_with_config() creates second AlertAnalyzer per store'
+  description: "GH #5: Each call to store_analysis_with_config creates its own AlertAnalyzer, wasting initialization. Cache or pass as parameter."
+  files: []
+  extra:
+  - type: github-issue
+    number: 5
+    url: "https://github.com/89jobrien/obfsck/issues/5"
+- id: obfsck-16
+  name: obfuscate-paths-map-never-updated
+  priority: P1
+  status: open
+  title: '[bug] obfuscate_paths() does not update ObfuscationMap.paths — always empty'
+  description: "GH #4: The obfuscate_paths function populates internal redaction but doesn't store results in the ObfuscationMap. Callers see an empty map."
+  files: []
+  extra:
+  - type: github-issue
+    number: 4
+    url: "https://github.com/89jobrien/obfsck/issues/4"
+- id: obfsck-17
+  name: ipv6-private-range-check
+  priority: P1
+  status: open
+  title: '[bug] IPv6 addresses always tagged IP-EXTERNAL regardless of private ranges'
+  description: "GH #2: IPv6 detection doesn't check for private ranges (fc00::/7, fe80::/10). All IPv6 addresses marked as external even if private."
+  files: []
+  extra:
+  - type: github-issue
+    number: 2
+    url: "https://github.com/89jobrien/obfsck/issues/2"
 log:
 - date: 2026-04-11
   summary: Implemented obfsck-11 — MCP server mode. Added src/mcp/ (Auditor/FilterSuggester ports, ObfsckAuditor/PatternSuggester adapters, JSON-RPC dispatch), obfsck-mcp binary (stdio line loop), 14 tests. Renamed binary mcp -> obfsck-mcp for PATH discovery. Added session learnings to CLAUDE.md.

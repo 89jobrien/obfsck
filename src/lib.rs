@@ -18,6 +18,9 @@ pub mod logging;
 #[cfg(feature = "analyzer")]
 pub mod schema;
 
+pub mod adapters;
+pub mod ports;
+
 mod helpers;
 use helpers::{is_sensitive_path, obfuscate_path_value, shannon_entropy};
 
@@ -604,37 +607,21 @@ pub fn secret_pattern_errors() -> &'static [SecretPatternError] {
 }
 
 fn ipv4_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b")
-            .expect("ipv4 regex")
-    })
+    lazy_regex::regex!(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b")
 }
 
 fn ipv6_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b").expect("ipv6 regex")
-    })
+    lazy_regex::regex!(r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b")
 }
 
 fn email_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b").expect("email regex")
-    })
+    lazy_regex::regex!(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 }
 
 fn container_combined_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        // UUID alternative first — dashes prevent overlap with plain hex segments.
-        // Both alternatives are matched in a single pass over the text.
-        Regex::new(
-            r"\b(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{12,64})\b",
-        )
-        .expect("container combined regex")
-    })
+    // UUID alternative first — dashes prevent overlap with plain hex segments.
+    // Both alternatives are matched in a single pass over the text.
+    lazy_regex::regex!(r"\b(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{12,64})\b")
 }
 
 #[cfg(feature = "legacy-user-scan")]
@@ -642,49 +629,30 @@ fn user_res() -> &'static [Regex] {
     static RES: OnceLock<Vec<Regex>> = OnceLock::new();
     RES.get_or_init(|| {
         [
-            r"(?i)(user=)([A-Za-z0-9._-]+)",
-            r"(?i)(uid=)(\d+)",
-            r"(?i)(User )([A-Za-z0-9._-]+)",
-            r"(?i)(by user )([A-Za-z0-9._-]+)",
+            lazy_regex::regex!(r"(?i)(user=)([A-Za-z0-9._-]+)"),
+            lazy_regex::regex!(r"(?i)(uid=)(\d+)"),
+            lazy_regex::regex!(r"(?i)(User )([A-Za-z0-9._-]+)"),
+            lazy_regex::regex!(r"(?i)(by user )([A-Za-z0-9._-]+)"),
         ]
-        .into_iter()
-        .map(|p| Regex::new(p).expect("user regex"))
-        .collect()
+        .to_vec()
     })
 }
 
 #[cfg(not(feature = "legacy-user-scan"))]
 fn user_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(
-            r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)([A-Za-z0-9._-]*[A-Za-z0-9])",
-        )
-        .expect("user regex")
-    })
+    lazy_regex::regex!(r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)([A-Za-z0-9._-]*[A-Za-z0-9])")
 }
 
 fn path_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(
-            r#"(?i)(?:[a-z]:\\[^\s]+|[a-z]:/[^\s]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[^\\\s]+)*|/[\w./-]+)"#,
-        )
-        .expect("path regex")
-    })
+    lazy_regex::regex!(r#"(?i)(?:[a-z]:\\[^\s]+|[a-z]:/[^\s]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[^\\\s]+)*|/[\w./-]+)"#)
 }
 
 fn hostname_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"\b[a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)+\b")
-            .expect("hostname regex")
-    })
+    lazy_regex::regex!(r"\b[a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)+\b")
 }
 
 fn high_entropy_candidate_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"\b[A-Za-z0-9+/=_-]{20,}\b").expect("entropy candidate regex"))
+    lazy_regex::regex!(r"\b[A-Za-z0-9+/=_-]{20,}\b")
 }
 
 pub mod yaml_config {

@@ -437,6 +437,10 @@ impl Obfuscator {
             .replace_all(text, |caps: &regex::Captures<'_>| {
                 let s = &caps[0];
                 if s.len() >= 20 && shannon_entropy(s) > 4.5 {
+                    // Check allowlist before redacting
+                    if self.allowlist.contains(s) {
+                        return s.to_string();
+                    }
                     let mut truncated = s.chars().take(10).collect::<String>();
                     truncated.push_str("...");
                     self.map.secrets.insert(truncated);

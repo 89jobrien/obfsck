@@ -1,4 +1,4 @@
-use obfsck::{ObfuscationLevel, obfuscate_alert, obfuscate_text, secret_pattern_errors};
+use obfsck::{ObfuscationLevel, obfuscate_alert, obfuscate_text, secret_pattern_errors, Obfuscator};
 use std::collections::HashMap;
 
 #[test]
@@ -244,5 +244,32 @@ fn user_re_does_not_capture_trailing_dot() {
     assert!(
         !map.users.contains_key("joe."),
         "trailing dot was incorrectly absorbed into username: {map:?}"
+    );
+}
+
+#[test]
+fn high_entropy_allowlist_bypass() {
+    // Bug obfsck-9: obfuscate_high_entropy() ignores the runtime allowlist
+    // A high-entropy string in the allowlist should pass through unredacted
+    let high_entropy_token = "aZ9xQ2mN7pL4vT1cR8yK3dF6hJ0wS5uB";
+    // Use 'value=' prefix (not 'token=') to avoid password field pattern
+    let input = format!("value={high_entropy_token}");
+    // The regex matches the entire "value=..." as one token because '=' is in the
+    // character class [A-Za-z0-9+/=_-]
+    let matched_by_regex = format!("value={high_entropy_token}");
+
+    let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid)
+        .with_allowlist(vec![matched_by_regex.clone()]);
+    let out = obfuscator.obfuscate(&input);
+
+    // Without fix: will contain [REDACTED-HIGH-ENTROPY] even though token is allowlisted
+    // With fix: should pass through unredacted
+    assert!(
+        out.contains(&matched_by_regex),
+        "allowlisted high-entropy token was redacted despite allowlist: {out}"
+    );
+    assert!(
+        !out.contains("[REDACTED-HIGH-ENTROPY]"),
+        "allowlisted token should not be redacted: {out}"
     );
 }

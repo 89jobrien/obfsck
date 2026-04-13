@@ -5,6 +5,10 @@
 default:
     @just --list
 
+# Launch zellij workspace layout
+workspace:
+    zellij --layout obfsck
+
 # ---------------------------------------------------------------------------
 # Build & check
 # ---------------------------------------------------------------------------

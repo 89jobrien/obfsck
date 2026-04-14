@@ -1,5 +1,15 @@
 # obfsck
 
+Redacts secrets and PII from log lines and structured text.
+
+## Install
+
+```bash
+cargo install --path .
+```
+
+## What it does
+
 ## What it does
 
 - Replaces secrets with labeled tokens (for example `[REDACTED-AWS-KEY]`)
@@ -139,7 +149,7 @@ groups:
     min_level: standard   # omit to apply at all levels
     patterns:
       - name: my_token
-        pattern: '\bTOK_[A-Za-z0-9]{32}\b'
+        pattern: 'TOK_[A-Za-z0-9]{32}'
         label: MY-TOKEN
         paranoid_only: false  # true = only fires at paranoid
 ```

@@ -100,3 +100,29 @@ Install to PATH for `mcpipe --scan` auto-discovery (`PathBinaryScanner` in mcpip
   `/Users/joe/.secrets`.
 
 **sccache gotcha:** `cargo build` may report `(0 crates compiled)` even when it recompiled via cache hit — don't treat this as a no-op. Check `strings target/release/redact | grep <pattern>` to verify embedded content.
+
+## Pattern Development Workflow
+
+```bash
+just audit-levels           # smoke-test all three levels against mixed_sample.txt
+just probe-pii-minimal      # assert PII is NOT redacted at minimal
+just probe-pii-standard     # assert PII IS redacted at standard
+just probe-paranoid         # assert paranoid_only patterns fire only at paranoid
+```
+
+**`just` preferred over `mise run`** — has additional recipes (`audit-levels`, `probe-*`,
+`test-golden`, `update-goldens`, `redact-stdin`). Run `just --list` to see all.
+
+## Pattern Regex Gotchas
+
+- `\w` does NOT match base64 `+` or `/` — use `[A-Za-z0-9+/_-]` for base64-encoded tokens
+  (e.g. HashiCorp Vault `hvs.`/`hvb.` tokens).
+- Context-anchored patterns (keyword + generic N-char payload) carry high FP risk — prefer
+  prefix-anchored patterns. Mark context-only patterns `paranoid_only: true` or put them in
+  the disabled `code_context` group.
+
+## Scanning Claude Session Files
+
+Session `.jsonl` files live at `~/.claude/projects/-Users-joe-dev-obfsck/*.jsonl`.
+Scan them for leaked secrets: `redact --level paranoid --audit <file>`.
+`[REDACTED-*]` placeholders in output mean the pre-commit hook already caught them — expected.

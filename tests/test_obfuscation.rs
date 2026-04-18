@@ -340,3 +340,43 @@ fn ipv6_public_address_tagged_ip_external() {
         "IPv6 public address must not be IP-INTERNAL, got: {out}"
     );
 }
+
+// Issue #4: obfuscate_paths() must record path→token mappings in ObfuscationMap.paths.
+#[test]
+fn obfuscate_paths_populates_map() {
+    // /etc/passwd is a well-known sensitive path — it won't be redacted by
+    // is_sensitive_path(). Use a non-sensitive path that path_re() will match.
+    let input = "opened /home/alice/secret.conf for reading";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    // The path should have been rewritten.
+    assert!(
+        !out.contains("/home/alice/secret.conf"),
+        "path should be obfuscated in output, got: {out}"
+    );
+    // And recorded in the mapping.
+    assert!(
+        !map.paths.is_empty(),
+        "ObfuscationMap.paths should be populated after path obfuscation, got empty map.\nout={out}"
+    );
+}
+
+#[test]
+fn obfuscate_paths_same_path_gets_same_token() {
+    // The same path appearing twice must receive the same token (idempotent mapping).
+    let input = "read /tmp/data.txt and write /tmp/data.txt";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert_eq!(
+        map.paths.len(),
+        1,
+        "one unique path should produce exactly one map entry, got: {map:?}\nout={out}"
+    );
+    // The two occurrences in the output should be identical tokens.
+    let token = map.paths.values().next().unwrap();
+    let count = out.matches(token.as_str()).count();
+    assert_eq!(
+        count, 2,
+        "the same token should appear twice in output, got: {out}"
+    );
+}

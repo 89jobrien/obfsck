@@ -207,6 +207,30 @@ impl Obfuscator {
         s.into_owned()
     }
 
+    fn is_private_ipv6(ip: &str) -> bool {
+        // Parse the first 16-bit group of a full-form IPv6 address.
+        // The regex (ipv6_re) only matches the full 8-group form, so we can
+        // always split on ':' and take the first group.
+        let first_group = ip.split(':').next().unwrap_or("");
+        let Ok(g0) = u16::from_str_radix(first_group, 16) else {
+            return false;
+        };
+        // ::1 loopback — all groups zero except the last.
+        // Detect by string equality since the regex matches full-form only.
+        if ip == "0000:0000:0000:0000:0000:0000:0000:0001" {
+            return true;
+        }
+        // fc00::/7 — Unique Local Addresses (ULA): top 7 bits == 1111 110x
+        if g0 & 0xFE00 == 0xFC00 {
+            return true;
+        }
+        // fe80::/10 — Link-Local: top 10 bits == 1111 1110 10xx xxxx
+        if g0 & 0xFFC0 == 0xFE80 {
+            return true;
+        }
+        false
+    }
+
     fn is_private_ipv4(ip: &str) -> bool {
         let mut parts = ip.split('.');
         let a = match parts.next().and_then(|p| p.parse::<u32>().ok()) {
@@ -273,7 +297,12 @@ impl Obfuscator {
                     if self.allowlist.contains(ip) {
                         return ip.to_string();
                     }
-                    get_or_create_token(counters, TokenCategory::IpExternal, ip, ips)
+                    let cat = if Self::is_private_ipv6(ip) {
+                        TokenCategory::IpInternal
+                    } else {
+                        TokenCategory::IpExternal
+                    };
+                    get_or_create_token(counters, cat, ip, ips)
                 })
                 .into_owned();
             s = Cow::Owned(replaced);

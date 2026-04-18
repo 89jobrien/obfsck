@@ -73,6 +73,11 @@ name = "api"
 path = "src/bin/api.rs"
 required-features = ["analyzer"]
 
+[[bin]]
+name = "obfsck-mcp"
+path = "src/bin/mcp.rs"
+required-features = ["analyzer"]
+
 [[example]]
 name = "inspect_schema"
 required-features = ["analyzer"]

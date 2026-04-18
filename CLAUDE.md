@@ -71,6 +71,27 @@ from it at compile time via `build.rs` — do not edit `src/secrets.rs` directly
 
 `~/.config/obfsck/secrets.yaml` silently overrides the bundled config entirely — if it exists and is non-empty, the bundled config is ignored. Delete it to restore bundled defaults.
 
+## Issue Tracking
+
+Issues are tracked in `HANDOFF.obfsck.workspace.yaml` (not GitHub). Issue IDs use the format
+`obfsck-N`. Check `blocked_by` / `unblocks` fields for dependency chains.
+
+## Pre-commit Hook
+
+The global git hook pipes the staged diff through `obfsck --level minimal`. Fake test tokens
+(e.g. `ghp_aaa...`) trigger it — add them to `~/.config/obfsck/allowlist` (one per line).
+
+## Pattern Sources — Audit Pass
+
+`SECRET_PATTERN_DEFS` (compiled from `config/secrets.yaml` via `build.rs`) is the authoritative
+pattern set. Do NOT also iterate YAML config groups in the same audit pass — that double-counts
+every hit.
+
+## MCP Binary
+
+The MCP server binary is `obfsck-mcp` (not `mcp`): `cargo build --bin obfsck-mcp`.
+Install to PATH for `mcpipe --scan` auto-discovery (`PathBinaryScanner` in mcpipe).
+
 ## devloop / Standup Notes
 
 - `devloop git analyze` requires an InsightProvider not yet wired in the CLI — returns error.

@@ -1,0 +1,5 @@
+#!/bin/sh
+# pre-push: full test suite — blocks broken tests before push
+set -e
+echo "pre-push: cargo nextest run"
+cargo nextest run

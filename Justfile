@@ -87,6 +87,11 @@ pre-commit: fmt-check lint
 # Pre-push gate: fmt-check + lint + test
 prepush: fmt-check lint test
 
+# Install versioned git hooks — run once after cloning
+hooks:
+    git config core.hooksPath .githooks
+    echo "hooks: git will now use .githooks/ (cargo check + nextest)"
+
 # Wire .git/hooks to call just — run once after cloning
 init:
     #!/usr/bin/env bash
@@ -155,6 +160,42 @@ audit-levels:
         tests/fixtures/inputs/mixed_sample.txt > /dev/null
     @echo "=== paranoid ===" && cargo run --bin redact -- --level paranoid --audit \
         tests/fixtures/inputs/mixed_sample.txt > /dev/null
+
+# ---------------------------------------------------------------------------
+# Diff scanning
+# ---------------------------------------------------------------------------
+
+# Scan staged changes for secrets. Runs obfsck redact + gitleaks (if available).
+# Exits non-zero if either tool finds a hit. Designed for pre-commit use.
+scan-diff:
+    #!/usr/bin/env sh
+    set -e
+    REDACT_BIN="redact"
+    if ! command -v "$REDACT_BIN" > /dev/null 2>&1; then
+        REDACT_BIN="cargo run --bin redact --"
+    fi
+    DIFF=$(git diff --staged)
+    if [ -z "$DIFF" ]; then
+        echo "scan-diff: no staged changes to scan"
+        exit 0
+    fi
+    echo "$DIFF" | $REDACT_BIN --level minimal
+    OBFSCK_EXIT=$?
+    if [ $OBFSCK_EXIT -ne 0 ]; then
+        echo "scan-diff: obfsck found secrets in staged diff — aborting" >&2
+        exit $OBFSCK_EXIT
+    fi
+    if command -v gitleaks > /dev/null 2>&1; then
+        gitleaks protect --staged
+        GITLEAKS_EXIT=$?
+        if [ $GITLEAKS_EXIT -ne 0 ]; then
+            echo "scan-diff: gitleaks found secrets in staged diff — aborting" >&2
+            exit $GITLEAKS_EXIT
+        fi
+    else
+        echo "scan-diff: gitleaks not found on PATH — skipping gitleaks check"
+    fi
+    echo "scan-diff: clean"
 
 # ---------------------------------------------------------------------------
 # Utility

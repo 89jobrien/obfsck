@@ -11,6 +11,7 @@ fn main() {
     let yaml = fs::read_to_string(&yaml_path).expect("build.rs: cannot read config/secrets.yaml");
 
     let patterns = parse_patterns(&yaml);
+    validate_patterns(&patterns);
     let code = emit_rust(&patterns);
 
     let out_dir = std::env::var("OUT_DIR").expect("OUT_DIR not set");
@@ -26,6 +27,40 @@ struct PatternEntry {
     paranoid_only: bool,
     /// Inherited from the group's min_level in the YAML (overrides paranoid_only when set).
     min_level: Option<String>,
+}
+
+/// Validate that all patterns have required fields (name, pattern, label).
+/// Panics loudly with a descriptive message instead of silently dropping patterns
+/// on indentation mismatches or other structural errors.
+fn validate_patterns(patterns: &[PatternEntry]) {
+    let mut errors = Vec::new();
+    for (idx, pat) in patterns.iter().enumerate() {
+        if pat.name.is_empty() {
+            errors.push(format!("Pattern {} has empty name", idx));
+        }
+        if pat.pattern.is_empty() {
+            errors.push(format!(
+                "Pattern '{}' (index {}) has empty pattern field \
+                 (possible indentation error in config/secrets.yaml)",
+                pat.name, idx
+            ));
+        }
+        if pat.label.is_empty() {
+            errors.push(format!(
+                "Pattern '{}' (index {}) has empty label field \
+                 (possible indentation error in config/secrets.yaml)",
+                pat.name, idx
+            ));
+        }
+    }
+    if !errors.is_empty() {
+        panic!(
+            "build.rs: config/secrets.yaml validation failed:\n{}\n\n\
+             Patterns must have 'pattern:' and 'label:' fields indented at \
+             the correct depth below their '- name:' line.",
+            errors.join("\n")
+        );
+    }
 }
 
 /// Minimal line-by-line parser for config/secrets.yaml.

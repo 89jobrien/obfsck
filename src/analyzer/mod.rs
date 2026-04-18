@@ -492,8 +492,91 @@ fn obfuscation_mapping_value(mapping: &crate::ObfuscationMapExport) -> Value {
     })
 }
 
+/// Extract the first complete, outermost JSON object from `raw`.
+///
+/// Uses a brace-depth state machine that tracks string literals so that
+/// braces inside quoted values are not counted. Returns the slice from
+/// the first `{` to its matching `}`, handling any nesting depth.
+///
+/// Returns `None` if no balanced `{…}` is found.
 fn extract_json_object(raw: &str) -> Option<&str> {
     let start = raw.find('{')?;
-    let end = raw.rfind('}')?;
-    (end > start).then_some(&raw[start..=end])
+    let mut depth: usize = 0;
+    let mut in_string = false;
+    let mut escape_next = false;
+
+    for (i, ch) in raw[start..].char_indices() {
+        if escape_next {
+            escape_next = false;
+            continue;
+        }
+        match ch {
+            '\\' if in_string => escape_next = true,
+            '"' => in_string = !in_string,
+            '{' if !in_string => depth += 1,
+            '}' if !in_string => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(&raw[start..start + i + 1]);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::extract_json_object;
+
+    // Issue #9: extract_json_object must use bracket-counting, not find/rfind.
+
+    #[test]
+    fn extracts_simple_object() {
+        assert_eq!(extract_json_object(r#"{"a":1}"#), Some(r#"{"a":1}"#));
+    }
+
+    #[test]
+    fn extracts_first_of_sibling_objects_not_merged() {
+        // find/rfind bug: would have returned `{"a":1}{"b":2}` — the span from
+        // first '{' to last '}', merging both sibling objects into one invalid string.
+        let input = r#"{"a":1}{"b":2}"#;
+        assert_eq!(
+            extract_json_object(input),
+            Some(r#"{"a":1}"#),
+            "should return only the first balanced object, not merge siblings"
+        );
+    }
+
+    #[test]
+    fn extracts_nested_object_correctly() {
+        let input = r#"{"outer":{"inner":42}}"#;
+        assert_eq!(extract_json_object(input), Some(r#"{"outer":{"inner":42}}"#));
+    }
+
+    #[test]
+    fn skips_leading_text() {
+        let input = r#"prefix {"key":"val"} suffix"#;
+        assert_eq!(extract_json_object(input), Some(r#"{"key":"val"}"#));
+    }
+
+    #[test]
+    fn ignores_braces_inside_strings() {
+        let input = r#"{"key":"val{not}brace"}"#;
+        assert_eq!(
+            extract_json_object(input),
+            Some(r#"{"key":"val{not}brace"}"#)
+        );
+    }
+
+    #[test]
+    fn returns_none_for_no_object() {
+        assert_eq!(extract_json_object("no braces here"), None);
+    }
+
+    #[test]
+    fn returns_none_for_unbalanced() {
+        assert_eq!(extract_json_object(r#"{"unclosed"#), None);
+    }
 }

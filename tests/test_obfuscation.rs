@@ -1,4 +1,4 @@
-use obfsck::{ObfuscationLevel, obfuscate_alert, obfuscate_text, secret_pattern_errors};
+use obfsck::{ObfuscationLevel, Obfuscator, obfuscate_alert, obfuscate_text, secret_pattern_errors};
 use std::collections::HashMap;
 
 #[test]
@@ -244,5 +244,45 @@ fn user_re_does_not_capture_trailing_dot() {
     assert!(
         !map.users.contains_key("joe."),
         "trailing dot was incorrectly absorbed into username: {map:?}"
+    );
+}
+
+// Issue #7: obfuscate_high_entropy() must respect the allowlist.
+#[test]
+fn high_entropy_allowlisted_value_is_not_redacted() {
+    // A 33-char mixed-case alphanumeric string has Shannon entropy well above 4.5
+    // and would normally be redacted by obfuscate_high_entropy(). Present it as a
+    // standalone word (space-separated) so the regex captures exactly the token,
+    // not a longer prefix like "token=<value>".
+    let high_entropy = "aB3xK9mQ2wR7tY1nP4sL6vC0dF8jH5uE";
+
+    let mut ob = Obfuscator::new(ObfuscationLevel::Paranoid)
+        .with_allowlist(vec![high_entropy.to_string()]);
+
+    let input = format!("found {high_entropy} in log");
+    let out = ob.obfuscate(&input);
+
+    assert!(
+        !out.contains("[REDACTED-HIGH-ENTROPY]"),
+        "allowlisted high-entropy value should not be redacted, got: {out}"
+    );
+    assert!(
+        out.contains(high_entropy),
+        "allowlisted value should pass through unchanged, got: {out}"
+    );
+}
+
+#[test]
+fn high_entropy_non_allowlisted_value_is_redacted() {
+    // Confirm that a non-allowlisted high-entropy value IS still redacted.
+    let high_entropy = "aB3xK9mQ2wR7tY1nP4sL6vC0dF8jH5uE";
+
+    let mut ob = Obfuscator::new(ObfuscationLevel::Paranoid);
+    let input = format!("found {high_entropy} in log");
+    let out = ob.obfuscate(&input);
+
+    assert!(
+        out.contains("[REDACTED-HIGH-ENTROPY]"),
+        "non-allowlisted high-entropy value should be redacted, got: {out}"
     );
 }

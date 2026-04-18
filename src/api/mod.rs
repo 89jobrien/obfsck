@@ -528,9 +528,10 @@ fn get_cached_analysis(state: &AppState, cache_key: &str) -> Result<Option<Cache
         }
     }
 
-    entry.dedup_count = entry.dedup_count.saturating_add(1);
-    entry.last_seen = Utc::now().to_rfc3339();
-    fs::write(&path, serde_json::to_string_pretty(&entry)?)?;
+    // Do not write back on cache hits — avoids TOCTOU race when multiple
+    // processes check the same alert simultaneously.  dedup_count and
+    // last_seen are informational metadata; their absence on a read-only
+    // hit does not affect cache correctness.
     Ok(Some(entry))
 }
 
@@ -727,6 +728,7 @@ fn re_ip_port() -> &'static Regex {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
 
     #[test]
     fn cache_key_rejects_path_traversal() {
@@ -761,5 +763,65 @@ mod tests {
     #[test]
     fn cache_key_accepts_alphanumeric_with_dash_underscore() {
         assert!(CacheKey::new("abc123-def_456").is_ok());
+    }
+
+    fn make_state_with_tempdir(dir: &std::path::Path) -> AppState {
+        AppState {
+            config: crate::analyzer::load_config(None).unwrap(),
+            cache_dir: dir.to_path_buf(),
+            cache_ttl_secs: 86_400,
+            http_client: reqwest::Client::new(),
+        }
+    }
+
+    fn write_cache_entry(dir: &std::path::Path, key: &str, dedup_count: u64) {
+        let entry = CacheEntry {
+            cache_key: key.to_string(),
+            timestamp: Utc::now().to_rfc3339(),
+            original_output: "test".to_string(),
+            rule: "TestRule".to_string(),
+            priority: "High".to_string(),
+            hostname: "host1".to_string(),
+            analysis: serde_json::json!({}),
+            obfuscated_output: "test".to_string(),
+            obfuscation_mapping: serde_json::json!({}),
+            dedup_count,
+            last_seen: Utc::now().to_rfc3339(),
+        };
+        let path = dir.join(format!("{key}.json"));
+        fs::write(path, serde_json::to_string_pretty(&entry).unwrap()).unwrap();
+    }
+
+    // Issue #6: get_cached_analysis() must NOT write back to disk on a cache hit.
+    #[test]
+    fn cache_hit_does_not_rewrite_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let state = make_state_with_tempdir(tmp.path());
+        let key = "abc123dedup";
+
+        write_cache_entry(tmp.path(), key, 5);
+
+        let path = tmp.path().join(format!("{key}.json"));
+        let mtime_before = fs::metadata(&path).unwrap().modified().unwrap();
+
+        // Small sleep to ensure mtime would differ if a write occurred.
+        std::thread::sleep(Duration::from_millis(10));
+
+        let result = get_cached_analysis(&state, key).unwrap();
+        assert!(result.is_some(), "cache hit expected");
+
+        let mtime_after = fs::metadata(&path).unwrap().modified().unwrap();
+        assert_eq!(
+            mtime_before, mtime_after,
+            "cache file must not be rewritten on a read-only hit (TOCTOU fix)"
+        );
+
+        // dedup_count in the file must remain unchanged.
+        let text = fs::read_to_string(&path).unwrap();
+        let on_disk: CacheEntry = serde_json::from_str(&text).unwrap();
+        assert_eq!(
+            on_disk.dedup_count, 5,
+            "dedup_count on disk must not be incremented on a read-only cache hit"
+        );
     }
 }

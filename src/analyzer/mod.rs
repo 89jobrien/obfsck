@@ -492,8 +492,4 @@ fn obfuscation_mapping_value(mapping: &crate::ObfuscationMapExport) -> Value {
     })
 }
 
-fn extract_json_object(raw: &str) -> Option<&str> {
-    let start = raw.find('{')?;
-    let end = raw.rfind('}')?;
-    (end > start).then_some(&raw[start..=end])
-}
+use crate::json_utils::extract_json_object;

@@ -518,7 +518,7 @@ fn get_cached_analysis(state: &AppState, cache_key: &str) -> Result<Option<Cache
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
         Err(e) => return Err(e.into()),
     };
-    let mut entry: CacheEntry = serde_json::from_str(&text)?;
+    let entry: CacheEntry = serde_json::from_str(&text)?;
 
     if let Ok(ts) = DateTime::parse_from_rfc3339(&entry.timestamp) {
         let age = Utc::now()
@@ -529,9 +529,10 @@ fn get_cached_analysis(state: &AppState, cache_key: &str) -> Result<Option<Cache
         }
     }
 
-    entry.dedup_count = entry.dedup_count.saturating_add(1);
-    entry.last_seen = Utc::now().to_rfc3339();
-    fs::write(&path, serde_json::to_string_pretty(&entry)?)?;
+    // Do not write back on cache hits — avoids TOCTOU race when multiple
+    // processes check the same alert simultaneously.  dedup_count and
+    // last_seen are informational metadata; their absence on a read-only
+    // hit does not affect cache correctness.
     Ok(Some(entry))
 }
 

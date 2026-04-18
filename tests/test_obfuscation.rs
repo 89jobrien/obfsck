@@ -273,3 +273,62 @@ fn high_entropy_allowlist_bypass() {
         "allowlisted token should not be redacted: {out}"
     );
 }
+
+// obfsck-17: IPv6 addresses should be tagged internal for private ranges
+#[test]
+fn ipv6_ula_tagged_internal() {
+    let input = "connected from fd12:3456:789a:0001:0000:0000:0000:0001";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
+    assert!(
+        out.contains("[IP-INTERNAL-"),
+        "ULA IPv6 (fc00::/7) should be tagged internal, got: {out}"
+    );
+    assert!(
+        !out.contains("[IP-EXTERNAL-"),
+        "ULA IPv6 should not be tagged external, got: {out}"
+    );
+    let tagged_internal = map
+        .ips
+        .values()
+        .any(|v| v.contains("IP-INTERNAL"));
+    assert!(tagged_internal, "map should contain an IP-INTERNAL entry, got: {map:?}");
+}
+
+#[test]
+fn ipv6_link_local_tagged_internal() {
+    let input = "host fe80:0000:0000:0000:0202:b3ff:fe1e:8329";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
+    assert!(
+        out.contains("[IP-INTERNAL-"),
+        "link-local IPv6 (fe80::/10) should be tagged internal, got: {out}"
+    );
+    let _ = map;
+}
+
+#[test]
+fn ipv6_public_tagged_external() {
+    let input = "server 2001:0db8:85a3:0000:0000:8a2e:0370:7334";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Standard);
+    assert!(
+        out.contains("[IP-EXTERNAL-"),
+        "public IPv6 should be tagged external, got: {out}"
+    );
+}
+
+// obfsck-16: obfuscate_paths() must populate ObfuscationMap.paths
+#[test]
+fn obfuscate_paths_populates_map() {
+    let input = "error reading /home/alice/projects/myapp/config.toml";
+    let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid);
+    let out = obfuscator.obfuscate(input);
+    let map = obfuscator.get_mapping();
+
+    assert!(
+        !map.paths.is_empty(),
+        "ObfuscationMap.paths should be populated after path redaction, got empty map.\nout={out}"
+    );
+    assert!(
+        map.paths.contains_key("/home/alice/projects/myapp/config.toml"),
+        "original path should be a key in map.paths, got: {map:?}"
+    );
+}

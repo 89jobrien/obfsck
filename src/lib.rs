@@ -23,6 +23,7 @@ pub mod ports;
 
 mod helpers;
 use helpers::{is_sensitive_path, obfuscate_path_value, shannon_entropy};
+pub(crate) mod json_utils;
 
 use regex::{Regex, RegexBuilder};
 use std::borrow::Cow;
@@ -210,6 +211,28 @@ impl Obfuscator {
         s.into_owned()
     }
 
+    fn is_private_ipv6(ip: &str) -> bool {
+        // Parse the first group of a full-form IPv6 address (8 colon-separated
+        // groups of hex digits). Handles only the full form produced by ipv6_re().
+        let first_group = ip.split(':').next().unwrap_or("");
+        let Ok(g0) = u16::from_str_radix(first_group, 16) else {
+            return false;
+        };
+        // ::1 loopback — all groups zero except last; detect by checking the whole string
+        if ip == "0000:0000:0000:0000:0000:0000:0000:0001" || ip == "::1" {
+            return true;
+        }
+        // fc00::/7 — Unique Local Addresses (ULA): first 7 bits == 1111110
+        if g0 & 0xFE00 == 0xFC00 {
+            return true;
+        }
+        // fe80::/10 — Link-Local: first 10 bits == 1111111010
+        if g0 & 0xFFC0 == 0xFE80 {
+            return true;
+        }
+        false
+    }
+
     fn is_private_ipv4(ip: &str) -> bool {
         let mut parts = ip.split('.');
         let a = match parts.next().and_then(|p| p.parse::<u32>().ok()) {
@@ -276,7 +299,12 @@ impl Obfuscator {
                     if self.allowlist.contains(ip) {
                         return ip.to_string();
                     }
-                    get_or_create_token(counters, TokenCategory::IpExternal, ip, ips)
+                    let cat = if Self::is_private_ipv6(ip) {
+                        TokenCategory::IpInternal
+                    } else {
+                        TokenCategory::IpExternal
+                    };
+                    get_or_create_token(counters, cat, ip, ips)
                 })
                 .into_owned();
             s = Cow::Owned(replaced);
@@ -397,6 +425,7 @@ impl Obfuscator {
             return text.to_string();
         }
 
+        let paths = &mut self.map.paths;
         path_re()
             .replace_all(text, |caps: &regex::Captures<'_>| {
                 let path = &caps[0];
@@ -404,7 +433,10 @@ impl Obfuscator {
                     return path.to_string();
                 }
 
-                obfuscate_path_value(path)
+                paths
+                    .entry(path.to_string())
+                    .or_insert_with(|| obfuscate_path_value(path))
+                    .clone()
             })
             .into_owned()
     }

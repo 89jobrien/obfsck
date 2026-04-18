@@ -286,3 +286,57 @@ fn high_entropy_non_allowlisted_value_is_redacted() {
         "non-allowlisted high-entropy value should be redacted, got: {out}"
     );
 }
+
+// Issue #2: IPv6 ULA addresses must be tagged IP-INTERNAL, not IP-EXTERNAL.
+#[test]
+fn ipv6_ula_address_tagged_ip_internal() {
+    // fc00::/7 Unique Local Address — private range per RFC 4193.
+    let input = "connect fd00:0000:0000:0000:0000:0000:0000:0001 failed";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
+
+    assert!(
+        out.contains("[IP-INTERNAL-"),
+        "IPv6 ULA address should be IP-INTERNAL, got: {out}"
+    );
+    assert!(
+        !out.contains("[IP-EXTERNAL-"),
+        "IPv6 ULA address must not be IP-EXTERNAL, got: {out}"
+    );
+    assert!(
+        map.ips
+            .contains_key("fd00:0000:0000:0000:0000:0000:0000:0001"),
+        "IPv6 address should be recorded in ips map"
+    );
+}
+
+#[test]
+fn ipv6_link_local_address_tagged_ip_internal() {
+    // fe80::/10 link-local — private per RFC 4291.
+    let input = "peer fe80:0000:0000:0000:0000:0000:0000:0001 connected";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Standard);
+
+    assert!(
+        out.contains("[IP-INTERNAL-"),
+        "IPv6 link-local address should be IP-INTERNAL, got: {out}"
+    );
+    assert!(
+        !out.contains("[IP-EXTERNAL-"),
+        "IPv6 link-local address must not be IP-EXTERNAL, got: {out}"
+    );
+}
+
+#[test]
+fn ipv6_public_address_tagged_ip_external() {
+    // 2001:db8::/32 is the documentation range — treated as public/external.
+    let input = "peer 2001:0db8:0000:0000:0000:0000:0000:0001 connected";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Standard);
+
+    assert!(
+        out.contains("[IP-EXTERNAL-"),
+        "IPv6 public address should be IP-EXTERNAL, got: {out}"
+    );
+    assert!(
+        !out.contains("[IP-INTERNAL-"),
+        "IPv6 public address must not be IP-INTERNAL, got: {out}"
+    );
+}

@@ -79,6 +79,11 @@ name = "obfsck-mcp"
 path = "src/bin/mcp.rs"
 required-features = ["analyzer"]
 
+[[bin]]
+name = "scan"
+path = "src/bin/scan.rs"
+required-features = ["analyzer"]
+
 [[example]]
 name = "inspect_schema"
 required-features = ["analyzer"]

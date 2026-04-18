@@ -26,4 +26,24 @@ pub struct LogEntry {
     pub message: String,
 }
 
+/// A single secret finding from a scanner.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Finding {
+    /// Human-readable description of what was found (e.g. pattern label or rule name).
+    pub description: String,
+    /// The line or context where the secret was found, if available.
+    pub location: Option<String>,
+    /// Source adapter that produced this finding (e.g. "obfsck", "gitleaks").
+    pub source: String,
+}
+
+/// Port: abstraction for scanning diff text for secrets.
+///
+/// Adapters implement this for the native Obfuscator scanner, gitleaks, etc.
+/// Receives a full unified diff (e.g. from `git diff --staged`) as a string.
+pub trait SecretScanner: Send + Sync {
+    /// Scan the provided diff text and return all findings.
+    fn scan_diff(&self, diff: &str) -> Result<Vec<Finding>>;
+}
+
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;

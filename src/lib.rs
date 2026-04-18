@@ -430,13 +430,18 @@ impl Obfuscator {
             return text.to_string();
         }
 
+        let allowlist = &self.allowlist;
+        let secrets = &mut self.map.secrets;
         high_entropy_candidate_re()
             .replace_all(text, |caps: &regex::Captures<'_>| {
                 let s = &caps[0];
                 if s.len() >= 20 && shannon_entropy(s) > 4.5 {
+                    if allowlist.contains(s) {
+                        return s.to_string();
+                    }
                     let mut truncated = s.chars().take(10).collect::<String>();
                     truncated.push_str("...");
-                    self.map.secrets.insert(truncated);
+                    secrets.insert(truncated);
                     "[REDACTED-HIGH-ENTROPY]".to_string()
                 } else {
                     s.to_string()

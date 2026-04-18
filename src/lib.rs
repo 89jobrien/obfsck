@@ -423,6 +423,7 @@ impl Obfuscator {
             return text.to_string();
         }
 
+        let paths = &mut self.map.paths;
         path_re()
             .replace_all(text, |caps: &regex::Captures<'_>| {
                 let path = &caps[0];
@@ -430,7 +431,10 @@ impl Obfuscator {
                     return path.to_string();
                 }
 
-                obfuscate_path_value(path)
+                paths
+                    .entry(path.to_string())
+                    .or_insert_with(|| obfuscate_path_value(path))
+                    .clone()
             })
             .into_owned()
     }

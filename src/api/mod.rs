@@ -36,6 +36,8 @@ pub enum ApiError {
     Http(#[from] reqwest::Error),
     #[error("join error: {0}")]
     Join(String),
+    #[error("invalid cache key: {0}")]
+    InvalidCacheKey(String),
 }
 
 #[derive(Clone)]
@@ -481,12 +483,35 @@ fn build_alert(output: String, rule: String, priority: String, hostname: String)
     })
 }
 
-fn cache_file(cache_dir: &FsPath, key: &str) -> PathBuf {
-    cache_dir.join(format!("{key}.json"))
+/// A validated cache key: only ASCII alphanumerics, hyphens, and underscores.
+/// Prevents path traversal via user-controlled URL segments.
+#[derive(Debug, Clone)]
+struct CacheKey(String);
+
+impl CacheKey {
+    fn new(s: &str) -> Result<Self, ApiError> {
+        if s.is_empty()
+            || !s
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        {
+            return Err(ApiError::InvalidCacheKey(s.to_string()));
+        }
+        Ok(Self(s.to_string()))
+    }
+
+    fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+fn cache_file(cache_dir: &FsPath, key: &CacheKey) -> PathBuf {
+    cache_dir.join(format!("{}.json", key.as_str()))
 }
 
 fn get_cached_analysis(state: &AppState, cache_key: &str) -> Result<Option<CacheEntry>, ApiError> {
-    let path = cache_file(&state.cache_dir, cache_key);
+    let key = CacheKey::new(cache_key)?;
+    let path = cache_file(&state.cache_dir, &key);
     if !path.exists() {
         return Ok(None);
     }
@@ -518,7 +543,8 @@ fn save_to_cache(
     priority: &str,
     hostname: &str,
 ) -> Result<(), ApiError> {
-    let path = cache_file(&state.cache_dir, cache_key);
+    let key = CacheKey::new(cache_key)?;
+    let path = cache_file(&state.cache_dir, &key);
     let entry = CacheEntry {
         cache_key: cache_key.to_string(),
         timestamp: Utc::now().to_rfc3339(),
@@ -696,4 +722,44 @@ fn re_container_id() -> &'static Regex {
 fn re_ip_port() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?").expect("ip regex"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cache_key_rejects_path_traversal() {
+        assert!(CacheKey::new("../../etc/passwd").is_err());
+    }
+
+    #[test]
+    fn cache_key_rejects_slash() {
+        assert!(CacheKey::new("foo/bar").is_err());
+    }
+
+    #[test]
+    fn cache_key_rejects_dot_dot() {
+        assert!(CacheKey::new("..").is_err());
+    }
+
+    #[test]
+    fn cache_key_rejects_null_byte() {
+        assert!(CacheKey::new("foo\0bar").is_err());
+    }
+
+    #[test]
+    fn cache_key_rejects_empty() {
+        assert!(CacheKey::new("").is_err());
+    }
+
+    #[test]
+    fn cache_key_accepts_hex_string() {
+        assert!(CacheKey::new("a1b2c3d4e5f6a1b2").is_ok());
+    }
+
+    #[test]
+    fn cache_key_accepts_alphanumeric_with_dash_underscore() {
+        assert!(CacheKey::new("abc123-def_456").is_ok());
+    }
 }

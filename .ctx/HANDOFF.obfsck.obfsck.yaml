@@ -1,6 +1,6 @@
 project: obfsck
 id: obfsck
-updated: 2026-04-13
+updated: 2026-04-18
 items:
 - id: obfsck-7
   doob_uuid: 84883c25-8fcf-4ff1-b0b2-346c925066a7
@@ -215,6 +215,9 @@ items:
     number: 2
     url: "https://github.com/89jobrien/obfsck/issues/2"
 log:
+- date: 2026-04-18
+  summary: Triage session — handon/conductor run. Design sketches proposed for obfsck-12/14/16/17 (extract_json_object, cache TOCTOU, obfuscate_paths map, IPv6 private ranges). No commits — awaiting approval.
+  commits: []
 - date: 2026-04-13
   summary: Fixed path traversal (obfsck-7), YAML parser silent drop (obfsck-8), allowlist bypass (obfsck-9). CacheKey newtype validates alphanumeric + hex; build.rs validate_patterns() errors on parse; obfuscate_high_entropy() threads allowlist through.
   commits:

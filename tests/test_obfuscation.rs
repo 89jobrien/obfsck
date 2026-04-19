@@ -332,3 +332,210 @@ fn obfuscate_paths_populates_map() {
         "original path should be a key in map.paths, got: {map:?}"
     );
 }
+
+// obfsck-13: obfuscate_paths() unit tests
+
+/// The map value for a redacted path must differ from the original path.
+#[test]
+fn obfuscate_paths_map_value_differs_from_key() {
+    let input = "loading /home/alice/projects/myapp/config.toml";
+    let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid);
+    let _out = obfuscator.obfuscate(input);
+    let map = obfuscator.get_mapping();
+
+    let original = "/home/alice/projects/myapp/config.toml";
+    let redacted = map.paths.get(original).expect("path must be in map");
+    assert_ne!(
+        redacted, original,
+        "redacted value should differ from original path"
+    );
+}
+
+/// Absolute paths (starting with '/') are detected and redacted.
+#[test]
+fn absolute_paths_are_redacted_at_paranoid() {
+    let input = "opened /var/log/app/service.log";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        !map.paths.is_empty(),
+        "absolute path should be recorded in map; out={out}"
+    );
+}
+
+/// Paths are not redacted below paranoid level.
+#[test]
+fn paths_not_redacted_at_standard_level() {
+    let input = "opened /home/alice/data/report.csv";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
+
+    // At standard, obfuscate_paths() is not called — map.paths stays empty
+    assert!(
+        map.paths.is_empty(),
+        "paths should not be recorded below paranoid; out={out}"
+    );
+}
+
+/// Paths are not redacted at minimal level.
+#[test]
+fn paths_not_redacted_at_minimal_level() {
+    let input = "opened /home/alice/data/report.csv";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Minimal);
+
+    assert_eq!(out, input, "minimal should not modify paths");
+    assert!(map.paths.is_empty());
+}
+
+/// Sensitive path exemptions: /etc/passwd must not be redacted.
+#[test]
+fn sensitive_path_etc_passwd_preserved() {
+    let input = "reading /etc/passwd for authentication";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        out.contains("/etc/passwd"),
+        "sensitive path /etc/passwd must not be redacted: {out}"
+    );
+    assert!(
+        !map.paths.contains_key("/etc/passwd"),
+        "sensitive path must not appear in map.paths"
+    );
+}
+
+/// Sensitive path exemptions: paths containing /.ssh/ must not be redacted.
+#[test]
+fn sensitive_path_ssh_preserved() {
+    let input = "key at /home/alice/.ssh/id_rsa";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        out.contains("/.ssh/id_rsa"),
+        "sensitive .ssh path must not be redacted: {out}"
+    );
+}
+
+/// Sensitive path exemptions: .aws/credentials must not be redacted.
+#[test]
+fn sensitive_path_aws_credentials_preserved() {
+    let input = "loaded credentials from /home/alice/.aws/credentials";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        out.contains("/.aws/credentials"),
+        "sensitive .aws/credentials path must not be redacted: {out}"
+    );
+}
+
+/// Path component obfuscation applies at paranoid even without user segments.
+/// Note: obfuscate_paths() does not consult the runtime allowlist — only
+/// is_sensitive_path() exemptions are honored. Allowlist entries skip
+/// secret-pattern and structural-PII passes, not path rewriting.
+#[test]
+fn non_sensitive_absolute_path_is_rewritten_at_paranoid() {
+    // /opt is a preserved segment; service is a non-preserved dir; config has > 3 chars
+    let path = "/opt/service/config.toml";
+    let input = format!("loading {path}");
+    let (out, map) = obfuscate_text(input.as_str(), ObfuscationLevel::Paranoid);
+
+    assert!(
+        !map.paths.is_empty(),
+        "non-sensitive path should be recorded in map.paths; out={out}"
+    );
+    assert!(
+        !out.contains(path),
+        "non-sensitive path should be rewritten at paranoid level; out={out}"
+    );
+    // File component (config > 3 chars) becomes [FILE].toml
+    assert!(out.contains("[FILE].toml"), "file component should be [FILE].toml: {out}");
+}
+
+/// UNC paths (Windows \\server\share\...) are detected and processed at paranoid level.
+/// The \\server\share prefix is preserved (2 preserved_count segments); inner path
+/// components are subject to redaction.
+#[test]
+fn unc_paths_are_detected_at_paranoid() {
+    let input = r"config at \\fileserver\share\reports\q4.xlsx";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    // The original path should not appear verbatim — some transformation occurred
+    assert!(
+        !out.contains(r"\\fileserver\share\reports\q4.xlsx"),
+        "UNC path should be transformed at paranoid level: {out}"
+    );
+}
+
+/// Windows drive paths (C:\...) are obfuscated at paranoid level.
+#[test]
+fn windows_drive_paths_are_obfuscated() {
+    let input = r"config at C:\Users\alice\AppData\Local\app\settings.json";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        !map.paths.is_empty(),
+        "Windows drive path should be recorded in map; out={out}"
+    );
+    assert!(
+        out.contains("[FILE].json"),
+        "Windows path file component should be redacted: {out}"
+    );
+}
+
+/// Repeated identical path tokens map to a single stable entry in map.paths.
+#[test]
+fn repeated_path_maps_to_single_entry() {
+    let path = "/home/alice/projects/myapp/config.toml";
+    let input = format!("reading {path} and also {path}");
+    let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid);
+    let _out = obfuscator.obfuscate(&input);
+    let map = obfuscator.get_mapping();
+
+    assert_eq!(
+        map.paths.len(),
+        1,
+        "same path appearing twice should produce one map entry; map={map:?}"
+    );
+    assert!(
+        map.paths.contains_key(path),
+        "original path must be a key in map.paths"
+    );
+}
+
+/// Home-user segment: with path-policy-home-user-redact the username after /home/ is
+/// replaced with [USERDIR]; without it the username is preserved as a path component.
+#[test]
+fn home_user_segment_redaction_is_feature_gated() {
+    let input = "reading /home/alice/docs/notes.txt";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    #[cfg(feature = "path-policy-home-user-redact")]
+    assert!(
+        out.contains("/home/[USERDIR]/"),
+        "with path-policy-home-user-redact, username after /home/ must become [USERDIR]: {out}"
+    );
+
+    #[cfg(not(feature = "path-policy-home-user-redact"))]
+    assert!(
+        !out.contains("[USERDIR]"),
+        "without path-policy-home-user-redact, [USERDIR] must not appear: {out}"
+    );
+}
+
+/// Non-allowlisted-redact feature: all non-preserved segments become [DIR].
+#[test]
+fn non_allowlisted_segments_redacted_when_feature_enabled() {
+    let input = "loading /opt/mycompany/service/config.toml";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    #[cfg(feature = "path-policy-non-allowlisted-redact")]
+    assert!(
+        out.contains("[DIR]"),
+        "non-allowlisted segments should become [DIR]: {out}"
+    );
+
+    #[cfg(not(feature = "path-policy-non-allowlisted-redact"))]
+    {
+        // Without the feature, non-system segments in /opt/... are passed through
+        // (opt is a preserved segment; mycompany and service are not redacted by default)
+        let _ = out;
+    }
+}

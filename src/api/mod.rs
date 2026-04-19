@@ -1,4 +1,4 @@
-use crate::analyzer::{AlertAnalyzer, AnalyzerConfig, AnalyzerError, load_config};
+use crate::analyzer::{AlertAnalyzer, AnalyzerError, load_config};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse};
@@ -42,7 +42,8 @@ pub enum ApiError {
 
 #[derive(Clone)]
 pub struct AppState {
-    config: AnalyzerConfig,
+    analyzer: Arc<AlertAnalyzer>,
+    backend_name: String,
     cache_dir: PathBuf,
     cache_ttl_secs: i64,
     http_client: reqwest::Client,
@@ -111,6 +112,17 @@ struct AnalysisPageView<'a> {
 
 pub async fn run_server(host: String, port: u16) -> Result<(), ApiError> {
     let config = load_config(None)?;
+    let backend_name = config.storage.backend.to_ascii_lowercase();
+    // Construct AlertAnalyzer in a blocking thread: reqwest::blocking::Client
+    // creates its own Tokio runtime internally, and dropping it inside an async
+    // Tokio context panics. spawn_blocking ensures construction and eventual
+    // drop happen off the async runtime.
+    let analyzer = Arc::new(
+        tokio::task::spawn_blocking(move || AlertAnalyzer::from_config(&config))
+            .await
+            .map_err(|e| ApiError::Join(e.to_string()))?
+            .map_err(ApiError::from)?,
+    );
     let cache_dir = std::env::var("ANALYSIS_CACHE_DIR")
         .map(|dir| {
             let expanded = shellexpand::tilde(&dir);
@@ -129,7 +141,8 @@ pub async fn run_server(host: String, port: u16) -> Result<(), ApiError> {
         .unwrap_or(86_400);
 
     let state = Arc::new(AppState {
-        config,
+        analyzer,
+        backend_name,
         cache_dir,
         cache_ttl_secs,
         http_client: reqwest::Client::new(),
@@ -170,7 +183,7 @@ async fn health_all(
     let timeout = query.timeout.unwrap_or(3.0).clamp(0.5, 30.0);
     let stack = std::env::var("STACK")
         .ok()
-        .unwrap_or_else(|| state.config.storage.backend.clone());
+        .unwrap_or_else(|| state.backend_name.clone());
 
     let mut checks: HashMap<&str, String> = HashMap::new();
     checks.insert(
@@ -272,11 +285,11 @@ async fn analyze_api(
         payload.hostname.unwrap_or_else(|| "Unknown".to_string()),
     );
 
-    match analyze_alert_with_config(state.config.clone(), alert.clone()).await {
+    match analyze_alert_with_config(Arc::clone(&state.analyzer), alert.clone()).await {
         Ok(result) => {
             if payload.store.unwrap_or(false)
                 && let Err(e) =
-                    store_analysis_with_config(state.config.clone(), result.clone()).await
+                    store_analysis_with_config(Arc::clone(&state.analyzer), result.clone()).await
             {
                 warn!(error = %e, "Failed to store analysis to backend");
             }
@@ -342,7 +355,7 @@ async fn analyze_page(
         priority.clone(),
         hostname.clone(),
     );
-    let result = match analyze_alert_with_config(state.config.clone(), alert).await {
+    let result = match analyze_alert_with_config(Arc::clone(&state.analyzer), alert).await {
         Ok(r) => r,
         Err(err) => {
             return Html(render_analysis_html(&AnalysisPageView {
@@ -360,7 +373,8 @@ async fn analyze_page(
 
     if store
         && result.pointer("/analysis/error").is_none()
-        && let Err(e) = store_analysis_with_config(state.config.clone(), result.clone()).await
+        && let Err(e) =
+            store_analysis_with_config(Arc::clone(&state.analyzer), result.clone()).await
     {
         warn!(error = %e, "Failed to store analysis to backend");
     }
@@ -664,13 +678,12 @@ pub fn get_cache_key(output: &str, rule: &str) -> String {
     hex.chars().take(16).collect()
 }
 
-#[instrument(skip(config, alert), fields(has_alert = !alert.is_null()))]
+#[instrument(skip(analyzer, alert), fields(has_alert = !alert.is_null()))]
 async fn analyze_alert_with_config(
-    config: AnalyzerConfig,
+    analyzer: Arc<AlertAnalyzer>,
     alert: Value,
 ) -> Result<Value, ApiError> {
     tokio::task::spawn_blocking(move || {
-        let analyzer = AlertAnalyzer::from_config(&config)?;
         Ok::<Value, AnalyzerError>(analyzer.analyze_alert(&alert, false))
     })
     .await
@@ -681,14 +694,14 @@ async fn analyze_alert_with_config(
     .map_err(ApiError::from)
 }
 
-async fn store_analysis_with_config(config: AnalyzerConfig, result: Value) -> Result<(), ApiError> {
-    tokio::task::spawn_blocking(move || {
-        let analyzer = AlertAnalyzer::from_config(&config)?;
-        analyzer.store_analysis(&result)
-    })
-    .await
-    .map_err(|e| ApiError::Join(e.to_string()))?
-    .map_err(ApiError::from)
+async fn store_analysis_with_config(
+    analyzer: Arc<AlertAnalyzer>,
+    result: Value,
+) -> Result<(), ApiError> {
+    tokio::task::spawn_blocking(move || analyzer.store_analysis(&result))
+        .await
+        .map_err(|e| ApiError::Join(e.to_string()))?
+        .map_err(ApiError::from)
 }
 
 fn re_iso_ts() -> &'static Regex {
@@ -750,5 +763,14 @@ mod tests {
     #[test]
     fn cache_key_accepts_alphanumeric() {
         assert!(CacheKey::new("abc123").is_ok());
+    }
+
+    /// Compile-time proof that Arc<AlertAnalyzer> satisfies Send + 'static,
+    /// which is required for spawn_blocking. If AlertAnalyzer ever gains a
+    /// non-Send field this will fail at compile time.
+    #[test]
+    fn alert_analyzer_arc_is_send_static() {
+        fn assert_send_static<T: Send + 'static>() {}
+        assert_send_static::<Arc<AlertAnalyzer>>();
     }
 }

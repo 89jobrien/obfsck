@@ -1,0 +1,51 @@
+language: "en-US"
+early_access: false
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+  path_filters:
+    - "!**/*.lock"
+    - "!**/vendor/**"
+    - "!**/.ctx/**"
+    - "!**/.superpowers/**"
+  path_instructions:
+    - path: "**/*.rs"
+      instructions: |
+        - Rust edition 2024 conventions.
+        - Prefer returning errors over panicking — no bare .unwrap()/.expect() at runtime.
+        - Use tracing::{warn,error} for observable failures.
+        - No unsafe unless explicitly justified with a safety comment.
+        - Secret pattern changes must be accompanied by golden-file test updates
+          (`just test-golden` / `just update-goldens`).
+        - Do NOT iterate both SECRET_PATTERN_DEFS and YAML config groups in the same audit pass
+          — that double-counts every hit.
+        - `\w` does not match base64 `+` or `/` — use `[A-Za-z0-9+/_-]` for base64 tokens.
+        - Context-anchored patterns carry high false-positive risk — prefer prefix-anchored
+          patterns; mark context-only patterns `paranoid_only: true`.
+        - Mutually exclusive features: `path-policy-home-user-redact` and
+          `path-policy-non-allowlisted-redact` must never both be enabled.
+    - path: "src/lib.rs"
+      instructions: |
+        - Every obfuscation pass must check the allowlist before redacting. Verify that no
+          allowlisted value is redacted regardless of ObfuscationLevel.
+        - Verify RFC ranges for IP classification: RFC 1918 (10/8, 172.16/12, 192.168/16),
+          RFC 5735 loopback (127/8), RFC 3927 link-local (169.254/16), RFC 4193 ULA
+          (fc00::/7). Flag any hardcoded IP range that diverges from these RFCs.
+    - path: "config/secrets.yaml"
+      instructions: |
+        - This is the single source of truth for secret patterns — src/secrets.rs is generated
+          from it via build.rs. Never suggest editing src/secrets.rs directly.
+        - New pattern groups must declare paranoid_only where appropriate.
+    - path: "**/Cargo.toml"
+      instructions: "Check for yanked or insecure dependency versions."
+chat:
+  auto_reply: true

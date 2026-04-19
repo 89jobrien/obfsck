@@ -1,0 +1,54 @@
+project: obfsck
+id: obfsck
+updated: 20260419:162232
+items:
+- id: obfsck-13
+  name: paths-behavior-tests
+  priority: P2
+  status: open
+  title: No tests for obfuscate_paths() behavior
+  description: |
+    obfuscate_paths() has no dedicated unit tests. Add tests covering path
+    redaction at each ObfuscationLevel (minimal/standard/paranoid).
+  files:
+  - src/lib.rs
+  - tests/
+  extra: []
+- id: obfsck-15
+  name: alert-analyzer-dedup
+  priority: P2
+  status: open
+  title: Duplicate AlertAnalyzer construction per store call
+  description: |
+    AlertAnalyzer is reconstructed on every call to the store — should be
+    constructed once and reused.
+  files:
+  - src/analyzer/
+  extra: []
+log:
+- date: 20260419:162232
+  session: 6
+  summary: handup sweep — workspace HANDOFF pruned (obfsck-7/8/9 were fixed 2026-04-13; removed done items). Migrated to HANDOFF.obfsck.obfsck.yaml.
+  commits: []
+- date: 20260418:000000
+  session: 5
+  summary: handjobs triage — closed GH #1/2/3/4/6/7/9 (all fixed). 2 open items remain (obfsck-13, obfsck-15). Design sketches proposed for obfsck-12/14/16/17.
+  commits: []
+- date: 20260413:000000
+  session: 4
+  summary: Fixed path traversal (obfsck-7), YAML parser silent drop (obfsck-8), allowlist bypass (obfsck-9).
+  commits:
+  - sha: 265e84c
+    branch: main
+  - sha: 4d5e1fd
+    branch: main
+  - sha: fa8cab9
+    branch: main
+- date: 20260411:000000
+  session: 3
+  summary: Implemented MCP server mode (obfsck-11) — src/mcp/, obfsck-mcp binary, 14 tests.
+  commits:
+  - sha: da19143
+    branch: main
+  - sha: 59cf099
+    branch: main

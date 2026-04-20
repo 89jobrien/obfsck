@@ -89,4 +89,6 @@ scratch/
 !CLAUDE.md
 .remember/logs/autonomous/*
 !Handoff.*
-.ctx/
+.ctx/*
+!.ctx/HANDOFF.*.yaml
+.ctx/HANDOFF.*.state.yaml

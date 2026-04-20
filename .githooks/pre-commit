@@ -1,0 +1,5 @@
+#!/bin/sh
+# pre-commit: fast compile check — blocks bad syntax before it lands
+set -e
+echo "pre-commit: cargo check --workspace"
+cargo check --workspace

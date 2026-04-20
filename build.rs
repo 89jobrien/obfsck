@@ -30,8 +30,7 @@ struct PatternEntry {
 }
 
 /// Validate that all patterns have required fields (name, pattern, label).
-/// Panics loudly with a descriptive message instead of silently dropping patterns
-/// on indentation mismatches or other structural errors.
+/// Errors loudly instead of silently dropping patterns on indentation mismatches.
 fn validate_patterns(patterns: &[PatternEntry]) {
     let mut errors = Vec::new();
     for (idx, pat) in patterns.iter().enumerate() {
@@ -40,26 +39,19 @@ fn validate_patterns(patterns: &[PatternEntry]) {
         }
         if pat.pattern.is_empty() {
             errors.push(format!(
-                "Pattern '{}' (index {}) has empty pattern field \
-                 (possible indentation error in config/secrets.yaml)",
+                "Pattern '{}' (index {}) has empty pattern (possible indentation error in config/secrets.yaml)",
                 pat.name, idx
             ));
         }
         if pat.label.is_empty() {
             errors.push(format!(
-                "Pattern '{}' (index {}) has empty label field \
-                 (possible indentation error in config/secrets.yaml)",
+                "Pattern '{}' (index {}) has empty label (possible indentation error in config/secrets.yaml)",
                 pat.name, idx
             ));
         }
     }
     if !errors.is_empty() {
-        panic!(
-            "build.rs: config/secrets.yaml validation failed:\n{}\n\n\
-             Patterns must have 'pattern:' and 'label:' fields indented at \
-             the correct depth below their '- name:' line.",
-            errors.join("\n")
-        );
+        panic!("build.rs validation failed:\n{}\n\nCheck config/secrets.yaml for indentation errors (patterns should have fields indented 4 spaces deeper than the pattern list).", errors.join("\n"));
     }
 }
 

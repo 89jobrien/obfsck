@@ -1,3 +1,4 @@
+use crate::json_utils::extract_json_object;
 use chrono::{DateTime, Utc};
 use serde_json::{Map, Value, json};
 
@@ -39,8 +40,3 @@ pub(super) fn from_rfc3339_or_now(value: Option<&str>) -> DateTime<Utc> {
         .unwrap_or_else(Utc::now)
 }
 
-fn extract_json_object(raw: &str) -> Option<&str> {
-    let start = raw.find('{')?;
-    let end = raw.rfind('}')?;
-    (start < end).then_some(&raw[start..=end])
-}

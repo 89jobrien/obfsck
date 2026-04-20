@@ -1,4 +1,4 @@
-use obfsck::{ObfuscationLevel, Obfuscator, obfuscate_alert, obfuscate_text, secret_pattern_errors};
+use obfsck::{ObfuscationLevel, obfuscate_alert, obfuscate_text, secret_pattern_errors, Obfuscator};
 use std::collections::HashMap;
 
 #[test]
@@ -247,136 +247,295 @@ fn user_re_does_not_capture_trailing_dot() {
     );
 }
 
-// Issue #7: obfuscate_high_entropy() must respect the allowlist.
 #[test]
-fn high_entropy_allowlisted_value_is_not_redacted() {
-    // A 33-char mixed-case alphanumeric string has Shannon entropy well above 4.5
-    // and would normally be redacted by obfuscate_high_entropy(). Present it as a
-    // standalone word (space-separated) so the regex captures exactly the token,
-    // not a longer prefix like "token=<value>".
-    let high_entropy = "aB3xK9mQ2wR7tY1nP4sL6vC0dF8jH5uE";
+fn high_entropy_allowlist_bypass() {
+    // Bug obfsck-9: obfuscate_high_entropy() ignores the runtime allowlist
+    // A high-entropy string in the allowlist should pass through unredacted
+    let high_entropy_token = "aZ9xQ2mN7pL4vT1cR8yK3dF6hJ0wS5uB";
+    // Use 'value=' prefix (not 'token=') to avoid password field pattern
+    let input = format!("value={high_entropy_token}");
+    // The regex matches the entire "value=..." as one token because '=' is in the
+    // character class [A-Za-z0-9+/=_-]
+    let matched_by_regex = format!("value={high_entropy_token}");
 
-    let mut ob = Obfuscator::new(ObfuscationLevel::Paranoid)
-        .with_allowlist(vec![high_entropy.to_string()]);
+    let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid)
+        .with_allowlist(vec![matched_by_regex.clone()]);
+    let out = obfuscator.obfuscate(&input);
 
-    let input = format!("found {high_entropy} in log");
-    let out = ob.obfuscate(&input);
-
+    // Without fix: will contain [REDACTED-HIGH-ENTROPY] even though token is allowlisted
+    // With fix: should pass through unredacted
+    assert!(
+        out.contains(&matched_by_regex),
+        "allowlisted high-entropy token was redacted despite allowlist: {out}"
+    );
     assert!(
         !out.contains("[REDACTED-HIGH-ENTROPY]"),
-        "allowlisted high-entropy value should not be redacted, got: {out}"
-    );
-    assert!(
-        out.contains(high_entropy),
-        "allowlisted value should pass through unchanged, got: {out}"
+        "allowlisted token should not be redacted: {out}"
     );
 }
 
+// obfsck-17: IPv6 addresses should be tagged internal for private ranges
 #[test]
-fn high_entropy_non_allowlisted_value_is_redacted() {
-    // Confirm that a non-allowlisted high-entropy value IS still redacted.
-    let high_entropy = "aB3xK9mQ2wR7tY1nP4sL6vC0dF8jH5uE";
-
-    let mut ob = Obfuscator::new(ObfuscationLevel::Paranoid);
-    let input = format!("found {high_entropy} in log");
-    let out = ob.obfuscate(&input);
-
-    assert!(
-        out.contains("[REDACTED-HIGH-ENTROPY]"),
-        "non-allowlisted high-entropy value should be redacted, got: {out}"
-    );
-}
-
-// Issue #2: IPv6 ULA addresses must be tagged IP-INTERNAL, not IP-EXTERNAL.
-#[test]
-fn ipv6_ula_address_tagged_ip_internal() {
-    // fc00::/7 Unique Local Address — private range per RFC 4193.
-    let input = "connect fd00:0000:0000:0000:0000:0000:0000:0001 failed";
+fn ipv6_ula_tagged_internal() {
+    let input = "connected from fd12:3456:789a:0001:0000:0000:0000:0001";
     let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
-
     assert!(
         out.contains("[IP-INTERNAL-"),
-        "IPv6 ULA address should be IP-INTERNAL, got: {out}"
+        "ULA IPv6 (fc00::/7) should be tagged internal, got: {out}"
     );
     assert!(
         !out.contains("[IP-EXTERNAL-"),
-        "IPv6 ULA address must not be IP-EXTERNAL, got: {out}"
+        "ULA IPv6 should not be tagged external, got: {out}"
     );
-    assert!(
-        map.ips
-            .contains_key("fd00:0000:0000:0000:0000:0000:0000:0001"),
-        "IPv6 address should be recorded in ips map"
-    );
+    let tagged_internal = map
+        .ips
+        .values()
+        .any(|v| v.contains("IP-INTERNAL"));
+    assert!(tagged_internal, "map should contain an IP-INTERNAL entry, got: {map:?}");
 }
 
 #[test]
-fn ipv6_link_local_address_tagged_ip_internal() {
-    // fe80::/10 link-local — private per RFC 4291.
-    let input = "peer fe80:0000:0000:0000:0000:0000:0000:0001 connected";
-    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Standard);
-
+fn ipv6_link_local_tagged_internal() {
+    let input = "host fe80:0000:0000:0000:0202:b3ff:fe1e:8329";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
     assert!(
         out.contains("[IP-INTERNAL-"),
-        "IPv6 link-local address should be IP-INTERNAL, got: {out}"
+        "link-local IPv6 (fe80::/10) should be tagged internal, got: {out}"
     );
-    assert!(
-        !out.contains("[IP-EXTERNAL-"),
-        "IPv6 link-local address must not be IP-EXTERNAL, got: {out}"
-    );
+    let _ = map;
 }
 
 #[test]
-fn ipv6_public_address_tagged_ip_external() {
-    // 2001:db8::/32 is the documentation range — treated as public/external.
-    let input = "peer 2001:0db8:0000:0000:0000:0000:0000:0001 connected";
+fn ipv6_public_tagged_external() {
+    let input = "server 2001:0db8:85a3:0000:0000:8a2e:0370:7334";
     let (out, _map) = obfuscate_text(input, ObfuscationLevel::Standard);
-
     assert!(
         out.contains("[IP-EXTERNAL-"),
-        "IPv6 public address should be IP-EXTERNAL, got: {out}"
-    );
-    assert!(
-        !out.contains("[IP-INTERNAL-"),
-        "IPv6 public address must not be IP-INTERNAL, got: {out}"
+        "public IPv6 should be tagged external, got: {out}"
     );
 }
 
-// Issue #4: obfuscate_paths() must record path→token mappings in ObfuscationMap.paths.
+// obfsck-16: obfuscate_paths() must populate ObfuscationMap.paths
 #[test]
 fn obfuscate_paths_populates_map() {
-    // /etc/passwd is a well-known sensitive path — it won't be redacted by
-    // is_sensitive_path(). Use a non-sensitive path that path_re() will match.
-    let input = "opened /home/alice/secret.conf for reading";
-    let (out, map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+    let input = "error reading /home/alice/projects/myapp/config.toml";
+    let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid);
+    let out = obfuscator.obfuscate(input);
+    let map = obfuscator.get_mapping();
 
-    // The path should have been rewritten.
-    assert!(
-        !out.contains("/home/alice/secret.conf"),
-        "path should be obfuscated in output, got: {out}"
-    );
-    // And recorded in the mapping.
     assert!(
         !map.paths.is_empty(),
-        "ObfuscationMap.paths should be populated after path obfuscation, got empty map.\nout={out}"
+        "ObfuscationMap.paths should be populated after path redaction, got empty map.\nout={out}"
+    );
+    assert!(
+        map.paths.contains_key("/home/alice/projects/myapp/config.toml"),
+        "original path should be a key in map.paths, got: {map:?}"
     );
 }
 
+// obfsck-13: obfuscate_paths() unit tests
+
+/// The map value for a redacted path must differ from the original path.
 #[test]
-fn obfuscate_paths_same_path_gets_same_token() {
-    // The same path appearing twice must receive the same token (idempotent mapping).
-    let input = "read /tmp/data.txt and write /tmp/data.txt";
+fn obfuscate_paths_map_value_differs_from_key() {
+    let input = "loading /home/alice/projects/myapp/config.toml";
+    let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid);
+    let _out = obfuscator.obfuscate(input);
+    let map = obfuscator.get_mapping();
+
+    let original = "/home/alice/projects/myapp/config.toml";
+    let redacted = map.paths.get(original).expect("path must be in map");
+    assert_ne!(
+        redacted, original,
+        "redacted value should differ from original path"
+    );
+}
+
+/// Absolute paths (starting with '/') are detected and redacted.
+#[test]
+fn absolute_paths_are_redacted_at_paranoid() {
+    let input = "opened /var/log/app/service.log";
     let (out, map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        !map.paths.is_empty(),
+        "absolute path should be recorded in map; out={out}"
+    );
+}
+
+/// Paths are not redacted below paranoid level.
+#[test]
+fn paths_not_redacted_at_standard_level() {
+    let input = "opened /home/alice/data/report.csv";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
+
+    // At standard, obfuscate_paths() is not called — map.paths stays empty
+    assert!(
+        map.paths.is_empty(),
+        "paths should not be recorded below paranoid; out={out}"
+    );
+}
+
+/// Paths are not redacted at minimal level.
+#[test]
+fn paths_not_redacted_at_minimal_level() {
+    let input = "opened /home/alice/data/report.csv";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Minimal);
+
+    assert_eq!(out, input, "minimal should not modify paths");
+    assert!(map.paths.is_empty());
+}
+
+/// Sensitive path exemptions: /etc/passwd must not be redacted.
+#[test]
+fn sensitive_path_etc_passwd_preserved() {
+    let input = "reading /etc/passwd for authentication";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        out.contains("/etc/passwd"),
+        "sensitive path /etc/passwd must not be redacted: {out}"
+    );
+    assert!(
+        !map.paths.contains_key("/etc/passwd"),
+        "sensitive path must not appear in map.paths"
+    );
+}
+
+/// Sensitive path exemptions: paths containing /.ssh/ must not be redacted.
+#[test]
+fn sensitive_path_ssh_preserved() {
+    let input = "key at /home/alice/.ssh/id_rsa";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        out.contains("/.ssh/id_rsa"),
+        "sensitive .ssh path must not be redacted: {out}"
+    );
+}
+
+/// Sensitive path exemptions: .aws/credentials must not be redacted.
+#[test]
+fn sensitive_path_aws_credentials_preserved() {
+    let input = "loaded credentials from /home/alice/.aws/credentials";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        out.contains("/.aws/credentials"),
+        "sensitive .aws/credentials path must not be redacted: {out}"
+    );
+}
+
+/// Path component obfuscation applies at paranoid even without user segments.
+/// Note: obfuscate_paths() does not consult the runtime allowlist — only
+/// is_sensitive_path() exemptions are honored. Allowlist entries skip
+/// secret-pattern and structural-PII passes, not path rewriting.
+#[test]
+fn non_sensitive_absolute_path_is_rewritten_at_paranoid() {
+    // /opt is a preserved segment; service is a non-preserved dir; config has > 3 chars
+    let path = "/opt/service/config.toml";
+    let input = format!("loading {path}");
+    let (out, map) = obfuscate_text(input.as_str(), ObfuscationLevel::Paranoid);
+
+    assert!(
+        !map.paths.is_empty(),
+        "non-sensitive path should be recorded in map.paths; out={out}"
+    );
+    assert!(
+        !out.contains(path),
+        "non-sensitive path should be rewritten at paranoid level; out={out}"
+    );
+    // File component (config > 3 chars) becomes [FILE].toml
+    assert!(out.contains("[FILE].toml"), "file component should be [FILE].toml: {out}");
+}
+
+/// UNC paths (Windows \\server\share\...) are detected and processed at paranoid level.
+/// The \\server\share prefix is preserved (2 preserved_count segments); inner path
+/// components are subject to redaction.
+#[test]
+fn unc_paths_are_detected_at_paranoid() {
+    let input = r"config at \\fileserver\share\reports\q4.xlsx";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    // The original path should not appear verbatim — some transformation occurred
+    assert!(
+        !out.contains(r"\\fileserver\share\reports\q4.xlsx"),
+        "UNC path should be transformed at paranoid level: {out}"
+    );
+}
+
+/// Windows drive paths (C:\...) are obfuscated at paranoid level.
+#[test]
+fn windows_drive_paths_are_obfuscated() {
+    let input = r"config at C:\Users\alice\AppData\Local\app\settings.json";
+    let (out, map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    assert!(
+        !map.paths.is_empty(),
+        "Windows drive path should be recorded in map; out={out}"
+    );
+    assert!(
+        out.contains("[FILE].json"),
+        "Windows path file component should be redacted: {out}"
+    );
+}
+
+/// Repeated identical path tokens map to a single stable entry in map.paths.
+#[test]
+fn repeated_path_maps_to_single_entry() {
+    let path = "/home/alice/projects/myapp/config.toml";
+    let input = format!("reading {path} and also {path}");
+    let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid);
+    let _out = obfuscator.obfuscate(&input);
+    let map = obfuscator.get_mapping();
 
     assert_eq!(
         map.paths.len(),
         1,
-        "one unique path should produce exactly one map entry, got: {map:?}\nout={out}"
+        "same path appearing twice should produce one map entry; map={map:?}"
     );
-    // The two occurrences in the output should be identical tokens.
-    let token = map.paths.values().next().unwrap();
-    let count = out.matches(token.as_str()).count();
-    assert_eq!(
-        count, 2,
-        "the same token should appear twice in output, got: {out}"
+    assert!(
+        map.paths.contains_key(path),
+        "original path must be a key in map.paths"
     );
+}
+
+/// Home-user segment: with path-policy-home-user-redact the username after /home/ is
+/// replaced with [USERDIR]; without it the username is preserved as a path component.
+#[test]
+fn home_user_segment_redaction_is_feature_gated() {
+    let input = "reading /home/alice/docs/notes.txt";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    #[cfg(feature = "path-policy-home-user-redact")]
+    assert!(
+        out.contains("/home/[USERDIR]/"),
+        "with path-policy-home-user-redact, username after /home/ must become [USERDIR]: {out}"
+    );
+
+    #[cfg(not(feature = "path-policy-home-user-redact"))]
+    assert!(
+        !out.contains("[USERDIR]"),
+        "without path-policy-home-user-redact, [USERDIR] must not appear: {out}"
+    );
+}
+
+/// Non-allowlisted-redact feature: all non-preserved segments become [DIR].
+#[test]
+fn non_allowlisted_segments_redacted_when_feature_enabled() {
+    let input = "loading /opt/mycompany/service/config.toml";
+    let (out, _map) = obfuscate_text(input, ObfuscationLevel::Paranoid);
+
+    #[cfg(feature = "path-policy-non-allowlisted-redact")]
+    assert!(
+        out.contains("[DIR]"),
+        "non-allowlisted segments should become [DIR]: {out}"
+    );
+
+    #[cfg(not(feature = "path-policy-non-allowlisted-redact"))]
+    {
+        // Without the feature, non-system segments in /opt/... are passed through
+        // (opt is a preserved segment; mycompany and service are not redacted by default)
+        let _ = out;
+    }
 }

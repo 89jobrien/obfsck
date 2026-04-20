@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 use std::time::Duration as StdDuration;
 use tracing::{error, info, instrument};
 
-pub(super) trait LlmProvider {
+pub(super) trait LlmProvider: Send + Sync {
     fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String>;
 }
 

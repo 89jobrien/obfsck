@@ -123,14 +123,16 @@ fn main() {
         .chain(config.custom.iter())
         .filter(|p| !p.paranoid_only || is_paranoid)
         .filter_map(|p| {
-            // Silently skip invalid patterns — Rust's regex crate doesn't support
-            // lookaheads/lookbehinds; bad patterns in user config should not produce
-            // stderr noise that leaks through hook runners.
-            RegexBuilder::new(&p.pattern)
-                .case_insensitive(true)
-                .build()
-                .ok()
-                .map(|re| (re, format!("[REDACTED-{}]", p.label)))
+            // Log invalid patterns (e.g. unsupported lookaheads) — they are skipped but
+            // the user should know which pattern caused the issue.
+            match RegexBuilder::new(&p.pattern).case_insensitive(true).build() {
+                Ok(re) => Some((re, format!("[REDACTED-{}]", p.label))),
+                Err(e) => {
+                    let snippet: String = p.pattern.chars().take(60).collect();
+                    eprintln!("warning: skipping invalid pattern '{}' ({}): {e}", p.label, snippet);
+                    None
+                }
+            }
         })
         .collect();
 
@@ -174,9 +176,9 @@ fn main() {
     let writer = open_writer(args.output.as_deref());
     let mut writer = BufWriter::new(writer);
 
-    for line in reader.lines() {
+    for (line_no, line) in reader.lines().enumerate() {
         let line = line.unwrap_or_else(|e| {
-            eprintln!("Failed to read input: {e}");
+            eprintln!("Failed to read input at line {}: {e}", line_no + 1);
             std::process::exit(1);
         });
 

@@ -31,8 +31,10 @@ pub struct LogEntry {
 pub struct Finding {
     /// Human-readable description of what was found (e.g. pattern label or rule name).
     pub description: String,
-    /// The line or context where the secret was found, if available.
+    /// The offending line content where the secret was found, if available.
     pub location: Option<String>,
+    /// 1-based line number within the scanned input, if available.
+    pub line_number: Option<usize>,
     /// Source adapter that produced this finding (e.g. "obfsck", "gitleaks").
     pub source: String,
 }

@@ -66,17 +66,20 @@ impl SecretScanner for ObfsckScanner {
             .chain(config.custom.iter())
             .filter(|p| !p.paranoid_only || is_paranoid)
             .filter_map(|p| {
-                RegexBuilder::new(&p.pattern)
-                    .case_insensitive(true)
-                    .build()
-                    .ok()
-                    .map(|re| (re, p.label.clone()))
+                match RegexBuilder::new(&p.pattern).case_insensitive(true).build() {
+                    Ok(re) => Some((re, p.label.clone())),
+                    Err(e) => {
+                        let snippet: String = p.pattern.chars().take(60).collect();
+                        eprintln!("warning: skipping invalid pattern '{}' ({}): {e}", p.label, snippet);
+                        None
+                    }
+                }
             })
             .collect();
 
         let mut findings = Vec::new();
 
-        for line in diff.lines() {
+        for (line_no, line) in diff.lines().enumerate() {
             // Only scan added lines in the diff (lines starting with '+' but not '+++').
             if !line.starts_with('+') || line.starts_with("+++") {
                 continue;
@@ -89,6 +92,7 @@ impl SecretScanner for ObfsckScanner {
                     findings.push(Finding {
                         description: format!("[REDACTED-{label}] pattern matched"),
                         location: Some(line.chars().take(120).collect()),
+                        line_number: Some(line_no + 1),
                         source: "obfsck".to_string(),
                     });
                 }
@@ -101,6 +105,7 @@ impl SecretScanner for ObfsckScanner {
                 findings.push(Finding {
                     description: "structural secret/PII detected by obfsck".to_string(),
                     location: Some(line.chars().take(120).collect()),
+                    line_number: Some(line_no + 1),
                     source: "obfsck".to_string(),
                 });
             }
@@ -185,11 +190,11 @@ fn main() {
 
     eprintln!("scan: {} finding(s) detected:", all_findings.len());
     for f in &all_findings {
-        let loc = f
-            .location
-            .as_deref()
-            .unwrap_or("<unknown location>");
-        eprintln!("  [{}] {} — {}", f.source, f.description, loc);
+        let loc = f.location.as_deref().unwrap_or("<unknown location>");
+        match f.line_number {
+            Some(n) => eprintln!("  [{}] line {}: {} — {}", f.source, n, f.description, loc),
+            None => eprintln!("  [{}] {} — {}", f.source, f.description, loc),
+        }
     }
     process::exit(1);
 }

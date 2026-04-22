@@ -94,6 +94,7 @@ impl SecretScanner for GitleaksAdapter {
             findings.push(Finding {
                 description: trimmed.to_string(),
                 location: None,
+                line_number: None,
                 source: "gitleaks".to_string(),
             });
         }
@@ -104,6 +105,7 @@ impl SecretScanner for GitleaksAdapter {
             findings.push(Finding {
                 description: "gitleaks detected secrets in diff (no parseable output)".to_string(),
                 location: None,
+                line_number: None,
                 source: "gitleaks".to_string(),
             });
         }

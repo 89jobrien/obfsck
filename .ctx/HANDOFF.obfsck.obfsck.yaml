@@ -1,39 +1,33 @@
 project: obfsck
 id: obfsck
-updated: 20260419:180000
+updated: 2026-04-22
 items: []
 log:
+- date: 20260422:215703
+  summary: Released v0.1.0. Added richer error messages (line numbers in findings, invalid pattern warnings). Wired obfsck-scan into pre-commit hook (local .githooks + global ~/.config/git/hooks). Added two CLI integration tests. Moved handoff SQLite DB to ~/.ctx/handoff.db.
+  commits:
+  - ca830e3
+  - 3d82a71
+  - 8c4661d
+  session: 8
 - date: 20260419:180000
-  session: 7
   summary: Merged refactor/pattern-source-port into main. All items closed (obfsck-12/13/14/15/16/17). Committed Send+Sync bounds on LlmProvider trait.
   commits:
-  - sha: f320d81
-    branch: main
-  - sha: eb14f28
-    branch: main
+  - f320d81
+  - eb14f28
+  session: 7
 - date: 20260419:162232
-  session: 6
   summary: handup sweep — workspace HANDOFF pruned (obfsck-7/8/9 were fixed 2026-04-13; removed done items). Migrated to HANDOFF.obfsck.obfsck.yaml.
   commits: []
+  session: 6
 - date: 20260418:000000
-  session: 5
-  summary: handjobs triage — closed GH #1/2/3/4/6/7/9 (all fixed). 2 open items remain (obfsck-13, obfsck-15). Design sketches proposed for obfsck-12/14/16/17.
+  summary: 'handjobs triage — closed GH #1/2/3/4/6/7/9 (all fixed). 2 open items remain (obfsck-13, obfsck-15). Design sketches proposed for obfsck-12/14/16/17.'
   commits: []
+  session: 5
 - date: 20260413:000000
-  session: 4
   summary: Fixed path traversal (obfsck-7), YAML parser silent drop (obfsck-8), allowlist bypass (obfsck-9).
   commits:
-  - sha: 265e84c
-    branch: main
-  - sha: 4d5e1fd
-    branch: main
-  - sha: fa8cab9
-    branch: main
-- date: 20260411:000000
-  session: 3
-  summary: Implemented MCP server mode (obfsck-11) — src/mcp/, obfsck-mcp binary, 14 tests.
-  commits:
-  - sha: da19143
-    branch: main
-  - sha: 59cf099
-    branch: main
+  - 265e84c
+  - 4d5e1fd
+  - fa8cab9
+  session: 4

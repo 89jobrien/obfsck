@@ -81,8 +81,8 @@ fmt:
 # Gates (mirrors minibox pattern)
 # ---------------------------------------------------------------------------
 
-# Pre-commit gate: fmt-check + lint
-pre-commit: fmt-check lint
+# Pre-commit gate: fmt-check + lint + secret scan
+pre-commit: fmt-check lint scan-diff
 
 # Pre-push gate: fmt-check + lint + test
 prepush: fmt-check lint test
@@ -165,21 +165,20 @@ audit-levels:
 # Diff scanning
 # ---------------------------------------------------------------------------
 
-# Scan staged changes for secrets. Runs obfsck redact + gitleaks (if available).
+# Scan staged changes for secrets. Runs obfsck scan + gitleaks (if available).
 # Exits non-zero if either tool finds a hit. Designed for pre-commit use.
 scan-diff:
     #!/usr/bin/env sh
     set -e
-    REDACT_BIN="redact"
-    if ! command -v "$REDACT_BIN" > /dev/null 2>&1; then
-        REDACT_BIN="cargo run --bin redact --"
+    SCAN_BIN="obfsck-scan"
+    if ! command -v "$SCAN_BIN" > /dev/null 2>&1; then
+        SCAN_BIN="cargo run --bin scan --"
     fi
-    DIFF=$(git diff --staged)
-    if [ -z "$DIFF" ]; then
+    if [ -z "$(git diff --staged --name-only)" ]; then
         echo "scan-diff: no staged changes to scan"
         exit 0
     fi
-    echo "$DIFF" | $REDACT_BIN --level minimal
+    git diff --staged | $SCAN_BIN
     OBFSCK_EXIT=$?
     if [ $OBFSCK_EXIT -ne 0 ]; then
         echo "scan-diff: obfsck found secrets in staged diff — aborting" >&2

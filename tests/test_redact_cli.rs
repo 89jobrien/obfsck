@@ -458,6 +458,79 @@ fn pii_off_does_not_suppress_secrets() {
     );
 }
 
+// =============================================================================
+// Richer error messages (feat: richer errors with offending line context)
+// =============================================================================
+
+/// An invalid regex pattern in a custom config emits a warning to stderr
+/// that includes the pattern label and a snippet of the bad regex.
+/// The binary still exits 0 — it skips the bad pattern and continues.
+#[test]
+fn invalid_pattern_warning_includes_label_and_snippet() {
+    use std::io::Write;
+
+    let bad_config = r#"
+groups: {}
+custom:
+  - name: bad_lookahead
+    label: BAD-LOOKAHEAD
+    pattern: "(?<=foo)bar"
+    paranoid_only: false
+"#;
+    let mut cfg = tempfile::NamedTempFile::new().expect("temp config");
+    cfg.write_all(bad_config.as_bytes()).expect("write config");
+
+    let out = redact_bin()
+        .args(["--config", cfg.path().to_str().unwrap()])
+        .args(["--level", "minimal"])
+        .stdin(std::process::Stdio::null())
+        .output()
+        .expect("run redact");
+
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("BAD-LOOKAHEAD"),
+        "warning should include pattern label: {stderr}"
+    );
+    assert!(
+        stderr.contains("(?<=foo)bar") || stderr.contains("(?<=foo"),
+        "warning should include pattern snippet: {stderr}"
+    );
+    // Binary must still exit 0 — bad pattern is skipped, not fatal.
+    assert!(
+        out.status.success(),
+        "should exit 0 despite bad pattern: {stderr}"
+    );
+}
+
+/// IO read errors include the 1-based line number where the failure occurred.
+/// We trigger this by writing valid UTF-8 lines followed by invalid UTF-8 bytes.
+#[test]
+fn io_read_error_includes_line_number() {
+    use std::io::Write;
+
+    // Two valid lines then a byte sequence that is not valid UTF-8.
+    let mut f = tempfile::NamedTempFile::new().expect("temp file");
+    f.write_all(b"line one\nline two\n\x80\xFF").expect("write");
+
+    let out = redact_bin()
+        .arg(f.path())
+        .args(["--level", "minimal"])
+        .output()
+        .expect("run redact");
+
+    assert!(
+        !out.status.success(),
+        "should exit nonzero for invalid UTF-8"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    // The invalid bytes start on line 3 (after the two valid newlines).
+    assert!(
+        stderr.contains("line 3"),
+        "stderr should report line number 3: {stderr}"
+    );
+}
+
 /// --pii on is the default; PII IS redacted at standard.
 #[test]
 fn pii_on_default_redacts_pii_at_standard() {

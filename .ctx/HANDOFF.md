@@ -1,25 +1,16 @@
-# Handoff — obfsck (2026-04-18)
+# Handoff — obfsck (2026-04-22)
 
-**Branch:** refactor/pattern-source-port | **Build:** clean | **Tests:** 104 passed, 5 skipped
-Design sketches proposed for obfsck-12/14/16/17 — awaiting user approval before TDD implementation.
+**Branch:** main | **Build:** unknown | **Tests:** unknown
 
 ## Items
 
-| ID        | P  | Status | Title                                                                  |
-|-----------|----|--------|------------------------------------------------------------------------|
-| obfsck-13 | P2 | open   | [enhancement] No tests for obfuscate_paths() behavior                 |
-| obfsck-15 | P2 | open   | [enhancement] duplicate AlertAnalyzer construction per store call      |
+| ID | P | Status | Title |
+|---|---|---|---|
 
 ## Log
 
-- 2026-04-18: handjobs triage — closed GH #1/2/3/4/6/7/9 (all fixed). 2 open items remain
-  (obfsck-13, obfsck-15). GH #5 and #8 still open.
-- 2026-04-18: Triage session — handon/conductor run. Design sketches proposed for
-  obfsck-12/14/16/17. No commits — awaiting approval.
-- 2026-04-13: Fixed path traversal (obfsck-7), YAML parser silent drop (obfsck-8), allowlist
-  bypass (obfsck-9). [265e84c, 4d5e1fd, fa8cab9]
-- 2026-04-11: Implemented MCP server mode (obfsck-11) — src/mcp/, obfsck-mcp binary, 14 tests.
-  [da19143, 59cf099, 9349b9b, 5661dbc]
-- 2026-04-07: Standardized CI — ci.yml, nightly.yml, deny.toml, git hooks. All CI green.
-  [2dfe210, b2f21e5, 2ca5ff7, f7f0c74]
-- 2026-04-06: devkit council sweep — 9 issues filed. Added obfsck-7/8/9 to HANDOFF.
+- 20260422:215703: Released v0.1.0. Added richer error messages (line numbers in findings, invalid pattern warnings). Wired obfsck-scan into pre-commit hook (local .githooks + global ~/.config/git/hooks). Added two CLI integration tests. Moved handoff SQLite DB to ~/.ctx/handoff.db. [ca830e3, 3d82a71, 8c4661d]
+- 20260419:180000: Merged refactor/pattern-source-port into main. All items closed (obfsck-12/13/14/15/16/17). Committed Send+Sync bounds on LlmProvider trait. [f320d81, eb14f28]
+- 20260419:162232: handup sweep — workspace HANDOFF pruned (obfsck-7/8/9 were fixed 2026-04-13; removed done items). Migrated to HANDOFF.obfsck.obfsck.yaml.
+- 20260418:000000: handjobs triage — closed GH #1/2/3/4/6/7/9 (all fixed). 2 open items remain (obfsck-13, obfsck-15). Design sketches proposed for obfsck-12/14/16/17.
+- 20260413:000000: Fixed path traversal (obfsck-7), YAML parser silent drop (obfsck-8), allowlist bypass (obfsck-9). [265e84c, 4d5e1fd, fa8cab9]

@@ -86,13 +86,15 @@ scratch/
 !docs/superpowers/**/*.md
 .envrc
 *.local.md
+*.local.json
 !CLAUDE.md
 .remember/logs/autonomous/*
 !Handoff.*
 # handoff-begin
 .ctx/*
 !.ctx/HANDOFF.*.yaml
-.ctx/HANDOFF.*.state.yaml
+.ctx/HANDOFF*.state.yaml
 !.ctx/handoff.*.config.toml.example
 .ctx/.initialized
+.ctx/HANDOFF.state.yaml
 # handoff-end

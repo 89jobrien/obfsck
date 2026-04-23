@@ -38,7 +38,10 @@ fn filter_suggestion_fields_are_non_empty() {
     let examples = vec!["token=ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string()];
     for sug in suggester.suggest(&examples) {
         assert!(!sug.label.is_empty(), "suggestion label must not be empty");
-        assert!(!sug.pattern.is_empty(), "suggestion pattern must not be empty");
+        assert!(
+            !sug.pattern.is_empty(),
+            "suggestion pattern must not be empty"
+        );
     }
 }
 

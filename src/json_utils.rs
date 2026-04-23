@@ -51,7 +51,10 @@ mod tests {
     #[test]
     fn extracts_nested_object() {
         let input = r#"{"outer":{"inner":42}}"#;
-        assert_eq!(extract_json_object(input), Some(r#"{"outer":{"inner":42}}"#));
+        assert_eq!(
+            extract_json_object(input),
+            Some(r#"{"outer":{"inner":42}}"#)
+        );
     }
 
     #[test]

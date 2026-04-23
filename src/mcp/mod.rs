@@ -46,7 +46,10 @@ impl Auditor for ObfsckAuditor {
         let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
 
         for def in SECRET_PATTERN_DEFS {
-            if let Ok(re) = RegexBuilder::new(def.pattern).case_insensitive(true).build() {
+            if let Ok(re) = RegexBuilder::new(def.pattern)
+                .case_insensitive(true)
+                .build()
+            {
                 let n = re.find_iter(text).count();
                 if n > 0 {
                     *counts.entry(def.label.to_string()).or_insert(0) += n;

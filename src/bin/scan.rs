@@ -21,10 +21,8 @@ use std::process;
 static BUNDLED_CONFIG: &str = include_str!("../../config/secrets.yaml");
 
 #[derive(Parser)]
-#[command(
-    about = "Scan a diff for secrets using obfsck and gitleaks. \
-             Reads unified diff from stdin or uses --staged to capture git diff automatically."
-)]
+#[command(about = "Scan a diff for secrets using obfsck and gitleaks. \
+             Reads unified diff from stdin or uses --staged to capture git diff automatically.")]
 struct Args {
     /// Run `git diff --staged` internally instead of reading from stdin.
     #[arg(long)]
@@ -65,16 +63,19 @@ impl SecretScanner for ObfsckScanner {
             .flat_map(|g| g.patterns.iter())
             .chain(config.custom.iter())
             .filter(|p| !p.paranoid_only || is_paranoid)
-            .filter_map(|p| {
-                match RegexBuilder::new(&p.pattern).case_insensitive(true).build() {
+            .filter_map(
+                |p| match RegexBuilder::new(&p.pattern).case_insensitive(true).build() {
                     Ok(re) => Some((re, p.label.clone())),
                     Err(e) => {
                         let snippet: String = p.pattern.chars().take(60).collect();
-                        eprintln!("warning: skipping invalid pattern '{}' ({}): {e}", p.label, snippet);
+                        eprintln!(
+                            "warning: skipping invalid pattern '{}' ({}): {e}",
+                            p.label, snippet
+                        );
                         None
                     }
-                }
-            })
+                },
+            )
             .collect();
 
         let mut findings = Vec::new();

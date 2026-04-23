@@ -61,25 +61,20 @@ impl SecretScanner for GitleaksAdapter {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| {
-                format!(
-                    "failed to spawn gitleaks binary '{}': {e}",
-                    self.binary
-                )
-            })?;
+            .map_err(|e| format!("failed to spawn gitleaks binary '{}': {e}", self.binary))?;
 
         // Write diff to stdin, then close it.
         if let Some(stdin) = child.stdin.take() {
             let mut stdin = stdin;
-            stdin.write_all(diff.as_bytes()).map_err(|e| {
-                format!("failed to write diff to gitleaks stdin: {e}")
-            })?;
+            stdin
+                .write_all(diff.as_bytes())
+                .map_err(|e| format!("failed to write diff to gitleaks stdin: {e}"))?;
             // stdin dropped here — EOF sent
         }
 
-        let output = child.wait_with_output().map_err(|e| {
-            format!("failed to wait for gitleaks process: {e}")
-        })?;
+        let output = child
+            .wait_with_output()
+            .map_err(|e| format!("failed to wait for gitleaks process: {e}"))?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);

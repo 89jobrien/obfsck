@@ -13,7 +13,10 @@ fn auditor_is_object_safe() {
 #[test]
 fn auditor_empty_text_returns_no_hits() {
     let auditor = ObfsckAuditor::default();
-    assert!(auditor.audit("").is_empty(), "empty input must yield no hits");
+    assert!(
+        auditor.audit("").is_empty(),
+        "empty input must yield no hits"
+    );
 }
 
 // Contract: text with a known secret pattern produces at least one hit.
@@ -62,13 +65,25 @@ fn auditor_counts_multiple_occurrences() {
     let text = format!("token1={pat} token2={pat}");
     let hits = auditor.audit(&text);
     let total: usize = hits.iter().map(|h| h.count).sum();
-    assert!(total >= 2, "two occurrences must produce count >= 2, got {total}");
+    assert!(
+        total >= 2,
+        "two occurrences must produce count >= 2, got {total}"
+    );
 }
 
 // Contract: AuditHit implements Debug and PartialEq.
 #[test]
 fn audit_hit_implements_debug_and_eq() {
-    let hit = AuditHit { label: "test".to_string(), count: 1 };
+    let hit = AuditHit {
+        label: "test".to_string(),
+        count: 1,
+    };
     let _ = format!("{hit:?}");
-    assert_eq!(hit, AuditHit { label: "test".to_string(), count: 1 });
+    assert_eq!(
+        hit,
+        AuditHit {
+            label: "test".to_string(),
+            count: 1
+        }
+    );
 }

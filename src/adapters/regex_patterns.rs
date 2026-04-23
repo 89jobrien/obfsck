@@ -3,11 +3,11 @@
 //! Provides compiled secret pattern regexes using lazy_regex for efficient
 //! initialization on first access.
 
-use crate::ports::PatternSource;
 use crate::SECRET_PATTERN_DEFS;
+use crate::ports::PatternSource;
 use regex::Regex;
-use std::sync::OnceLock;
 use regex::RegexBuilder;
+use std::sync::OnceLock;
 
 pub struct RegexPatternSource;
 

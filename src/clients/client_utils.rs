@@ -39,4 +39,3 @@ pub(super) fn from_rfc3339_or_now(value: Option<&str>) -> DateTime<Utc> {
         .map(|d| d.with_timezone(&Utc))
         .unwrap_or_else(Utc::now)
 }
-

@@ -19,7 +19,10 @@ fn gitleaks_scan_empty_diff() {
         return;
     }
     let result = adapter.scan_diff("");
-    assert!(result.is_ok(), "scan_diff(\"\") must succeed when gitleaks is available");
+    assert!(
+        result.is_ok(),
+        "scan_diff(\"\") must succeed when gitleaks is available"
+    );
     let findings = result.unwrap();
     assert!(
         findings.is_empty(),
@@ -43,7 +46,10 @@ fn gitleaks_scan_clean_diff_returns_no_findings() {
 "#;
     let result = adapter.scan_diff(clean_diff);
     assert!(result.is_ok());
-    assert!(result.unwrap().is_empty(), "clean diff must yield no findings");
+    assert!(
+        result.unwrap().is_empty(),
+        "clean diff must yield no findings"
+    );
 }
 
 // Contract: findings produced by gitleaks carry source == "gitleaks".
@@ -75,7 +81,10 @@ fn gitleaks_findings_have_correct_source() {
 fn gitleaks_unavailable_binary_returns_err() {
     let adapter = GitleaksAdapter::with_binary("/nonexistent/binary/gitleaks");
     let result = adapter.scan_diff("anything");
-    assert!(result.is_err(), "spawning a non-existent binary must return Err");
+    assert!(
+        result.is_err(),
+        "spawning a non-existent binary must return Err"
+    );
 }
 
 // is_available() reflects actual binary presence.
@@ -83,5 +92,8 @@ fn gitleaks_unavailable_binary_returns_err() {
 fn gitleaks_is_available_reflects_binary_presence() {
     let absent = GitleaksAdapter::with_binary("/nonexistent/binary/gitleaks");
     let _ = GitleaksAdapter::new().is_available(); // must not panic
-    assert!(!absent.is_available(), "non-existent binary must not be available");
+    assert!(
+        !absent.is_available(),
+        "non-existent binary must not be available"
+    );
 }

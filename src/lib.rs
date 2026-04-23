@@ -8,13 +8,13 @@ pub const ANALYZER_DEFAULT_FILTER: &str = "obfsck=info,warn";
 #[cfg(feature = "analyzer")]
 pub mod analyzer;
 #[cfg(feature = "analyzer")]
-pub mod mcp;
-#[cfg(feature = "analyzer")]
 pub mod api;
 #[cfg(feature = "analyzer")]
 pub mod clients;
 #[cfg(feature = "analyzer")]
 pub mod logging;
+#[cfg(feature = "analyzer")]
+pub mod mcp;
 #[cfg(feature = "analyzer")]
 pub mod schema;
 
@@ -643,7 +643,9 @@ pub fn secret_pattern_errors() -> &'static [SecretPatternError] {
 }
 
 fn ipv4_re() -> &'static Regex {
-    lazy_regex::regex!(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b")
+    lazy_regex::regex!(
+        r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
+    )
 }
 
 fn ipv6_re() -> &'static Regex {
@@ -657,7 +659,9 @@ fn email_re() -> &'static Regex {
 fn container_combined_re() -> &'static Regex {
     // UUID alternative first — dashes prevent overlap with plain hex segments.
     // Both alternatives are matched in a single pass over the text.
-    lazy_regex::regex!(r"\b(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{12,64})\b")
+    lazy_regex::regex!(
+        r"\b(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{12,64})\b"
+    )
 }
 
 #[cfg(feature = "legacy-user-scan")]
@@ -676,11 +680,15 @@ fn user_res() -> &'static [Regex] {
 
 #[cfg(not(feature = "legacy-user-scan"))]
 fn user_re() -> &'static Regex {
-    lazy_regex::regex!(r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)([A-Za-z0-9._-]*[A-Za-z0-9])")
+    lazy_regex::regex!(
+        r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)([A-Za-z0-9._-]*[A-Za-z0-9])"
+    )
 }
 
 fn path_re() -> &'static Regex {
-    lazy_regex::regex!(r#"(?i)(?:[a-z]:\\[^\s]+|[a-z]:/[^\s]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[^\\\s]+)*|/[\w./-]+)"#)
+    lazy_regex::regex!(
+        r#"(?i)(?:[a-z]:\\[^\s]+|[a-z]:/[^\s]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[^\\\s]+)*|/[\w./-]+)"#
+    )
 }
 
 fn hostname_re() -> &'static Regex {

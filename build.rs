@@ -51,7 +51,10 @@ fn validate_patterns(patterns: &[PatternEntry]) {
         }
     }
     if !errors.is_empty() {
-        panic!("build.rs validation failed:\n{}\n\nCheck config/secrets.yaml for indentation errors (patterns should have fields indented 4 spaces deeper than the pattern list).", errors.join("\n"));
+        panic!(
+            "build.rs validation failed:\n{}\n\nCheck config/secrets.yaml for indentation errors (patterns should have fields indented 4 spaces deeper than the pattern list).",
+            errors.join("\n")
+        );
     }
 }
 

@@ -1,4 +1,6 @@
-use obfsck::{ObfuscationLevel, obfuscate_alert, obfuscate_text, secret_pattern_errors, Obfuscator};
+use obfsck::{
+    ObfuscationLevel, Obfuscator, obfuscate_alert, obfuscate_text, secret_pattern_errors,
+};
 use std::collections::HashMap;
 
 #[test]
@@ -258,8 +260,8 @@ fn high_entropy_allowlist_bypass() {
     // character class [A-Za-z0-9+/=_-]
     let matched_by_regex = format!("value={high_entropy_token}");
 
-    let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid)
-        .with_allowlist(vec![matched_by_regex.clone()]);
+    let mut obfuscator =
+        Obfuscator::new(ObfuscationLevel::Paranoid).with_allowlist(vec![matched_by_regex.clone()]);
     let out = obfuscator.obfuscate(&input);
 
     // Without fix: will contain [REDACTED-HIGH-ENTROPY] even though token is allowlisted
@@ -287,11 +289,11 @@ fn ipv6_ula_tagged_internal() {
         !out.contains("[IP-EXTERNAL-"),
         "ULA IPv6 should not be tagged external, got: {out}"
     );
-    let tagged_internal = map
-        .ips
-        .values()
-        .any(|v| v.contains("IP-INTERNAL"));
-    assert!(tagged_internal, "map should contain an IP-INTERNAL entry, got: {map:?}");
+    let tagged_internal = map.ips.values().any(|v| v.contains("IP-INTERNAL"));
+    assert!(
+        tagged_internal,
+        "map should contain an IP-INTERNAL entry, got: {map:?}"
+    );
 }
 
 #[test]
@@ -328,7 +330,8 @@ fn obfuscate_paths_populates_map() {
         "ObfuscationMap.paths should be populated after path redaction, got empty map.\nout={out}"
     );
     assert!(
-        map.paths.contains_key("/home/alice/projects/myapp/config.toml"),
+        map.paths
+            .contains_key("/home/alice/projects/myapp/config.toml"),
         "original path should be a key in map.paths, got: {map:?}"
     );
 }
@@ -446,7 +449,10 @@ fn non_sensitive_absolute_path_is_rewritten_at_paranoid() {
         "non-sensitive path should be rewritten at paranoid level; out={out}"
     );
     // File component (config > 3 chars) becomes [FILE].toml
-    assert!(out.contains("[FILE].toml"), "file component should be [FILE].toml: {out}");
+    assert!(
+        out.contains("[FILE].toml"),
+        "file component should be [FILE].toml: {out}"
+    );
 }
 
 /// UNC paths (Windows \\server\share\...) are detected and processed at paranoid level.

@@ -115,7 +115,7 @@ fn dispatch_call(req: &JsonRpcRequest) -> JsonRpcResponse {
             let text = match args.get("text").and_then(|v| v.as_str()) {
                 Some(t) => t,
                 None => {
-                    return JsonRpcResponse::err(req.id.clone(), -32602, "missing argument: text")
+                    return JsonRpcResponse::err(req.id.clone(), -32602, "missing argument: text");
                 }
             };
             let auditor = ObfsckAuditor;
@@ -137,7 +137,7 @@ fn dispatch_call(req: &JsonRpcRequest) -> JsonRpcResponse {
                         req.id.clone(),
                         -32602,
                         "missing argument: examples",
-                    )
+                    );
                 }
             };
             let suggester = PatternSuggester;

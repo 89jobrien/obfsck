@@ -15,7 +15,12 @@ struct MockLogClient {
 impl MockLogClient {
     fn new() -> (Self, Arc<Mutex<Vec<String>>>) {
         let store = Arc::new(Mutex::new(Vec::new()));
-        (Self { entries: Arc::clone(&store) }, store)
+        (
+            Self {
+                entries: Arc::clone(&store),
+            },
+            store,
+        )
     }
 }
 
@@ -37,7 +42,9 @@ fn log_client_is_object_safe() {
 #[test]
 fn mock_log_client_delivers_entry() {
     let (mock, store) = MockLogClient::new();
-    let entry = LogEntry { message: "hello world".to_string() };
+    let entry = LogEntry {
+        message: "hello world".to_string(),
+    };
     mock.send(&entry).expect("send must succeed");
     let captured = store.lock().unwrap();
     assert_eq!(captured.len(), 1);
@@ -49,7 +56,9 @@ fn mock_log_client_delivers_entry() {
 fn mock_log_client_accumulates_entries() {
     let (mock, store) = MockLogClient::new();
     for i in 0..5u32 {
-        let entry = LogEntry { message: format!("msg-{i}") };
+        let entry = LogEntry {
+            message: format!("msg-{i}"),
+        };
         mock.send(&entry).unwrap();
     }
     let captured = store.lock().unwrap();
@@ -72,7 +81,9 @@ fn log_client_boxed_dyn_is_send() {
     let (mock, store) = MockLogClient::new();
     let boxed: Box<dyn LogClient> = Box::new(mock);
     let handle = std::thread::spawn(move || {
-        let entry = LogEntry { message: "from thread".to_string() };
+        let entry = LogEntry {
+            message: "from thread".to_string(),
+        };
         boxed.send(&entry).unwrap();
     });
     handle.join().unwrap();

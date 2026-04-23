@@ -757,7 +757,10 @@ mod tests {
 
     #[test]
     fn cache_key_accepts_hex_string() {
-        assert!(CacheKey::new("a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2").is_ok());
+        assert!(
+            CacheKey::new("a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2")
+                .is_ok()
+        );
     }
 
     #[test]

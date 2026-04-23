@@ -129,7 +129,10 @@ fn main() {
                 Ok(re) => Some((re, format!("[REDACTED-{}]", p.label))),
                 Err(e) => {
                     let snippet: String = p.pattern.chars().take(60).collect();
-                    eprintln!("warning: skipping invalid pattern '{}' ({}): {e}", p.label, snippet);
+                    eprintln!(
+                        "warning: skipping invalid pattern '{}' ({}): {e}",
+                        p.label, snippet
+                    );
                     None
                 }
             }

@@ -1,0 +1,6 @@
+[allowlist]
+description = "obfsck project allowlist"
+paths = [
+    '''config/secrets\.yaml''',
+    '''tests/fixtures/''',
+]

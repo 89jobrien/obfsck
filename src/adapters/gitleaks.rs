@@ -8,6 +8,29 @@ use crate::ports::{Finding, Result, SecretScanner};
 use std::io::Write;
 use std::process::{Command, Stdio};
 
+/// Strip ANSI escape sequences from a string for classification.
+fn strip_ansi(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let mut chars = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\x1b' {
+            // Skip CSI sequences: ESC [ ... final_byte
+            if chars.peek() == Some(&'[') {
+                chars.next(); // consume '['
+                while let Some(&next) = chars.peek() {
+                    chars.next();
+                    if next.is_ascii_alphabetic() {
+                        break;
+                    }
+                }
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
 /// Adapter that delegates secret scanning to the installed `gitleaks` binary.
 ///
 /// # Availability
@@ -79,11 +102,42 @@ impl SecretScanner for GitleaksAdapter {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
 
-        // Any output line is a potential finding description.
+        // Parse output lines, filtering out gitleaks' ASCII banner, ANSI
+        // escape sequences, and status/info messages that are not findings.
         let mut findings: Vec<Finding> = Vec::new();
         for line in stdout.lines().chain(stderr.lines()) {
             let trimmed = line.trim();
             if trimmed.is_empty() {
+                continue;
+            }
+            let stripped = strip_ansi(trimmed);
+
+            // Skip decorative banner lines (box-drawing, dots, etc.).
+            if stripped.chars().all(|c| {
+                matches!(
+                    c,
+                    '○' | '│' | '╲' | '░' | '─' | '┐' | '┘' | '┌' | '└'
+                        | '╱' | '█' | ' '
+                )
+            }) {
+                continue;
+            }
+            // Skip status/info lines from gitleaks.
+            if stripped.contains("gitleaks")
+                && !stripped.contains("Finding")
+                && !stripped.contains("Secret")
+                && !stripped.contains("RuleID")
+            {
+                continue;
+            }
+            if stripped.starts_with("INF") || stripped.starts_with("WRN") {
+                continue;
+            }
+            // Skip scanned/timing/summary lines.
+            if stripped.contains("scanned ~")
+                || stripped.contains("no leaks found")
+                || stripped.contains("leaks found:")
+            {
                 continue;
             }
             findings.push(Finding {

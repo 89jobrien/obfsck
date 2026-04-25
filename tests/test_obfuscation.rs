@@ -545,3 +545,86 @@ fn non_allowlisted_segments_redacted_when_feature_enabled() {
         let _ = out;
     }
 }
+
+// obfsck-21: RFC 1918 / loopback / link-local IPv4 classification tests
+mod ipv4_classification {
+    use obfsck::{ObfuscationLevel, obfuscate_text};
+
+    fn assert_internal(ip: &str, label: &str) {
+        let input = format!("host {ip}");
+        let (out, _) = obfuscate_text(&input, ObfuscationLevel::Standard);
+        assert!(
+            out.contains("[IP-INTERNAL-"),
+            "{label}: {ip} should be tagged IP-INTERNAL, got: {out}"
+        );
+    }
+
+    fn assert_external(ip: &str, label: &str) {
+        let input = format!("host {ip}");
+        let (out, _) = obfuscate_text(&input, ObfuscationLevel::Standard);
+        assert!(
+            out.contains("[IP-EXTERNAL-"),
+            "{label}: {ip} should be tagged IP-EXTERNAL, got: {out}"
+        );
+    }
+
+    #[test]
+    fn rfc1918_10_lower() {
+        assert_internal("10.0.0.1", "10.0.0.0/8 lower");
+    }
+
+    #[test]
+    fn rfc1918_10_upper() {
+        assert_internal("10.255.255.255", "10.0.0.0/8 upper boundary");
+    }
+
+    #[test]
+    fn rfc1918_172_16_lower() {
+        assert_internal("172.16.0.1", "172.16.0.0/12 lower");
+    }
+
+    #[test]
+    fn rfc1918_172_16_upper() {
+        assert_internal("172.31.255.255", "172.16.0.0/12 upper boundary");
+    }
+
+    #[test]
+    fn rfc1918_172_below_range() {
+        assert_external("172.15.255.255", "below 172.16.0.0/12");
+    }
+
+    #[test]
+    fn rfc1918_172_above_range() {
+        assert_external("172.32.0.1", "above 172.16.0.0/12");
+    }
+
+    #[test]
+    fn rfc1918_192_168_lower() {
+        assert_internal("192.168.0.1", "192.168.0.0/16 lower");
+    }
+
+    #[test]
+    fn rfc1918_192_168_upper() {
+        assert_internal("192.168.255.255", "192.168.0.0/16 upper");
+    }
+
+    #[test]
+    fn loopback_lower() {
+        assert_internal("127.0.0.1", "loopback lower");
+    }
+
+    #[test]
+    fn loopback_upper() {
+        assert_internal("127.255.255.255", "loopback upper");
+    }
+
+    #[test]
+    fn rfc3927_link_local() {
+        assert_internal("169.254.1.1", "RFC 3927 link-local");
+    }
+
+    #[test]
+    fn public_ip() {
+        assert_external("8.8.8.8", "public IP");
+    }
+}

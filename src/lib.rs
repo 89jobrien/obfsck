@@ -261,6 +261,7 @@ impl Obfuscator {
             (0xAC100000, 0xAC1FFFFF),
             (0xC0A80000, 0xC0A8FFFF),
             (0x7F000000, 0x7FFFFFFF),
+            (0xA9FE0000, 0xA9FEFFFF), // 169.254.0.0/16 link-local (RFC 3927)
         ];
 
         PRIVATE_RANGES

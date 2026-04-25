@@ -10,33 +10,28 @@ fn secret_scanner_is_object_safe() {
     let _dyn_ref: &dyn SecretScanner = &adapter;
 }
 
-// Contract: scan_diff("") on available gitleaks returns Ok(empty).
+// Combined gitleaks integration test — single adapter, three scenarios.
+// Ignored by default because gitleaks startup is ~50s per invocation.
+// Run with: cargo test -- --ignored gitleaks_scan_diff_contracts
 #[test]
-fn gitleaks_scan_empty_diff() {
+#[ignore]
+fn gitleaks_scan_diff_contracts() {
     let adapter = GitleaksAdapter::new();
     if !adapter.is_available() {
         eprintln!("gitleaks not available, skipping scan_diff tests");
         return;
     }
+
+    // 1. Empty diff → Ok(empty)
     let result = adapter.scan_diff("");
-    assert!(
-        result.is_ok(),
-        "scan_diff(\"\") must succeed when gitleaks is available"
-    );
+    assert!(result.is_ok(), "scan_diff(\"\") must succeed");
     let findings = result.unwrap();
     assert!(
         findings.is_empty(),
         "empty diff must yield no findings, got: {findings:?}"
     );
-}
 
-// Contract: scan_diff on a clean diff returns Ok(empty).
-#[test]
-fn gitleaks_scan_clean_diff_returns_no_findings() {
-    let adapter = GitleaksAdapter::new();
-    if !adapter.is_available() {
-        return;
-    }
+    // 2. Clean diff → Ok(empty)
     let clean_diff = r#"diff --git a/foo.rs b/foo.rs
 --- a/foo.rs
 +++ b/foo.rs
@@ -50,15 +45,8 @@ fn gitleaks_scan_clean_diff_returns_no_findings() {
         result.unwrap().is_empty(),
         "clean diff must yield no findings"
     );
-}
 
-// Contract: findings produced by gitleaks carry source == "gitleaks".
-#[test]
-fn gitleaks_findings_have_correct_source() {
-    let adapter = GitleaksAdapter::new();
-    if !adapter.is_available() {
-        return;
-    }
+    // 3. Diff with secret → findings carry source == "gitleaks"
     let diff_with_secret = concat!(
         "diff --git a/config.txt b/config.txt\n",
         "--- a/config.txt\n",

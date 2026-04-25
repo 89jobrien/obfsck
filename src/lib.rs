@@ -1,5 +1,7 @@
 //! Obfuscator
 
+#![warn(clippy::unwrap_used, clippy::expect_used)]
+
 #[cfg(feature = "analyzer")]
 pub const API_DEFAULT_FILTER: &str = "obfsck=info,tower_http=debug,warn";
 #[cfg(feature = "analyzer")]
@@ -666,6 +668,7 @@ fn container_combined_re() -> &'static Regex {
 }
 
 #[cfg(feature = "legacy-user-scan")]
+#[allow(clippy::unwrap_used)] // Static regexes — patterns are compile-time constants.
 fn user_res() -> &'static [Regex] {
     static RES: OnceLock<Vec<Regex>> = OnceLock::new();
     RES.get_or_init(|| {

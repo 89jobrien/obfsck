@@ -1,0 +1,2 @@
+# Deny unwrap/expect in non-test code — enforces .coderabbit.yaml rule.
+# Static regex compilation in OnceLock::get_or_init uses #[allow] per-site.

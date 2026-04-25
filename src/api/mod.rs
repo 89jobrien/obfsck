@@ -707,6 +707,8 @@ async fn store_analysis_with_config(
 fn re_iso_ts() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
+        // Safety: static regex literal — compile failure is a bug, not a runtime condition.
+        #[allow(clippy::expect_used)]
         Regex::new(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{4})?")
             .expect("iso ts regex")
     })
@@ -714,28 +716,38 @@ fn re_iso_ts() -> &'static Regex {
 
 fn re_unix_ts() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
+    // Safety: static regex literal — compile failure is a bug, not a runtime condition.
+    #[allow(clippy::expect_used)]
     RE.get_or_init(|| Regex::new(r"\b\d{10,13}(\.\d+)?\b").expect("unix ts regex"))
 }
 
 fn re_plain_dt() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
+    // Safety: static regex literal — compile failure is a bug, not a runtime condition.
+    #[allow(clippy::expect_used)]
     RE.get_or_init(|| Regex::new(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}").expect("plain dt regex"))
 }
 
 fn re_ids() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
+        // Safety: static regex literal — compile failure is a bug, not a runtime condition.
+        #[allow(clippy::expect_used)]
         Regex::new(r"(user_uid|user_loginuid|pid|ppid|gid|tid|res)=\d+").expect("ids regex")
     })
 }
 
 fn re_container_id() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
+    // Safety: static regex literal — compile failure is a bug, not a runtime condition.
+    #[allow(clippy::expect_used)]
     RE.get_or_init(|| Regex::new(r"(container_id)=[a-f0-9]{8,64}").expect("cid regex"))
 }
 
 fn re_ip_port() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
+    // Safety: static regex literal — compile failure is a bug, not a runtime condition.
+    #[allow(clippy::expect_used)]
     RE.get_or_init(|| Regex::new(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?").expect("ip regex"))
 }
 

@@ -668,13 +668,12 @@ fn container_combined_re() -> &'static Regex {
 fn user_res() -> &'static [Regex] {
     static RES: OnceLock<Vec<Regex>> = OnceLock::new();
     RES.get_or_init(|| {
-        [
-            lazy_regex::regex!(r"(?i)(user=)([A-Za-z0-9._-]+)"),
-            lazy_regex::regex!(r"(?i)(uid=)(\d+)"),
-            lazy_regex::regex!(r"(?i)(User )([A-Za-z0-9._-]+)"),
-            lazy_regex::regex!(r"(?i)(by user )([A-Za-z0-9._-]+)"),
+        vec![
+            Regex::new(r"(?i)(user=)([A-Za-z0-9._-]+)").unwrap(),
+            Regex::new(r"(?i)(uid=)(\d+)").unwrap(),
+            Regex::new(r"(?i)(User )([A-Za-z0-9._-]+)").unwrap(),
+            Regex::new(r"(?i)(by user )([A-Za-z0-9._-]+)").unwrap(),
         ]
-        .to_vec()
     })
 }
 

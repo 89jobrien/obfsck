@@ -116,8 +116,17 @@ impl SecretScanner for GitleaksAdapter {
             if stripped.chars().all(|c| {
                 matches!(
                     c,
-                    '○' | '│' | '╲' | '░' | '─' | '┐' | '┘' | '┌' | '└'
-                        | '╱' | '█' | ' '
+                    '○' | '│'
+                        | '╲'
+                        | '░'
+                        | '─'
+                        | '┐'
+                        | '┘'
+                        | '┌'
+                        | '└'
+                        | '╱'
+                        | '█'
+                        | ' '
                 )
             }) {
                 continue;

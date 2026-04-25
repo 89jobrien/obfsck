@@ -5,14 +5,14 @@ use obfsck::mcp::{FilterSuggester, FilterSuggestion, PatternSuggester};
 // Trait object safety.
 #[test]
 fn filter_suggester_is_object_safe() {
-    let adapter = PatternSuggester::default();
+    let adapter = PatternSuggester;
     let _dyn_ref: &dyn FilterSuggester = &adapter;
 }
 
 // Contract: suggest(&[]) returns no suggestions.
 #[test]
 fn filter_suggester_empty_examples_returns_no_suggestions() {
-    let suggester = PatternSuggester::default();
+    let suggester = PatternSuggester;
     assert!(
         suggester.suggest(&[]).is_empty(),
         "empty examples must yield no suggestions"
@@ -22,7 +22,7 @@ fn filter_suggester_empty_examples_returns_no_suggestions() {
 // Contract: example with a known secret produces at least one suggestion.
 #[test]
 fn filter_suggester_known_secret_produces_suggestion() {
-    let suggester = PatternSuggester::default();
+    let suggester = PatternSuggester;
     let examples = vec!["token=ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string()];
     let suggestions = suggester.suggest(&examples);
     assert!(
@@ -34,7 +34,7 @@ fn filter_suggester_known_secret_produces_suggestion() {
 // Contract: FilterSuggestion fields are non-empty.
 #[test]
 fn filter_suggestion_fields_are_non_empty() {
-    let suggester = PatternSuggester::default();
+    let suggester = PatternSuggester;
     let examples = vec!["token=ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string()];
     for sug in suggester.suggest(&examples) {
         assert!(!sug.label.is_empty(), "suggestion label must not be empty");
@@ -48,7 +48,7 @@ fn filter_suggestion_fields_are_non_empty() {
 // Contract: suggestions are de-duplicated — same label appears at most once.
 #[test]
 fn filter_suggester_deduplicates_by_label() {
-    let suggester = PatternSuggester::default();
+    let suggester = PatternSuggester;
     let pat = "ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     let examples: Vec<String> = (0..3).map(|i| format!("token{i}={pat}")).collect();
     let suggestions = suggester.suggest(&examples);

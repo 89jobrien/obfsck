@@ -5,14 +5,14 @@ use obfsck::mcp::{AuditHit, Auditor, ObfsckAuditor};
 // Trait object safety.
 #[test]
 fn auditor_is_object_safe() {
-    let adapter = ObfsckAuditor::default();
+    let adapter = ObfsckAuditor;
     let _dyn_ref: &dyn Auditor = &adapter;
 }
 
 // Contract: audit("") returns no hits.
 #[test]
 fn auditor_empty_text_returns_no_hits() {
-    let auditor = ObfsckAuditor::default();
+    let auditor = ObfsckAuditor;
     assert!(
         auditor.audit("").is_empty(),
         "empty input must yield no hits"
@@ -22,7 +22,7 @@ fn auditor_empty_text_returns_no_hits() {
 // Contract: text with a known secret pattern produces at least one hit.
 #[test]
 fn auditor_detects_known_secret_pattern() {
-    let auditor = ObfsckAuditor::default();
+    let auditor = ObfsckAuditor;
     let text = "token=ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     let hits = auditor.audit(text);
     assert!(
@@ -34,7 +34,7 @@ fn auditor_detects_known_secret_pattern() {
 // Contract: AuditHit fields are non-empty and count > 0.
 #[test]
 fn audit_hits_have_valid_fields() {
-    let auditor = ObfsckAuditor::default();
+    let auditor = ObfsckAuditor;
     let text = "token=ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     for hit in auditor.audit(text) {
         assert!(!hit.label.is_empty(), "hit label must not be empty");
@@ -45,7 +45,7 @@ fn audit_hits_have_valid_fields() {
 // Contract: hits are sorted by label (deterministic output).
 #[test]
 fn auditor_hits_are_sorted_by_label() {
-    let auditor = ObfsckAuditor::default();
+    let auditor = ObfsckAuditor;
     let text = concat!(
         "token=ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ",
         "key=AKIAIOSFODNN7EXAMPLE ",
@@ -60,7 +60,7 @@ fn auditor_hits_are_sorted_by_label() {
 // Contract: two occurrences of the same pattern yield count >= 2.
 #[test]
 fn auditor_counts_multiple_occurrences() {
-    let auditor = ObfsckAuditor::default();
+    let auditor = ObfsckAuditor;
     let pat = "ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     let text = format!("token1={pat} token2={pat}");
     let hits = auditor.audit(&text);

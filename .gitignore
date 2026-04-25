@@ -98,3 +98,4 @@ scratch/
 .ctx/.initialized
 .ctx/HANDOFF.state.yaml
 # handoff-end
+.claude/worktrees/

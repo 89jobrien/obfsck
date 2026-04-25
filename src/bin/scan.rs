@@ -15,6 +15,7 @@ use obfsck::ports::{Finding, SecretScanner};
 use obfsck::yaml_config::SecretsConfig;
 use obfsck::{ObfuscationLevel, Obfuscator};
 use regex::RegexBuilder;
+use std::collections::HashSet;
 use std::io::{self, Read};
 use std::process;
 
@@ -41,10 +42,27 @@ struct Args {
     require_gitleaks: bool,
 }
 
+/// Load allowlist entries from `~/.config/obfsck/allowlist`.
+/// Returns an empty set if the file does not exist.
+fn load_allowlist() -> HashSet<String> {
+    let home = std::env::var("HOME").unwrap_or_default();
+    let path = std::path::PathBuf::from(home).join(".config/obfsck/allowlist");
+    let Ok(contents) = std::fs::read_to_string(&path) else {
+        return HashSet::new();
+    };
+    contents
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .map(String::from)
+        .collect()
+}
+
 /// Native obfsck diff scanner — implements SecretScanner by running the YAML
 /// secret patterns over each added line in the diff.
 struct ObfsckScanner {
     level: ObfuscationLevel,
+    allowlist: HashSet<String>,
 }
 
 impl SecretScanner for ObfsckScanner {
@@ -87,6 +105,15 @@ impl SecretScanner for ObfsckScanner {
             }
             let content = &line[1..]; // strip leading '+'
 
+            // Skip lines that contain any allowlisted value.
+            if self
+                .allowlist
+                .iter()
+                .any(|entry| content.contains(entry.as_str()))
+            {
+                continue;
+            }
+
             // Run YAML patterns.
             for (re, label) in &patterns {
                 if re.is_match(content) {
@@ -100,7 +127,8 @@ impl SecretScanner for ObfsckScanner {
             }
 
             // Run structural obfuscator — if any obfuscation happens the text changed.
-            let mut obfuscator = Obfuscator::new(level);
+            let mut obfuscator =
+                Obfuscator::new(level).with_allowlist(self.allowlist.iter().cloned().collect());
             let obfuscated = obfuscator.obfuscate(content);
             if obfuscated != content {
                 findings.push(Finding {
@@ -155,7 +183,8 @@ fn main() {
     let mut all_findings: Vec<Finding> = Vec::new();
 
     // Run native obfsck scanner.
-    let obfsck = ObfsckScanner { level };
+    let allowlist = load_allowlist();
+    let obfsck = ObfsckScanner { level, allowlist };
     match obfsck.scan_diff(&diff) {
         Ok(findings) => all_findings.extend(findings),
         Err(e) => {

@@ -213,6 +213,12 @@ impl Obfuscator {
         s.into_owned()
     }
 
+    // IPv6 private-range bitmasks
+    const IPV6_ULA_MASK: u16 = 0xFE00;
+    const IPV6_ULA_PREFIX: u16 = 0xFC00;
+    const IPV6_LINK_LOCAL_MASK: u16 = 0xFFC0;
+    const IPV6_LINK_LOCAL_PREFIX: u16 = 0xFE80;
+
     fn is_private_ipv6(ip: &str) -> bool {
         // Parse the first group of a full-form IPv6 address (8 colon-separated
         // groups of hex digits). Handles only the full form produced by ipv6_re().
@@ -225,11 +231,11 @@ impl Obfuscator {
             return true;
         }
         // fc00::/7 — Unique Local Addresses (ULA): first 7 bits == 1111110
-        if g0 & 0xFE00 == 0xFC00 {
+        if g0 & Self::IPV6_ULA_MASK == Self::IPV6_ULA_PREFIX {
             return true;
         }
         // fe80::/10 — Link-Local: first 10 bits == 1111111010
-        if g0 & 0xFFC0 == 0xFE80 {
+        if g0 & Self::IPV6_LINK_LOCAL_MASK == Self::IPV6_LINK_LOCAL_PREFIX {
             return true;
         }
         false
@@ -257,7 +263,10 @@ impl Obfuscator {
             return false;
         }
 
-        let ip_int = (a << 24) + (b << 16) + (c << 8) + d;
+        const OCTET_A_SHIFT: u32 = 24;
+        const OCTET_B_SHIFT: u32 = 16;
+        const OCTET_C_SHIFT: u32 = 8;
+        let ip_int = (a << OCTET_A_SHIFT) + (b << OCTET_B_SHIFT) + (c << OCTET_C_SHIFT) + d;
         const PRIVATE_RANGES: &[(u32, u32)] = &[
             (0x0A000000, 0x0AFFFFFF),
             (0xAC100000, 0xAC1FFFFF),
@@ -463,6 +472,10 @@ impl Obfuscator {
             .into_owned()
     }
 
+    const HIGH_ENTROPY_MIN_LEN: usize = 20;
+    const HIGH_ENTROPY_THRESHOLD: f64 = 4.5;
+    const HIGH_ENTROPY_TRUNCATE_LEN: usize = 10;
+
     fn obfuscate_high_entropy(&mut self, text: &str) -> String {
         if !high_entropy_candidate_re().is_match(text) {
             return text.to_string();
@@ -471,12 +484,17 @@ impl Obfuscator {
         high_entropy_candidate_re()
             .replace_all(text, |caps: &regex::Captures<'_>| {
                 let s = &caps[0];
-                if s.len() >= 20 && shannon_entropy(s) > 4.5 {
+                if s.len() >= Self::HIGH_ENTROPY_MIN_LEN
+                    && shannon_entropy(s) > Self::HIGH_ENTROPY_THRESHOLD
+                {
                     // Check allowlist before redacting
                     if self.allowlist.contains(s) {
                         return s.to_string();
                     }
-                    let mut truncated = s.chars().take(10).collect::<String>();
+                    let mut truncated = s
+                        .chars()
+                        .take(Self::HIGH_ENTROPY_TRUNCATE_LEN)
+                        .collect::<String>();
                     truncated.push_str("...");
                     self.map.secrets.insert(truncated);
                     "[REDACTED-HIGH-ENTROPY]".to_string()
@@ -486,6 +504,8 @@ impl Obfuscator {
             })
             .into_owned()
     }
+
+    const SECRET_TRUNCATE_LEN: usize = 20;
 
     fn obfuscate_secrets(&mut self, text: &str) -> String {
         let mut s: Cow<'_, str> = Cow::Borrowed(text);
@@ -516,7 +536,10 @@ impl Obfuscator {
                     if self.allowlist.contains(m) {
                         return m.to_string();
                     }
-                    let mut truncated = m.chars().take(20).collect::<String>();
+                    let mut truncated = m
+                        .chars()
+                        .take(Self::SECRET_TRUNCATE_LEN)
+                        .collect::<String>();
                     truncated.push_str("...");
                     self.map.secrets.insert(truncated);
                     format!("[REDACTED-{label}]")
@@ -645,27 +668,32 @@ pub fn secret_pattern_errors() -> &'static [SecretPatternError] {
     SECRET_PATTERN_ERRORS.get_or_init(Vec::new)
 }
 
-fn ipv4_re() -> &'static Regex {
-    lazy_regex::regex!(
-        r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
-    )
+/// Helper to create a `OnceLock`-backed static regex.
+macro_rules! static_regex {
+    ($name:ident, $pattern:expr) => {
+        fn $name() -> &'static Regex {
+            static RE: OnceLock<Regex> = OnceLock::new();
+            RE.get_or_init(|| {
+                Regex::new($pattern).expect(concat!("static regex: ", stringify!($name)))
+            })
+        }
+    };
 }
 
-fn ipv6_re() -> &'static Regex {
-    lazy_regex::regex!(r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b")
-}
-
-fn email_re() -> &'static Regex {
-    lazy_regex::regex!(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
-}
-
-fn container_combined_re() -> &'static Regex {
-    // UUID alternative first — dashes prevent overlap with plain hex segments.
-    // Both alternatives are matched in a single pass over the text.
-    lazy_regex::regex!(
-        r"\b(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{12,64})\b"
-    )
-}
+static_regex!(
+    ipv4_re,
+    r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
+);
+static_regex!(ipv6_re, r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b");
+static_regex!(
+    email_re,
+    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
+);
+// UUID alternative first — dashes prevent overlap with plain hex segments.
+static_regex!(
+    container_combined_re,
+    r"\b(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{12,64})\b"
+);
 
 #[cfg(feature = "legacy-user-scan")]
 #[allow(clippy::unwrap_used)] // Static regexes — patterns are compile-time constants.
@@ -682,25 +710,19 @@ fn user_res() -> &'static [Regex] {
 }
 
 #[cfg(not(feature = "legacy-user-scan"))]
-fn user_re() -> &'static Regex {
-    lazy_regex::regex!(
-        r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)([A-Za-z0-9._-]*[A-Za-z0-9])"
-    )
-}
-
-fn path_re() -> &'static Regex {
-    lazy_regex::regex!(
-        r#"(?i)(?:[a-z]:\\[^\s]+|[a-z]:/[^\s]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[^\\\s]+)*|/[\w./-]+)"#
-    )
-}
-
-fn hostname_re() -> &'static Regex {
-    lazy_regex::regex!(r"\b[a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)+\b")
-}
-
-fn high_entropy_candidate_re() -> &'static Regex {
-    lazy_regex::regex!(r"\b[A-Za-z0-9+/=_-]{20,}\b")
-}
+static_regex!(
+    user_re,
+    r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)([A-Za-z0-9._-]*[A-Za-z0-9])"
+);
+static_regex!(
+    path_re,
+    r"(?i)(?:[a-z]:\\[^\s]+|[a-z]:/[^\s]+|\\\\[^\\\s]+\\[^\\\s]+(?:\\[^\\\s]+)*|/[\w./-]+)"
+);
+static_regex!(
+    hostname_re,
+    r"\b[a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)+\b"
+);
+static_regex!(high_entropy_candidate_re, r"\b[A-Za-z0-9+/=_-]{20,}\b");
 
 pub mod yaml_config {
     use indexmap::IndexMap;

@@ -128,7 +128,8 @@ fn main() {
             match RegexBuilder::new(&p.pattern).case_insensitive(true).build() {
                 Ok(re) => Some((re, format!("[REDACTED-{}]", p.label))),
                 Err(e) => {
-                    let snippet: String = p.pattern.chars().take(60).collect();
+                    const PATTERN_SNIPPET_LEN: usize = 60;
+                    let snippet: String = p.pattern.chars().take(PATTERN_SNIPPET_LEN).collect();
                     eprintln!(
                         "warning: skipping invalid pattern '{}' ({}): {e}",
                         p.label, snippet

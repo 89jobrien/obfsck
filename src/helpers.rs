@@ -1,8 +1,10 @@
+const BYTE_RANGE: usize = 256;
+
 pub(super) fn shannon_entropy(s: &str) -> f64 {
     if s.is_empty() {
         return 0.0;
     }
-    let mut counts = [0usize; 256];
+    let mut counts = [0usize; BYTE_RANGE];
     for &b in s.as_bytes() {
         counts[b as usize] += 1;
     }
@@ -92,8 +94,9 @@ pub(super) fn obfuscate_path_value(path: &str) -> String {
             continue;
         }
 
+        const MIN_FILENAME_REDACT_LEN: usize = 3;
         if let Some((name, ext)) = part.rsplit_once('.') {
-            if name.len() > 3 {
+            if name.len() > MIN_FILENAME_REDACT_LEN {
                 out.push_str("[FILE].");
                 out.push_str(ext);
             } else {

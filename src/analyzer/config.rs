@@ -210,11 +210,13 @@ pub fn load_config(config_path: Option<&str>) -> Result<AnalyzerConfig> {
     Ok(cfg)
 }
 
+const MAX_SECRET_FILE_SIZE: u64 = 65_536;
+
 fn read_secret(env_var: &str) -> Option<String> {
     let file_var = format!("{env_var}_FILE");
     if let Ok(file_path) = env::var(&file_var) {
         if let Ok(meta) = fs::metadata(&file_path)
-            && meta.len() > 65_536
+            && meta.len() > MAX_SECRET_FILE_SIZE
         {
             warn!(path = %file_path, size = meta.len(), "Secret file too large (>64KB), skipping");
             return None;

@@ -5,7 +5,7 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-lazy-regex = "3"
+indexmap = { version = "2", features = ["serde"] }
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -26,8 +26,6 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"], option
 tower-http = { version = "0.6", features = ["cors", "trace", "request-id"], optional = true }
 tracing-appender = { version = "0.2", optional = true }
 tracing-subscriber = { version = "0.3", features = ["json", "env-filter"], optional = true }
-walkdir = { version = "2", optional = true }
-indexmap = { version = "2.13.0", features = ["serde"] }
 
 [features]
 default = ["analyzer"]
@@ -45,7 +43,6 @@ analyzer = [
     "tower-http",
     "tracing-appender",
     "tracing-subscriber",
-    "walkdir",
 ]
 legacy-user-scan = []
 path-policy-home-user-redact = []
@@ -90,7 +87,7 @@ required-features = ["analyzer"]
 
 [package.metadata.cargo-machete]
 # These are feature-gated under "analyzer" — machete runs without features and flags them as unused
-ignored = ["simplify_baml_macros", "walkdir"]
+ignored = ["simplify_baml_macros"]
 
 [[bench]]
 name = "user_obfuscation"

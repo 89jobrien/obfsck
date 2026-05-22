@@ -3,16 +3,15 @@
 // src/secrets.rs and wires build.rs, it must still pass.
 
 #[test]
-fn secret_pattern_defs_non_empty() {
-    assert!(
-        !obfsck::SECRET_PATTERN_DEFS.is_empty(),
-        "SECRET_PATTERN_DEFS must not be empty"
-    );
+fn secret_pattern_defs_is_non_empty() {
+    let defs = obfsck::SECRET_PATTERN_DEFS;
+    assert!(!defs.is_empty(), "SECRET_PATTERN_DEFS must not be empty");
 }
 
 #[test]
-fn known_patterns_present() {
-    let names: Vec<&str> = obfsck::SECRET_PATTERN_DEFS.iter().map(|p| p.name).collect();
+fn secret_pattern_defs_contains_known_patterns() {
+    let defs = obfsck::SECRET_PATTERN_DEFS;
+    let names: Vec<&str> = defs.iter().map(|p| p.name).collect();
     for expected in &[
         "aws_access_key",
         "github_pat",
@@ -31,8 +30,8 @@ fn known_patterns_present() {
 }
 
 #[test]
-fn paranoid_only_flag_present() {
-    // At least one pattern should be paranoid_only = true (e.g. heroku_api_key, aws_secret_key)
-    let has_paranoid = obfsck::SECRET_PATTERN_DEFS.iter().any(|p| p.paranoid_only);
+fn secret_pattern_defs_has_paranoid_only_flag() {
+    let defs = obfsck::SECRET_PATTERN_DEFS;
+    let has_paranoid = defs.iter().any(|p| p.paranoid_only);
     assert!(has_paranoid, "Expected at least one paranoid_only pattern");
 }

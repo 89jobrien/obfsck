@@ -89,17 +89,19 @@ fn suggestion_pattern_is_valid_regex() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn jsonrpc_request_deserializes_initialize() {
+fn dispatch_tool_handles_initialize_request() {
     let raw = r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"#;
     let req: JsonRpcRequest = serde_json::from_str(raw).expect("deserialize");
-    assert_eq!(req.method, "initialize");
+    let resp = dispatch_tool(&req);
+    assert!(resp.result.is_some(), "initialize should return a result");
 }
 
 #[test]
-fn jsonrpc_request_deserializes_tools_list() {
+fn dispatch_tool_handles_tools_list_request() {
     let raw = r#"{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}"#;
     let req: JsonRpcRequest = serde_json::from_str(raw).expect("deserialize");
-    assert_eq!(req.method, "tools/list");
+    let resp = dispatch_tool(&req);
+    assert!(resp.result.is_some(), "tools/list should return a result");
 }
 
 #[test]

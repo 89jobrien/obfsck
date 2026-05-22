@@ -1,0 +1,43 @@
+# rustqual configuration for obfsck
+#
+# Binary dispatch functions (main, CLI wiring) are covered by integration
+# tests, not unit tests — rustqual only traces intra-crate unit test calls.
+ignore_functions = [
+    "main",
+    "run_from_args",
+    "print_analysis",
+    "open_reader",
+    "open_writer",
+    "load_config",
+    "apply_profile",
+    "default_true",
+    "default_openai_model",
+    "default_anthropic_model",
+    "from_config",
+    "parse_analysis_response",
+    "expand_env_in_value",
+    "init",               # logging::init
+    "fetch_raw",          # example helper
+    "synthetic_payload",  # example helper
+]
+
+# Intentional duplication: test_yaml_parser.rs copies build.rs parser
+# functions to test them in isolation (build.rs can't export to lib).
+exclude_files = [
+    "tests/test_yaml_parser.rs",
+]
+
+[duplicates]
+# pub API functions (secret_pattern_errors, with_binary, etc.) are used
+# by other crates and integration tests — single-crate analysis flags
+# them as dead code incorrectly.
+detect_dead_code = false
+
+[srp]
+file_length_baseline = 500
+file_length_ceiling = 800
+
+[complexity]
+max_cognitive = 18
+max_cyclomatic = 11
+max_function_lines = 68

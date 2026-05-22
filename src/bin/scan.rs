@@ -85,7 +85,8 @@ impl SecretScanner for ObfsckScanner {
                 |p| match RegexBuilder::new(&p.pattern).case_insensitive(true).build() {
                     Ok(re) => Some((re, p.label.clone())),
                     Err(e) => {
-                        let snippet: String = p.pattern.chars().take(60).collect();
+                        const PATTERN_SNIPPET_LEN: usize = 60;
+                        let snippet: String = p.pattern.chars().take(PATTERN_SNIPPET_LEN).collect();
                         eprintln!(
                             "warning: skipping invalid pattern '{}' ({}): {e}",
                             p.label, snippet
@@ -114,12 +115,14 @@ impl SecretScanner for ObfsckScanner {
                 continue;
             }
 
+            const MAX_LOCATION_LEN: usize = 120;
+
             // Run YAML patterns.
             for (re, label) in &patterns {
                 if re.is_match(content) {
                     findings.push(Finding {
                         description: format!("[REDACTED-{label}] pattern matched"),
-                        location: Some(line.chars().take(120).collect()),
+                        location: Some(line.chars().take(MAX_LOCATION_LEN).collect()),
                         line_number: Some(line_no + 1),
                         source: "obfsck".to_string(),
                     });
@@ -133,7 +136,7 @@ impl SecretScanner for ObfsckScanner {
             if obfuscated != content {
                 findings.push(Finding {
                     description: "structural secret/PII detected by obfsck".to_string(),
-                    location: Some(line.chars().take(120).collect()),
+                    location: Some(line.chars().take(MAX_LOCATION_LEN).collect()),
                     line_number: Some(line_no + 1),
                     source: "obfsck".to_string(),
                 });

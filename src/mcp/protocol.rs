@@ -87,6 +87,10 @@ fn tools_schema() -> Value {
     })
 }
 
+/// JSON-RPC 2.0 standard error codes.
+const JSONRPC_METHOD_NOT_FOUND: i32 = -32601;
+const JSONRPC_INVALID_PARAMS: i32 = -32602;
+
 pub fn dispatch_tool(req: &JsonRpcRequest) -> JsonRpcResponse {
     match req.method.as_str() {
         "initialize" => JsonRpcResponse::ok(
@@ -99,14 +103,20 @@ pub fn dispatch_tool(req: &JsonRpcRequest) -> JsonRpcResponse {
         ),
         "tools/list" => JsonRpcResponse::ok(req.id.clone(), tools_schema()),
         "tools/call" => dispatch_call(req),
-        _ => JsonRpcResponse::err(req.id.clone(), -32601, "method not found"),
+        _ => JsonRpcResponse::err(req.id.clone(), JSONRPC_METHOD_NOT_FOUND, "method not found"),
     }
 }
 
 fn dispatch_call(req: &JsonRpcRequest) -> JsonRpcResponse {
     let name = match req.params.get("name").and_then(|v| v.as_str()) {
         Some(n) => n,
-        None => return JsonRpcResponse::err(req.id.clone(), -32602, "missing tool name"),
+        None => {
+            return JsonRpcResponse::err(
+                req.id.clone(),
+                JSONRPC_INVALID_PARAMS,
+                "missing tool name",
+            );
+        }
     };
     let args = req.params.get("arguments").unwrap_or(&Value::Null);
 
@@ -115,7 +125,11 @@ fn dispatch_call(req: &JsonRpcRequest) -> JsonRpcResponse {
             let text = match args.get("text").and_then(|v| v.as_str()) {
                 Some(t) => t,
                 None => {
-                    return JsonRpcResponse::err(req.id.clone(), -32602, "missing argument: text");
+                    return JsonRpcResponse::err(
+                        req.id.clone(),
+                        JSONRPC_INVALID_PARAMS,
+                        "missing argument: text",
+                    );
                 }
             };
             let auditor = ObfsckAuditor;
@@ -135,7 +149,7 @@ fn dispatch_call(req: &JsonRpcRequest) -> JsonRpcResponse {
                 None => {
                     return JsonRpcResponse::err(
                         req.id.clone(),
-                        -32602,
+                        JSONRPC_INVALID_PARAMS,
                         "missing argument: examples",
                     );
                 }
@@ -151,6 +165,10 @@ fn dispatch_call(req: &JsonRpcRequest) -> JsonRpcResponse {
                 serde_json::json!({ "suggestions": suggestions }),
             )
         }
-        _ => JsonRpcResponse::err(req.id.clone(), -32602, format!("unknown tool: {name}")),
+        _ => JsonRpcResponse::err(
+            req.id.clone(),
+            JSONRPC_INVALID_PARAMS,
+            format!("unknown tool: {name}"),
+        ),
     }
 }

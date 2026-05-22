@@ -28,9 +28,12 @@ pub(super) fn with_metadata(
     alert
 }
 
+const NS_PER_MICROSECOND: i64 = 1_000;
+
 pub(super) fn from_loki_timestamp_ns(nanos_str: &str) -> DateTime<Utc> {
     let timestamp_ns = nanos_str.parse::<i64>().unwrap_or(0);
-    DateTime::<Utc>::from_timestamp_micros(timestamp_ns / 1_000).unwrap_or_else(Utc::now)
+    DateTime::<Utc>::from_timestamp_micros(timestamp_ns / NS_PER_MICROSECOND)
+        .unwrap_or_else(Utc::now)
 }
 
 pub(super) fn from_rfc3339_or_now(value: Option<&str>) -> DateTime<Utc> {

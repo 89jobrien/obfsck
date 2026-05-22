@@ -1,6 +1,6 @@
 //! Adapter: default in-memory regex pattern source.
 //!
-//! Provides compiled secret pattern regexes using lazy_regex for efficient
+//! Provides compiled secret pattern regexes using `OnceLock` for efficient
 //! initialization on first access.
 
 use crate::SECRET_PATTERN_DEFS;

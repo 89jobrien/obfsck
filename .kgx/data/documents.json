@@ -1,0 +1,32 @@
+{
+  "documents": [
+    {
+      "id": "obfsck_architecture",
+      "title": "obfsck Crate Architecture",
+      "source": "src/lib.rs, Cargo.toml, CLAUDE.md",
+      "raw_content": "obfsck is a Rust crate for obfuscating/redacting sensitive data in log text before LLM analysis. Public API: obfuscate_text(), obfuscate_alert(), ObfuscationLevel, Obfuscator, ObfuscationMap. Core: lib.rs, helpers.rs, secrets.rs, ports.rs. Adapters: regex_patterns.rs, gitleaks.rs. MCP server. Analyzer feature. Binaries: redact, scan, analyzer, api, obfsck-mcp.",
+      "chunks": [
+        {
+          "id": "ee4df549-2688-4004-8d22-fdbe0b9cd6e2",
+          "doc_id": "obfsck_architecture",
+          "text": "obfsck is a Rust crate for obfuscating/redacting sensitive data in log text before LLM analysis. Public API: obfuscate_text(), obfuscate_alert(), ObfuscationLevel, Obfuscator, ObfuscationMap. Core: lib.rs, helpers.rs, secrets.rs, ports.rs. Adapters: regex_patterns.rs, gitleaks.rs. MCP server. Analyzer feature. Binaries: redact, scan, analyzer, api, obfsck-mcp.",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "id": "session_2026_05_23",
+      "title": "Session 2026-05-23: Quality and Testing",
+      "source": ".ctx/reflect-2026-05-23.md",
+      "raw_content": "Session work: rustqual score improved 53% to 81% (175 to 63 findings). Removed lazy-regex dependency, replaced with static_regex! macro using OnceLock. Removed walkdir dependency. Core deps 7 to 6, full deps 21 to 19. Extracted magic numbers to named constants across 8 files. Added rustqual.toml config. Applied testing philosophy: 10 proptest property tests (obfuscation invariants, IP classification, level parsing, allowlist bypass), 2 cargo-fuzz targets (fuzz_obfuscate, fuzz_strip_ansi), 14 inline unit tests in helpers.rs. Discovered: pattern evaluation order is load-bearing (IndexMap required, BTreeMap broke golden tests). serde_yml 0.0.12 too immature to replace serde_yaml.",
+      "chunks": [
+        {
+          "id": "542c9896-39c1-4b8d-a9e2-1b1ab5537a5d",
+          "doc_id": "session_2026_05_23",
+          "text": "Session work: rustqual score improved 53% to 81% (175 to 63 findings). Removed lazy-regex dependency, replaced with static_regex! macro using OnceLock. Removed walkdir dependency. Core deps 7 to 6, full deps 21 to 19. Extracted magic numbers to named constants across 8 files. Added rustqual.toml config. Applied testing philosophy: 10 proptest property tests (obfuscation invariants, IP classification, level parsing, allowlist bypass), 2 cargo-fuzz targets (fuzz_obfuscate, fuzz_strip_ansi), 14 inline unit tests in helpers.rs. Discovered: pattern evaluation order is load-bearing (IndexMap required, BTreeMap broke golden tests). serde_yml 0.0.12 too immature to replace serde_yaml.",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

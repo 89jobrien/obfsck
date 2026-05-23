@@ -1,20 +1,15 @@
 project: obfsck
 id: obfsck
-updated: 2026-04-22
+updated: 2026-05-23
 items: []
 log:
 - date: 20260422:215703
   summary: Released v0.1.0. Added richer error messages (line numbers in findings, invalid pattern warnings). Wired obfsck-scan into pre-commit hook (local .githooks + global ~/.config/git/hooks). Added two CLI integration tests. Moved handoff SQLite DB to ~/.ctx/handoff.db.
-  commits:
-  - ca830e3
-  - 3d82a71
-  - 8c4661d
+  commits: []
   session: 8
 - date: 20260419:180000
   summary: Merged refactor/pattern-source-port into main. All items closed (obfsck-12/13/14/15/16/17). Committed Send+Sync bounds on LlmProvider trait.
-  commits:
-  - f320d81
-  - eb14f28
+  commits: []
   session: 7
 - date: 20260419:162232
   summary: handup sweep — workspace HANDOFF pruned (obfsck-7/8/9 were fixed 2026-04-13; removed done items). Migrated to HANDOFF.obfsck.obfsck.yaml.
@@ -26,8 +21,5 @@ log:
   session: 5
 - date: 20260413:000000
   summary: Fixed path traversal (obfsck-7), YAML parser silent drop (obfsck-8), allowlist bypass (obfsck-9).
-  commits:
-  - 265e84c
-  - 4d5e1fd
-  - fa8cab9
+  commits: []
   session: 4

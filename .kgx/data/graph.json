@@ -1,0 +1,535 @@
+{
+  "nodes": [
+    {
+      "id": "d0f974d0-452f-495b-9df9-cfeeb766ab74",
+      "name": "scan",
+      "type": "binary",
+      "supporting_text": "CLI: pre-commit secret scanner",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "d7beae14-ffb4-4296-9aab-98aa60397fed",
+      "name": "loki_client",
+      "type": "adapter",
+      "supporting_text": "Log client for Grafana Loki",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "650b85af-748f-4f64-b0c6-a5af451ff164",
+      "name": "property_tests.rs",
+      "type": "test_file",
+      "supporting_text": "10 proptest property tests for obfuscation invariants",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "84392762-dba1-405f-8964-5eb7a469d1f5",
+      "name": "fuzz_strip_ansi",
+      "type": "fuzz_target",
+      "supporting_text": "Fuzzes ANSI escape sequence stripper",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "61fb0f00-a274-46ba-b369-01ce9170ea41",
+      "name": "RegexPatternSource",
+      "type": "adapter",
+      "supporting_text": "Implements PatternSource using SECRET_PATTERN_DEFS",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "efea457b-0d73-4240-adcc-21026f189776",
+      "name": "obfuscate_text",
+      "type": "function",
+      "supporting_text": "Public API function returning (String, ObfuscationMap)",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "fbdcf6a7-e4c7-4094-8d86-9b8a0490e2f7",
+      "name": "LogClient",
+      "type": "trait",
+      "supporting_text": "Port trait for fetching log entries from backends",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "fad9b4ec-9944-414e-9252-61aeac9e80f8",
+      "name": "FilterSuggester",
+      "type": "trait",
+      "supporting_text": "Port trait for suggesting log filters",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "7dbabf8d-29aa-4554-85a0-e4294afc4369",
+      "name": "config/secrets.yaml",
+      "type": "config",
+      "supporting_text": "YAML config defining secret detection patterns",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "name": "obfsck",
+      "type": "crate",
+      "supporting_text": "Rust crate for obfuscating/redacting sensitive data in log text",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "5dd903c8-2765-4fe1-b186-a49c903bfc79",
+      "name": "ObfuscationLevel",
+      "type": "enum",
+      "supporting_text": "Minimal, Standard, Paranoid — controls redaction aggressiveness",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "75d7080c-f829-4224-a660-062ac42a4675",
+      "name": "Auditor",
+      "type": "trait",
+      "supporting_text": "Port trait for auditing text against secret patterns",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "87f55e95-5bf1-41e6-ba98-62a9d15443d1",
+      "name": "build.rs",
+      "type": "build_script",
+      "supporting_text": "Compiles secrets.yaml into SECRET_PATTERN_DEFS",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "ab052101-f672-43a6-9d98-258f66ae942b",
+      "name": "victoria_client",
+      "type": "adapter",
+      "supporting_text": "Log client for VictoriaLogs",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "31d5d3cd-4a1f-4522-9b9c-93ebf956ba2e",
+      "name": "ObfuscationMap",
+      "type": "struct",
+      "supporting_text": "Maps original values to redacted tokens",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "0493fbb3-372d-4009-908d-b9d290fbcace",
+      "name": "lib.rs",
+      "type": "module",
+      "supporting_text": "Public API, IP classification, regex, obfuscation engine",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "a11f3750-8f3b-46b5-a035-d5c7c0c73795",
+      "name": "fuzz_obfuscate",
+      "type": "fuzz_target",
+      "supporting_text": "Fuzzes Obfuscator::obfuscate with arbitrary UTF-8",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "d10dfe9d-cf4f-499f-8132-969a22dbb9f3",
+      "name": "obfuscate_alert",
+      "type": "function",
+      "supporting_text": "Public API function for alert obfuscation",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "96eeecc9-6a73-4e67-b002-4cfc72e60da0",
+      "name": "obfsck-mcp",
+      "type": "binary",
+      "supporting_text": "CLI: MCP server",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "ece39f0f-8823-44f8-9cd4-76b6e50a1dc9",
+      "name": "SecretScanner",
+      "type": "trait",
+      "supporting_text": "Port trait for scanning diffs for secrets",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "99d3e9a9-cf52-4b39-b15b-d3085d2ce147",
+      "name": "PatternSource",
+      "type": "trait",
+      "supporting_text": "Port trait providing compiled regex patterns",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "fe0a2eaa-000e-4d53-a33e-4795ff57874b",
+      "name": "helpers.rs",
+      "type": "module",
+      "supporting_text": "shannon_entropy, is_sensitive_path, obfuscate_path_value",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "55ec42d4-5558-4038-a55b-b413d4db85fb",
+      "name": "rustqual.toml",
+      "type": "config",
+      "supporting_text": "rustqual config: ignore_functions, detect_dead_code=false, exclude_files",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "dbd50052-0784-462b-8ee8-a852809cf147",
+      "name": "static_regex macro",
+      "type": "macro",
+      "supporting_text": "Replaced lazy-regex with static_regex! using OnceLock<Regex>",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "2e35c800-78ac-4a91-8278-e02b9f183874",
+      "name": "ports.rs",
+      "type": "module",
+      "supporting_text": "Trait definitions: SecretScanner, PatternSource, Auditor, FilterSuggester, LogClient, LlmProvider",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "61dc290b-0942-4838-baef-e82914482d43",
+      "name": "Obfuscator",
+      "type": "struct",
+      "supporting_text": "Stateful obfuscator with level and optional allowlist",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "46145156-32bc-4267-8f11-5d9106d4a778",
+      "name": "secrets.rs",
+      "type": "module",
+      "supporting_text": "Generated from config/secrets.yaml via build.rs",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "c761f217-d8c7-488b-bbd2-60f455e36e82",
+      "name": "redact",
+      "type": "binary",
+      "supporting_text": "CLI: pipe text through obfuscation",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "64f4f1fd-5c5e-4e24-a8c5-27b7e551cfc8",
+      "name": "mcp_server",
+      "type": "component",
+      "supporting_text": "MCP server: JSON-RPC dispatch for audit and filter tools",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "5e604090-8464-4936-913e-712416347619",
+      "name": "GitleaksAdapter",
+      "type": "adapter",
+      "supporting_text": null,
+      "source_docs": []
+    },
+    {
+      "id": "61d60450-7b12-40e4-8b0e-f97bce1be913",
+      "name": "analyzer",
+      "type": "feature",
+      "supporting_text": "Feature flag enabling LLM analysis, API server, all binaries",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "9286ea09-741e-48d4-9f05-627e61d6cf47",
+      "name": "GitleaksScanner",
+      "type": "adapter",
+      "supporting_text": "Implements SecretScanner by shelling out to gitleaks",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "4ecc08ab-c54d-43cc-bbfc-572f7cc969fd",
+      "name": "axum_api",
+      "type": "component",
+      "supporting_text": "axum REST server",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "425770dc-a495-45f9-9e1a-98cc1fe438f1",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "efea457b-0d73-4240-adcc-21026f189776",
+      "type": "exports",
+      "confidence": 1.0,
+      "supporting_text": "pub fn obfuscate_text",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "6767f9b4-838c-48f0-8cc2-738d9ba28476",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "d10dfe9d-cf4f-499f-8132-969a22dbb9f3",
+      "type": "exports",
+      "confidence": 1.0,
+      "supporting_text": "pub fn obfuscate_alert",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "add5ca55-2c7f-4cc5-908c-153c9a0ef893",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "5dd903c8-2765-4fe1-b186-a49c903bfc79",
+      "type": "exports",
+      "confidence": 1.0,
+      "supporting_text": "pub enum ObfuscationLevel",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "3e6e6a7b-4170-4f28-aea4-e2cb84e41219",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "61dc290b-0942-4838-baef-e82914482d43",
+      "type": "exports",
+      "confidence": 1.0,
+      "supporting_text": "pub struct Obfuscator",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "f6d6f5ea-71db-42c7-8937-87e5d12414e6",
+      "source": "efea457b-0d73-4240-adcc-21026f189776",
+      "target": "31d5d3cd-4a1f-4522-9b9c-93ebf956ba2e",
+      "type": "returns",
+      "confidence": 1.0,
+      "supporting_text": "returns (String, ObfuscationMap)",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "7a9dfb12-1507-46e0-a730-e8edf0f0cfca",
+      "source": "0493fbb3-372d-4009-908d-b9d290fbcace",
+      "target": "fe0a2eaa-000e-4d53-a33e-4795ff57874b",
+      "type": "depends_on",
+      "confidence": 1.0,
+      "supporting_text": "lib.rs calls helpers functions",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "827405d9-06ae-4f37-b1d0-8f8c7f16dcd5",
+      "source": "0493fbb3-372d-4009-908d-b9d290fbcace",
+      "target": "46145156-32bc-4267-8f11-5d9106d4a778",
+      "type": "depends_on",
+      "confidence": 1.0,
+      "supporting_text": "lib.rs uses SECRET_PATTERN_DEFS",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "8dea3996-4862-492a-bd85-72ce7aeca633",
+      "source": "87f55e95-5bf1-41e6-ba98-62a9d15443d1",
+      "target": "7dbabf8d-29aa-4554-85a0-e4294afc4369",
+      "type": "reads",
+      "confidence": 1.0,
+      "supporting_text": "build.rs compiles secrets.yaml",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "a4b617e8-1a43-41a4-9d13-baa4aa4cc315",
+      "source": "87f55e95-5bf1-41e6-ba98-62a9d15443d1",
+      "target": "46145156-32bc-4267-8f11-5d9106d4a778",
+      "type": "generates",
+      "confidence": 1.0,
+      "supporting_text": "build.rs generates secrets.rs",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "43abbfae-251c-4a6e-9e40-a9b0fc499ae8",
+      "source": "61fb0f00-a274-46ba-b369-01ce9170ea41",
+      "target": "99d3e9a9-cf52-4b39-b15b-d3085d2ce147",
+      "type": "implements",
+      "confidence": 1.0,
+      "supporting_text": "implements PatternSource trait",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "b184e554-61e0-4526-a1d2-82d423a9f676",
+      "source": "9286ea09-741e-48d4-9f05-627e61d6cf47",
+      "target": "ece39f0f-8823-44f8-9cd4-76b6e50a1dc9",
+      "type": "implements",
+      "confidence": 1.0,
+      "supporting_text": "implements SecretScanner trait",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "ba68fb34-62c9-4a57-ae6a-761699133b46",
+      "source": "64f4f1fd-5c5e-4e24-a8c5-27b7e551cfc8",
+      "target": "75d7080c-f829-4224-a660-062ac42a4675",
+      "type": "depends_on",
+      "confidence": 1.0,
+      "supporting_text": "MCP dispatch uses Auditor",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "bed5250d-fea7-4826-9241-e5d880775e9e",
+      "source": "64f4f1fd-5c5e-4e24-a8c5-27b7e551cfc8",
+      "target": "fad9b4ec-9944-414e-9252-61aeac9e80f8",
+      "type": "depends_on",
+      "confidence": 1.0,
+      "supporting_text": "MCP dispatch uses FilterSuggester",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "35b13585-94c4-416f-9977-f0379960b86e",
+      "source": "c761f217-d8c7-488b-bbd2-60f455e36e82",
+      "target": "efea457b-0d73-4240-adcc-21026f189776",
+      "type": "calls",
+      "confidence": 1.0,
+      "supporting_text": "redact pipes stdin through obfuscate_text",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "a677f517-d0da-435d-81e1-e407994bbbaf",
+      "source": "d0f974d0-452f-495b-9df9-cfeeb766ab74",
+      "target": "9286ea09-741e-48d4-9f05-627e61d6cf47",
+      "type": "calls",
+      "confidence": 1.0,
+      "supporting_text": "scan uses GitleaksScanner",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "faa1a6e6-8cfe-4141-a6fc-7c97ba1e5bbe",
+      "source": "4ecc08ab-c54d-43cc-bbfc-572f7cc969fd",
+      "target": "efea457b-0d73-4240-adcc-21026f189776",
+      "type": "calls",
+      "confidence": 1.0,
+      "supporting_text": "API exposes obfuscation via HTTP",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "f9c154ba-131d-4c44-8068-ab157f263b36",
+      "source": "d7beae14-ffb4-4296-9aab-98aa60397fed",
+      "target": "fbdcf6a7-e4c7-4094-8d86-9b8a0490e2f7",
+      "type": "implements",
+      "confidence": 0.9,
+      "supporting_text": "Loki client implements LogClient",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "3dc9e904-b827-4a5f-a0b5-49fab96ead7d",
+      "source": "ab052101-f672-43a6-9d98-258f66ae942b",
+      "target": "fbdcf6a7-e4c7-4094-8d86-9b8a0490e2f7",
+      "type": "implements",
+      "confidence": 0.9,
+      "supporting_text": "VictoriaLogs implements LogClient",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "872e6cbf-50bf-471b-a6d3-1419f60bcd51",
+      "source": "61d60450-7b12-40e4-8b0e-f97bce1be913",
+      "target": "4ecc08ab-c54d-43cc-bbfc-572f7cc969fd",
+      "type": "enables",
+      "confidence": 1.0,
+      "supporting_text": "analyzer feature enables API server",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "4a3773ea-0c97-456e-b278-889c08172f2c",
+      "source": "dbd50052-0784-462b-8ee8-a852809cf147",
+      "target": "0493fbb3-372d-4009-908d-b9d290fbcace",
+      "type": "used_in",
+      "confidence": 1.0,
+      "supporting_text": "static_regex! replaces lazy_regex::regex! in lib.rs",
+      "source_doc": "session_2026_05_23"
+    },
+    {
+      "id": "c74af369-6ad8-470c-9484-5b513be288df",
+      "source": "650b85af-748f-4f64-b0c6-a5af451ff164",
+      "target": "efea457b-0d73-4240-adcc-21026f189776",
+      "type": "tests",
+      "confidence": 1.0,
+      "supporting_text": "property tests verify obfuscation invariants",
+      "source_doc": "session_2026_05_23"
+    },
+    {
+      "id": "f58d49b2-096c-4b07-875b-dac3ac94f493",
+      "source": "650b85af-748f-4f64-b0c6-a5af451ff164",
+      "target": "5dd903c8-2765-4fe1-b186-a49c903bfc79",
+      "type": "tests",
+      "confidence": 1.0,
+      "supporting_text": "property tests verify level parsing roundtrip",
+      "source_doc": "session_2026_05_23"
+    },
+    {
+      "id": "1d356f83-fbb3-4bf5-b674-5b09effae87e",
+      "source": "a11f3750-8f3b-46b5-a035-d5c7c0c73795",
+      "target": "61dc290b-0942-4838-baef-e82914482d43",
+      "type": "tests",
+      "confidence": 1.0,
+      "supporting_text": "fuzz target exercises Obfuscator::obfuscate",
+      "source_doc": "session_2026_05_23"
+    },
+    {
+      "id": "060d51c6-feb8-4e36-94cf-63be5c923ad1",
+      "source": "84392762-dba1-405f-8964-5eb7a469d1f5",
+      "target": "0493fbb3-372d-4009-908d-b9d290fbcace",
+      "type": "tests",
+      "confidence": 0.8,
+      "supporting_text": "fuzz target exercises strip_ansi function from adapter",
+      "source_doc": "session_2026_05_23"
+    },
+    {
+      "id": "3bc92444-0edc-4634-ade5-5a93d6844b01",
+      "source": "5e604090-8464-4936-913e-712416347619",
+      "target": "ece39f0f-8823-44f8-9cd4-76b6e50a1dc9",
+      "type": "implements",
+      "confidence": 1.0,
+      "supporting_text": null,
+      "source_doc": null
+    },
+    {
+      "id": "7c92ce34-f577-4821-a466-c8e932914e74",
+      "source": "d0f974d0-452f-495b-9df9-cfeeb766ab74",
+      "target": "5e604090-8464-4936-913e-712416347619",
+      "type": "calls",
+      "confidence": 1.0,
+      "supporting_text": null,
+      "source_doc": null
+    }
+  ]
+}

@@ -10,8 +10,6 @@ cargo install --path .
 
 ## What it does
 
-## What it does
-
 - Replaces secrets with labeled tokens (for example `[REDACTED-AWS-KEY]`)
 - Obfuscates identifiers with stable mappings (same input => same token)
 - Supports privacy levels based on how aggressive redaction should be
@@ -19,89 +17,34 @@ cargo install --path .
 ## Obfuscation levels
 
 - `Minimal`: secret pattern redaction only
-- `Standard`: adds IP, email, container ID, and user obfuscation
+- `Standard`: adds IP, email, container ID, user, and PII obfuscation
 - `Paranoid`: adds path, hostname, and high-entropy token redaction
 
-Path obfuscation supports Unix, Windows drive paths, and UNC paths. Sensitive system paths are preserved.
+Path obfuscation supports Unix, Windows drive paths, and UNC paths.
+Sensitive system paths are preserved.
 
-Preserved path segments include common roots like `home`, `usr`, `etc`, `windows`, `users`, and `programdata`.
+Preserved path segments include common roots like `home`, `usr`, `etc`,
+`windows`, `users`, and `programdata`.
 
-## Run locally with `cargo` or use the `mise.toml`:
+### What each level redacts
 
-```bash
-# check / build / test
-mise run check
-mise run build
-mise run test
+| Pattern category | minimal | standard | paranoid |
+|-----------------|---------|----------|----------|
+| API keys, tokens, passwords | yes | yes | yes |
+| IPs, emails, container IDs, usernames | — | yes | yes |
+| PII (names, SSN, phone, credit card) | — | yes | yes |
+| Paths, hostnames, high-entropy strings | — | — | yes |
+| Paranoid-only PII (IBAN, passport, DL) | — | — | yes |
 
-# formatting
-mise run format
-mise run format-check
-
-# linting
-mise run lint
-
-# auto-fix clippy suggestions
-mise run fix
-
-# local CI bundle
-mise run ci
-```
-
-
-## Examples
-
-### Obfuscation alert
-
-- Processed 250 records
-- Max tokens in a single record: ips=2 users=1 emails=1
-
-```text
-Sample before: event_id=evt-0000 user=user0 src=10.1.1.1 dst=198.51.100.10 email=user0@corp.example host=service0.corp.example path=/var/lib/app0/env0.json
-
-Sample after : event_id=evt-0000 user=[USER-1] src=[IP-INTERNAL-1] dst=[IP-EXTERNAL-1] email=[EMAIL-1] host=[HOST-1] path=/var/lib/app0/[FILE].json
-
-```
-
-```text
-Obfuscated output: Some("incident=AUTH-48291 severity=high | actor=bob src=[IP-EXTERNAL-1] dst=[IP-INTERNAL-1] | email=[EMAIL-1] host=[HOST-1] | path=/home/bob/.aws/credentials | token=[REDACTED-GITHUB-TOKEN]")
-Obfuscated fields keys: ["file_path", "workstation", "dst_ip", "notes", "jump_host", "src_ip", "contact", "host", "actor", "command"]
-Token counts => ips: 3, users: 0, emails: 1, hosts: 4, containers: 0, secrets: 1
-```
-
-### Larger payloads
-
-- Token totals => ips: 500, users: 120, emails: 120, hostnames: 15, secrets: 700
-
-```
---- output preview ---
-ts=2026-02-25T18:00:00Z level=info user=[USER-1] src=[IP-INTERNAL-1] dst=[IP-EXTERNAL-1] email=[EMAIL-1] host=[HOST-1] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
-ts=2026-02-25T18:01:00Z level=info user=[USER-2] src=[IP-INTERNAL-2] dst=[IP-EXTERNAL-2] email=[EMAIL-2] host=[HOST-2] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
-ts=2026-02-25T18:02:00Z level=info user=[USER-3] src=[IP-INTERNAL-3] dst=[IP-EXTERNAL-3] email=[EMAIL-3] host=[HOST-3] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
-ts=2026-02-25T18:03:00Z level=info user=[USER-4] src=[IP-INTERNAL-4] dst=[IP-EXTERNAL-4] email=[EMAIL-4] host=[HOST-4] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
-ts=2026-02-25T18:04:00Z level=info user=[USER-5] src=[IP-INTERNAL-5] dst=[IP-EXTERNAL-5] email=[EMAIL-5] host=[HOST-5] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
-ts=2026-02-25T18:05:00Z level=info user=[USER-6] src=[IP-INTERNAL-6] dst=[IP-EXTERNAL-6] email=[EMAIL-6] host=[HOST-6] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
-ts=2026-02-25T18:06:00Z level=info user=[USER-7] src=[IP-INTERNAL-7] dst=[IP-EXTERNAL-7] email=[EMAIL-7] host=[HOST-7] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
-ts=2026-02-25T18:07:00Z level=info user=[USER-8] src=[IP-INTERNAL-8] dst=[IP-EXTERNAL-8] email=[EMAIL-8] host=[HOST-8] path=/home[REDACTED-PAGERDUTY-KEY]/[FILE].log secret=[REDACTED-AWS-KEY]
-```
-
-- Mappings => ips: 160, users: 80, emails: 80, hostnames: 7, secrets: 80
-
-```text
---- output preview ---
-ts=2026-02-25T17:00:00Z level=warn user=[USER-1] src=[IP-INTERNAL-1] dst=[IP-EXTERNAL-1] email=[EMAIL-1] host=[HOST-1] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
-ts=2026-02-25T17:01:00Z level=warn user=[USER-2] src=[IP-INTERNAL-2] dst=[IP-EXTERNAL-2] email=[EMAIL-2] host=[HOST-2] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
-ts=2026-02-25T17:02:00Z level=warn user=[USER-3] src=[IP-INTERNAL-3] dst=[IP-EXTERNAL-3] email=[EMAIL-3] host=[HOST-3] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
-ts=2026-02-25T17:03:00Z level=warn user=[USER-4] src=[IP-INTERNAL-4] dst=[IP-EXTERNAL-4] email=[EMAIL-4] host=[HOST-4] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
-ts=2026-02-25T17:04:00Z level=warn user=[USER-5] src=[IP-INTERNAL-5] dst=[IP-EXTERNAL-5] email=[EMAIL-5] host=[HOST-5] path=/[REDACTED-PAGERDUTY-KEY]payment/[FILE].yaml
-```
+`standard` is the privacy-forward default for sharing logs externally.
+`minimal` is safe for internal tooling where structural identifiers are useful.
 
 ## redact CLI
 
 Redact secrets and PII from a file or stdin.
 
 ```bash
-# Stdin → stdout (default level: minimal — secrets only)
+# Stdin -> stdout (default level: minimal — secrets only)
 echo "key=sk-ant-api03-ABCDEF..." | redact
 
 # File input
@@ -112,7 +55,10 @@ redact input.txt --output redacted.txt
 
 # Increase level
 redact input.txt --level standard   # + IPs, emails, usernames, PII
-redact input.txt --level paranoid   # + paths, hostnames, high-entropy strings
+redact input.txt --level paranoid   # + paths, hostnames, high-entropy
+
+# Audit mode — report findings to stderr without redacting
+redact input.txt --audit
 
 # Custom secrets config (overrides bundled config)
 redact input.txt --config ~/.config/obfsck/secrets.yaml
@@ -125,56 +71,65 @@ redact input.txt --config ~/.config/obfsck/secrets.yaml
 | `--level <minimal\|standard\|paranoid>` | `minimal` | Obfuscation level |
 | `--output <file>` / `-o` | stdout | Write redacted output to file |
 | `--config <path>` / `-c` | bundled | Path to secrets YAML config |
+| `--audit` | off | Report findings to stderr without redacting |
+| `--pii-off` | off | Suppress PII patterns at standard+ levels |
 
-### What each level redacts
+## scan CLI (pre-commit)
 
-| Pattern category | minimal | standard | paranoid |
-|-----------------|---------|----------|----------|
-| API keys, tokens, passwords | ✓ | ✓ | ✓ |
-| IPs, emails, container IDs, usernames | — | ✓ | ✓ |
-| PII (names, SSN, phone, credit card) | — | ✓ | ✓ |
-| Paths, hostnames, high-entropy strings | — | — | ✓ |
-| Paranoid-only PII (IBAN, passport, DL) | — | — | ✓ |
-
-**`standard` is the privacy-forward default for sharing logs externally.** `minimal` is safe for internal tooling where structural identifiers are useful.
-
-### Custom config
-
-The bundled `config/secrets.yaml` covers common secret patterns grouped by category (`ai_apis`, `cloud`, `pii`, `paranoid`, etc.). Each group supports:
-
-```yaml
-groups:
-  my_group:
-    enabled: true
-    min_level: standard   # omit to apply at all levels
-    patterns:
-      - name: my_token
-        pattern: 'TOK_[A-Za-z0-9]{32}'
-        label: MY-TOKEN
-        paranoid_only: false  # true = only fires at paranoid
-```
-
-Lookup order: `--config` flag → `~/.config/obfsck/secrets.yaml` → bundled config.
-
-## Benchmarks
-
-Run benchmarks with Criterion:
+Scans a unified diff for secrets using both obfsck patterns and gitleaks.
 
 ```bash
-cargo bench
+# Pipe a diff
+git diff --staged | scan
+
+# Or let scan capture the staged diff itself
+scan --staged
+
+# Skip gitleaks (obfsck patterns only)
+scan --staged --no-gitleaks
+
+# Set obfuscation level
+scan --staged --level standard
 ```
 
-## Public API
+### Pre-commit hook
 
-- `obfuscate_text(text, level) -> (String, ObfuscationMapExport)`
-- `obfuscate_alert(output, output_fields, level) -> (Option<String>, Option<HashMap<String, String>>, ObfuscationMapExport)`
-- `ObfuscationLevel::parse("minimal|standard|paranoid")`
+Add to `.githooks/pre-commit` or your global hooks:
 
-`ObfuscationMapExport` includes generated mappings for IPs, hostnames, users, containers, paths, emails, plus `secrets_count`.
+```bash
+#!/bin/sh
+git diff --staged | scan --level minimal
+```
 
-### Alert Analyzer (Rust)
+Or use `--staged` mode:
 
-This crate now includes a Rust alert analyzer under the `src/analyzer/` module with a CLI binary:
+```bash
+#!/bin/sh
+scan --staged --level minimal
+```
+
+The allowlist at `~/.config/obfsck/allowlist` (one entry per line)
+skips known false positives like test fixtures.
+
+## obfsck-mcp (MCP server)
+
+JSON-RPC server exposing two tools for IDE and agent integration:
+
+- `audit` — scan text for secret patterns, returns labeled findings
+- `generate-filters` — suggest log filter patterns from secret examples
+
+```bash
+# Build and install
+cargo build --bin obfsck-mcp
+cp target/release/obfsck-mcp ~/.local/bin/
+
+# The server reads JSON-RPC from stdin and writes to stdout
+```
+
+## Alert Analyzer
+
+Fetches alerts from Loki or VictoriaLogs, obfuscates them, and sends
+to an LLM for analysis. Behind the `analyzer` feature flag.
 
 ```bash
 cargo run --bin analyzer -- --last 1h --limit 5 --dry-run
@@ -184,14 +139,78 @@ Common options:
 
 ```text
 -c, --config <path>            Configuration file path
--p, --priority <priority>      Filter by priority (Critical|Error|Warning|Notice)
--l, --last <duration>          Time range to query (15m|1h|7d) [default: 1h]
+-p, --priority <priority>      Filter by priority
+-l, --last <duration>          Time range to query [default: 1h]
 -n, --limit <n>                Maximum number of alerts [default: 5]
--d, --dry-run                  Skip LLM analysis, show obfuscated prompt only
--s, --store                    Store analysis results back to log backend
--v, --verbose                  Show obfuscation mapping statistics
--j, --json                     Output results as JSON
+-d, --dry-run                  Skip LLM analysis, show obfuscated prompt
 -b, --backend <backend>        Log backend (loki|vm|victorialogs)
-    --loki-url <url>           Override Loki URL
-    --victorialogs-url <url>   Override VictoriaLogs URL
+```
+
+## Custom config
+
+The bundled `config/secrets.yaml` covers common secret patterns grouped
+by category (`ai_apis`, `cloud`, `pii`, `paranoid`, etc.). Each group
+supports:
+
+```yaml
+groups:
+  my_group:
+    enabled: true
+    min_level: standard   # omit to apply at all levels
+    patterns:
+      - name: my_token
+        pattern: '\bTOK_[A-Za-z0-9]{32}\b'
+        label: MY-TOKEN
+        paranoid_only: false  # true = only fires at paranoid
+```
+
+Lookup order: `--config` flag -> `~/.config/obfsck/secrets.yaml` ->
+bundled config.
+
+## Public API
+
+```rust
+use obfsck::{obfuscate_text, ObfuscationLevel, Obfuscator};
+
+// One-shot function
+let (redacted, map) = obfuscate_text(text, ObfuscationLevel::Standard);
+
+// Stateful obfuscator with allowlist
+let mut obfuscator = Obfuscator::new(ObfuscationLevel::Standard)
+    .with_allowlist(vec!["10.0.0.1".into()]);
+let redacted = obfuscator.obfuscate(text);
+```
+
+Exports:
+
+- `obfuscate_text(text, level) -> (String, ObfuscationMapExport)`
+- `obfuscate_alert(output, fields, level) -> (Option<String>,
+  Option<HashMap<String, String>>, ObfuscationMapExport)`
+- `Obfuscator::new(level)` — stateful, supports `.with_allowlist()`
+- `ObfuscationLevel::parse("minimal|standard|paranoid")`
+
+## Development
+
+```bash
+# check / build / test / lint / CI gate
+just ci               # or: mise run ci
+
+# individual steps
+cargo check
+cargo test
+cargo clippy --all-targets -- -D warnings
+cargo bench            # criterion benchmarks
+
+# formatting
+cargo fmt --all
+```
+
+## Example output
+
+```text
+Before: event_id=evt-001 user=alice src=10.1.1.5 dst=198.51.100.10
+        email=alice@corp.example path=/var/lib/app/env.json
+
+After:  event_id=evt-001 user=[USER-1] src=[IP-INTERNAL-1]
+        dst=[IP-EXTERNAL-1] email=[EMAIL-1] path=/var/lib/app/[FILE].json
 ```

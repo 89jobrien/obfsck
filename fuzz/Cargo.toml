@@ -1,0 +1,27 @@
+[package]
+name = "obfsck-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.obfsck]
+path = ".."
+default-features = false
+
+[[bin]]
+name = "fuzz_obfuscate"
+path = "fuzz_targets/fuzz_obfuscate.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_strip_ansi"
+path = "fuzz_targets/fuzz_strip_ansi.rs"
+doc = false
+
+[workspace]

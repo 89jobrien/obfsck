@@ -161,3 +161,139 @@ fn should_preserve_path_segment(part: &str) -> bool {
             | "programdata"
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- shannon_entropy ---
+
+    #[test]
+    fn entropy_empty_string_is_zero() {
+        assert_eq!(shannon_entropy(""), 0.0);
+    }
+
+    #[test]
+    fn entropy_single_char_repeated_is_zero() {
+        assert_eq!(shannon_entropy("aaaaaaa"), 0.0);
+    }
+
+    #[test]
+    fn entropy_two_equal_chars_is_one() {
+        let e = shannon_entropy("ab");
+        assert!((e - 1.0).abs() < 1e-10, "expected 1.0, got {e}");
+    }
+
+    #[test]
+    fn entropy_high_for_random_looking_string() {
+        let e = shannon_entropy("aB3$xZ9!kL2@mN5#");
+        assert!(e > 3.5, "expected high entropy, got {e}");
+    }
+
+    #[test]
+    fn entropy_bounded_by_eight() {
+        // Maximum possible Shannon entropy for byte data is 8.0 bits
+        let e = shannon_entropy("the quick brown fox jumps over the lazy dog 0123456789");
+        assert!(e <= 8.0, "entropy should be <= 8.0, got {e}");
+        assert!(e > 0.0);
+    }
+
+    // --- is_sensitive_path ---
+
+    #[test]
+    fn sensitive_path_etc_shadow() {
+        assert!(is_sensitive_path("/etc/shadow"));
+    }
+
+    #[test]
+    fn sensitive_path_ssh_dir() {
+        assert!(is_sensitive_path("/home/user/.ssh/id_rsa"));
+    }
+
+    #[test]
+    fn sensitive_path_aws_credentials() {
+        assert!(is_sensitive_path("/home/user/.aws/credentials"));
+    }
+
+    #[test]
+    fn sensitive_path_windows_sam() {
+        assert!(is_sensitive_path("C:\\Windows\\System32\\config\\SAM"));
+    }
+
+    #[test]
+    fn non_sensitive_path_var_log() {
+        assert!(!is_sensitive_path("/var/log/syslog"));
+    }
+
+    #[test]
+    fn non_sensitive_path_tmp() {
+        assert!(!is_sensitive_path("/tmp/scratch.txt"));
+    }
+
+    // --- should_preserve_path_segment ---
+
+    #[test]
+    fn preserves_standard_dirs() {
+        for dir in &[
+            "home", "var", "tmp", "etc", "usr", "opt", "proc", "sys", "dev",
+        ] {
+            assert!(
+                should_preserve_path_segment(dir),
+                "{dir} should be preserved"
+            );
+        }
+    }
+
+    #[test]
+    fn preserves_case_insensitive() {
+        assert!(should_preserve_path_segment("Home"));
+        assert!(should_preserve_path_segment("VAR"));
+        assert!(should_preserve_path_segment("Windows"));
+    }
+
+    #[test]
+    fn does_not_preserve_custom_dirs() {
+        assert!(!should_preserve_path_segment("myapp"));
+        assert!(!should_preserve_path_segment("data"));
+        assert!(!should_preserve_path_segment("secrets"));
+    }
+
+    // --- obfuscate_path_value ---
+
+    #[test]
+    fn unix_path_preserves_standard_segments() {
+        let result = obfuscate_path_value("/var/log/myapp/debug.log");
+        assert!(result.starts_with("/var"));
+        assert!(result.contains("var"));
+    }
+
+    #[test]
+    fn windows_drive_path_preserves_drive_letter() {
+        let result = obfuscate_path_value("C:\\Users\\alice\\Documents\\report.docx");
+        assert!(result.starts_with("C:\\"));
+    }
+
+    #[test]
+    fn unc_path_preserves_first_two_segments() {
+        let result = obfuscate_path_value("\\\\server\\share\\folder\\file.txt");
+        assert!(result.starts_with("\\\\server\\share"));
+    }
+
+    #[test]
+    fn short_filename_not_redacted() {
+        let result = obfuscate_path_value("/tmp/ab.c");
+        assert!(
+            result.contains("ab.c"),
+            "short filename should be preserved, got: {result}"
+        );
+    }
+
+    #[test]
+    fn long_filename_redacted() {
+        let result = obfuscate_path_value("/tmp/longfilename.log");
+        assert!(
+            result.contains("[FILE].log"),
+            "long filename should be redacted, got: {result}"
+        );
+    }
+}

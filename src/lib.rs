@@ -32,6 +32,61 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
+/// Allowlist that supports both exact string matches and glob patterns.
+///
+/// Entries containing `*` or `?` are treated as glob patterns (matched via
+/// `glob_match::glob_match`). All other entries are exact substring matches.
+#[derive(Debug, Default, Clone)]
+pub struct Allowlist {
+    exact: HashSet<String>,
+    globs: Vec<String>,
+}
+
+impl Allowlist {
+    pub fn new(entries: impl IntoIterator<Item = String>) -> Self {
+        let mut exact = HashSet::new();
+        let mut globs = Vec::new();
+        for entry in entries {
+            if entry.contains('*') || entry.contains('?') {
+                globs.push(entry);
+            } else {
+                exact.insert(entry);
+            }
+        }
+        Self { exact, globs }
+    }
+
+    /// Returns true if `value` is an exact match or matches any glob pattern.
+    pub fn contains(&self, value: &str) -> bool {
+        if self.exact.contains(value) {
+            return true;
+        }
+        self.globs
+            .iter()
+            .any(|pat| glob_match::glob_match(pat, value))
+    }
+
+    /// Returns true if `text` contains any exact allowlist entry as a
+    /// substring, or if the full `text` matches any glob pattern.
+    pub fn matches_line(&self, text: &str) -> bool {
+        if self.exact.iter().any(|entry| text.contains(entry.as_str())) {
+            return true;
+        }
+        self.globs
+            .iter()
+            .any(|pat| glob_match::glob_match(pat, text))
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.exact.is_empty() && self.globs.is_empty()
+    }
+
+    /// Return exact entries as a Vec for passing to `Obfuscator::with_allowlist`.
+    pub fn exact_entries(&self) -> Vec<String> {
+        self.exact.iter().cloned().collect()
+    }
+}
+
 #[cfg(all(
     feature = "path-policy-home-user-redact",
     feature = "path-policy-non-allowlisted-redact"
@@ -148,7 +203,8 @@ pub struct Obfuscator {
     /// standard/paranoid. Secrets are unaffected. Mirrors the `--pii off` CLI flag.
     pii: bool,
     /// Values in this set are never redacted even when they match a pattern.
-    allowlist: HashSet<String>,
+    /// Supports exact strings and glob patterns (entries with `*` or `?`).
+    allowlist: Allowlist,
     map: ObfuscationMap,
     counters: Counters,
 }
@@ -158,7 +214,7 @@ impl Obfuscator {
         Self {
             level,
             pii: true,
-            allowlist: HashSet::new(),
+            allowlist: Allowlist::default(),
             map: ObfuscationMap::default(),
             counters: Counters::default(),
         }
@@ -171,8 +227,9 @@ impl Obfuscator {
     }
 
     /// Values in this list will never be redacted even when they match a pattern.
+    /// Entries containing `*` or `?` are treated as glob patterns.
     pub fn with_allowlist(mut self, entries: Vec<String>) -> Self {
-        self.allowlist = entries.into_iter().collect();
+        self.allowlist = Allowlist::new(entries);
         self
     }
 

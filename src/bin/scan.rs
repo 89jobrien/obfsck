@@ -13,10 +13,10 @@ use clap::Parser;
 use obfsck::adapters::GitleaksAdapter;
 use obfsck::ports::{Finding, SecretScanner};
 use obfsck::yaml_config::SecretsConfig;
-use obfsck::{ObfuscationLevel, Obfuscator};
+use obfsck::{Allowlist, ObfuscationLevel, Obfuscator};
 use regex::RegexBuilder;
-use std::collections::HashSet;
 use std::io::{self, Read};
+use std::path::PathBuf;
 use std::process;
 
 static BUNDLED_CONFIG: &str = include_str!("../../config/secrets.yaml");
@@ -42,27 +42,64 @@ struct Args {
     require_gitleaks: bool,
 }
 
-/// Load allowlist entries from `~/.config/obfsck/allowlist`.
-/// Returns an empty set if the file does not exist.
-fn load_allowlist() -> HashSet<String> {
+/// Load allowlist entries from multiple sources (merged in order):
+///   1. `~/.config/obfsck/allowlist` (global, one entry per line)
+///   2. `.obfsck.toml` in the repo root (per-repo, `[allowlist] patterns = [...]`)
+///
+/// Entries containing `*` or `?` are treated as glob patterns.
+fn load_allowlist() -> Allowlist {
+    let mut entries = Vec::new();
+
+    // 1. Global allowlist file
     let home = std::env::var("HOME").unwrap_or_default();
-    let path = std::path::PathBuf::from(home).join(".config/obfsck/allowlist");
-    let Ok(contents) = std::fs::read_to_string(&path) else {
-        return HashSet::new();
-    };
-    contents
-        .lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty() && !l.starts_with('#'))
-        .map(String::from)
-        .collect()
+    let global_path = PathBuf::from(home).join(".config/obfsck/allowlist");
+    if let Ok(contents) = std::fs::read_to_string(&global_path) {
+        entries.extend(
+            contents
+                .lines()
+                .map(str::trim)
+                .filter(|l| !l.is_empty() && !l.starts_with('#'))
+                .map(String::from),
+        );
+    }
+
+    // 2. Repo-local .obfsck.toml (walk up from cwd to find it)
+    if let Some(toml_entries) = load_repo_toml_allowlist() {
+        entries.extend(toml_entries);
+    }
+
+    Allowlist::new(entries)
+}
+
+/// Walk up from cwd looking for `.obfsck.toml`, parse `[allowlist] patterns`.
+fn load_repo_toml_allowlist() -> Option<Vec<String>> {
+    let mut dir = std::env::current_dir().ok()?;
+    loop {
+        let candidate = dir.join(".obfsck.toml");
+        if candidate.is_file() {
+            let contents = std::fs::read_to_string(&candidate).ok()?;
+            let table: toml::Table = contents.parse().ok()?;
+            let allowlist = table.get("allowlist")?;
+            let patterns = allowlist.get("patterns")?.as_array()?;
+            return Some(
+                patterns
+                    .iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect(),
+            );
+        }
+        if !dir.pop() {
+            break;
+        }
+    }
+    None
 }
 
 /// Native obfsck diff scanner — implements SecretScanner by running the YAML
 /// secret patterns over each added line in the diff.
 struct ObfsckScanner {
     level: ObfuscationLevel,
-    allowlist: HashSet<String>,
+    allowlist: Allowlist,
 }
 
 impl SecretScanner for ObfsckScanner {
@@ -106,12 +143,8 @@ impl SecretScanner for ObfsckScanner {
             }
             let content = &line[1..]; // strip leading '+'
 
-            // Skip lines that contain any allowlisted value.
-            if self
-                .allowlist
-                .iter()
-                .any(|entry| content.contains(entry.as_str()))
-            {
+            // Skip lines that match any allowlisted value or glob pattern.
+            if self.allowlist.matches_line(content) {
                 continue;
             }
 
@@ -131,7 +164,7 @@ impl SecretScanner for ObfsckScanner {
 
             // Run structural obfuscator — if any obfuscation happens the text changed.
             let mut obfuscator =
-                Obfuscator::new(level).with_allowlist(self.allowlist.iter().cloned().collect());
+                Obfuscator::new(level).with_allowlist(self.allowlist.exact_entries());
             let obfuscated = obfuscator.obfuscate(content);
             if obfuscated != content {
                 findings.push(Finding {

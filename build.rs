@@ -1,5 +1,6 @@
 // build.rs — generates OUT_DIR/secrets.rs from config/secrets.yaml
 // Uses std only (no build-deps). Minimal line-by-line YAML parser.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::fs;
 use std::path::PathBuf;

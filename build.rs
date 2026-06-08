@@ -262,6 +262,73 @@ groups:
             "bad indentation should yield no parsed entries"
         );
     }
+
+    // --- tests migrated from tests/test_yaml_parser.rs (file deleted) ---
+
+    #[test]
+    fn yaml_parser_silently_drops_patterns_on_indentation_mismatch() {
+        // Bug obfsck-8: Parser silently drops patterns when indentation is wrong.
+        // When a line at indent=2 ends with ':', the parser treats it as a new group,
+        // flushing the current pattern before its fields are assigned.
+        let malformed_yaml = "groups:\n  test:\n    patterns:\n      - name: broken_pattern\n  field_at_wrong_indent:\n        pattern: '\\btest\\b'\n        label: TEST\n";
+        let patterns = parse_patterns(malformed_yaml);
+        let broken = patterns.iter().find(|p| p.name == "broken_pattern");
+        assert!(
+            broken.is_some(),
+            "Pattern 'broken_pattern' should be parsed (even if incomplete)"
+        );
+        let pattern = broken.unwrap();
+        assert!(
+            pattern.pattern.is_empty(),
+            "Pattern field is empty due to indentation error, but no error was raised: {:?}",
+            pattern
+        );
+        assert!(
+            pattern.label.is_empty(),
+            "Label field is empty due to indentation error, but no error was raised: {:?}",
+            pattern
+        );
+    }
+
+    #[test]
+    fn yaml_parser_handles_correct_indentation() {
+        let correct_yaml = "groups:\n  test:\n    patterns:\n      - name: good_pattern\n        pattern: '\\btest\\b'\n        label: TEST\n";
+        let patterns = parse_patterns(correct_yaml);
+        let good = patterns.iter().find(|p| p.name == "good_pattern");
+        assert!(good.is_some());
+        let pattern = good.unwrap();
+        assert_eq!(pattern.name, "good_pattern");
+        assert_eq!(pattern.pattern, r"\btest\b");
+        assert_eq!(pattern.label, "TEST");
+    }
+
+    #[test]
+    fn validation_catches_empty_pattern_field() {
+        // Verify that validate_patterns catches the incomplete pattern produced by malformed YAML.
+        let malformed_yaml = "groups:\n  test:\n    patterns:\n      - name: broken_pattern\n  field_at_wrong_indent:\n        pattern: '\\btest\\b'\n        label: TEST\n";
+        let patterns = parse_patterns(malformed_yaml);
+        let mut errors = Vec::new();
+        for (idx, pat) in patterns.iter().enumerate() {
+            if pat.pattern.is_empty() {
+                errors.push(format!(
+                    "Pattern '{}' (index {}) has empty pattern",
+                    pat.name, idx
+                ));
+            }
+            if pat.label.is_empty() {
+                errors.push(format!(
+                    "Pattern '{}' (index {}) has empty label",
+                    pat.name, idx
+                ));
+            }
+        }
+        assert!(
+            !errors.is_empty(),
+            "Validation should have caught empty pattern field"
+        );
+        assert!(errors[0].contains("broken_pattern"));
+        assert!(errors[0].contains("empty pattern"));
+    }
 }
 
 fn emit_rust(patterns: &[PatternEntry]) -> String {

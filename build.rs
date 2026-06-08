@@ -139,10 +139,8 @@ fn strip_inline_comment(line: &str) -> &str {
     for i in 0..bytes.len() {
         match bytes[i] {
             b'\'' => in_quote = !in_quote,
-            b'#' if !in_quote => {
-                if i > 0 && bytes[i - 1] == b' ' {
-                    return &line[..i];
-                }
+            b'#' if !in_quote && i > 0 && bytes[i - 1] == b' ' => {
+                return &line[..i];
             }
             _ => {}
         }

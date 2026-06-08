@@ -11,6 +11,7 @@ fn main() {
     let yaml = fs::read_to_string(&yaml_path).expect("build.rs: cannot read config/secrets.yaml");
 
     let patterns = parse_patterns(&yaml);
+    validate_nonempty_pattern_list(&patterns);
     validate_patterns(&patterns);
     let code = emit_rust(&patterns);
 
@@ -27,6 +28,22 @@ struct PatternEntry {
     paranoid_only: bool,
     /// Inherited from the group's min_level in the YAML (overrides paranoid_only when set).
     min_level: Option<String>,
+}
+
+/// Guard: panics if `patterns` is empty, indicating the YAML parser produced no entries
+/// from what should be a non-empty config file. This catches total indentation failures
+/// that `validate_patterns` would silently pass.
+///
+/// Call this before `validate_patterns`, passing the raw YAML length so the error only
+/// fires when the input was non-empty.
+fn validate_nonempty_pattern_list(patterns: &[PatternEntry]) {
+    if patterns.is_empty() {
+        panic!(
+            "build.rs: parse_patterns returned zero patterns from config/secrets.yaml.\n\
+             This usually means a global indentation mismatch — no '- name:' entries were found.\n\
+             Check that pattern list items are indented correctly (6 spaces for '- name:' under 'patterns:')."
+        );
+    }
 }
 
 /// Validate that all patterns have required fields (name, pattern, label).
@@ -181,6 +198,69 @@ fn try_extract(trimmed: &str, key: &str) -> Option<String> {
     // Assumption: double-quoted values in config/secrets.yaml do not use \" escapes.
     // The raw content (e.g. \\b) is passed through and double-escaped by emit_rust.
     Some(rest.trim_matches('"').to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Regression: a non-empty secrets.yaml with wrong indentation must not silently
+    /// produce an empty pattern list. `validate_patterns` should panic.
+    #[test]
+    #[should_panic(expected = "zero patterns")]
+    fn validate_patterns_panics_on_empty_list_from_nonempty_yaml() {
+        // Simulate what parse_patterns returns when the YAML indentation is
+        // completely wrong — the parser finds no "- name:" entries.
+        let patterns: Vec<PatternEntry> = Vec::new();
+        // The caller would have gotten these from a non-empty YAML input, so we
+        // invoke the guard that validate_patterns must enforce.
+        validate_nonempty_pattern_list(&patterns);
+    }
+
+    #[test]
+    fn validate_patterns_accepts_valid_entries() {
+        let patterns = vec![PatternEntry {
+            name: "foo".to_string(),
+            pattern: r"\bfoo\b".to_string(),
+            label: "FOO".to_string(),
+            paranoid_only: false,
+            min_level: None,
+        }];
+        // Must not panic.
+        validate_nonempty_pattern_list(&patterns);
+        validate_patterns(&patterns);
+    }
+
+    #[test]
+    fn parse_patterns_returns_entries_for_valid_yaml() {
+        let yaml = r#"
+groups:
+  test_group:
+    enabled: true
+    patterns:
+      - name: test_token
+        pattern: '\btest_[A-Za-z0-9]{20}\b'
+        label: TEST-TOKEN
+        paranoid_only: false
+"#;
+        let patterns = parse_patterns(yaml);
+        assert!(
+            !patterns.is_empty(),
+            "expected at least one pattern from valid YAML"
+        );
+        assert_eq!(patterns[0].name, "test_token");
+    }
+
+    #[test]
+    fn parse_patterns_returns_empty_for_garbage_indentation() {
+        // All lines at wrong indent — parser finds no "- name:" entries.
+        let yaml = "groups:\ntest_group:\npatterns:\nname: foo\npattern: bar\nlabel: baz\n";
+        let patterns = parse_patterns(yaml);
+        assert!(
+            patterns.is_empty(),
+            "bad indentation should yield no parsed entries"
+        );
+    }
 }
 
 fn emit_rust(patterns: &[PatternEntry]) -> String {

@@ -1,6 +1,6 @@
 //! Obfuscator
 
-#![warn(clippy::unwrap_used, clippy::expect_used)]
+#![deny(clippy::unwrap_used, clippy::expect_used)]
 
 #[cfg(feature = "analyzer")]
 pub const API_DEFAULT_FILTER: &str = "obfsck=info,tower_http=debug,warn";

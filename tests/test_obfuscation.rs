@@ -546,6 +546,72 @@ fn non_allowlisted_segments_redacted_when_feature_enabled() {
     }
 }
 
+// obfsck-20: base64 +/_ chars in Vault token payloads must be matched
+// `\w` does NOT match `+` or `/`; patterns must use [A-Za-z0-9+/_-].
+// The vault_service_token and vault_batch_token patterns use the correct charset.
+mod vault_base64_chars {
+    use obfsck::{ObfuscationLevel, obfuscate_text};
+
+    /// Vault service token with `+` in the payload must be redacted.
+    #[test]
+    fn vault_service_token_with_plus_in_payload_is_redacted() {
+        // 90-char payload containing `+` at position 3 — matches vault_service_token pattern.
+        // Pattern requires [A-Za-z0-9+/_-]{90,120}; `\w` would miss `+` and fail to match.
+        let token = "hvs.AQI+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        let input = format!("vault_token={token}");
+        let (out, map) = obfuscate_text(&input, ObfuscationLevel::Minimal);
+        assert!(
+            out.contains("[REDACTED-VAULT-SERVICE]"),
+            "hvs. token with '+' should be redacted; got: {out}"
+        );
+        assert!(map.secrets_count >= 1);
+    }
+
+    /// Vault service token with `/` in the payload must be redacted.
+    #[test]
+    fn vault_service_token_with_slash_in_payload_is_redacted() {
+        // 90-char payload containing `/` at position 3 — matches vault_service_token pattern.
+        // Pattern requires [A-Za-z0-9+/_-]{90,120}; `\w` would miss `/` and fail to match.
+        let token = "hvs.AQI/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        let input = format!("vault_token={token}");
+        let (out, map) = obfuscate_text(&input, ObfuscationLevel::Minimal);
+        assert!(
+            out.contains("[REDACTED-VAULT-SERVICE]"),
+            "hvs. token with '/' should be redacted; got: {out}"
+        );
+        assert!(map.secrets_count >= 1);
+    }
+
+    /// Vault batch token with `+` in the payload must be redacted.
+    #[test]
+    fn vault_batch_token_with_plus_in_payload_is_redacted() {
+        // 138-char payload containing `+` at position 3 — matches vault_batch_token pattern.
+        // Pattern requires [A-Za-z0-9+/_-]{138,300}; `\w` would miss `+` and fail to match.
+        let token = "hvb.AQI+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        let input = format!("token={token}");
+        let (out, map) = obfuscate_text(&input, ObfuscationLevel::Minimal);
+        assert!(
+            out.contains("[REDACTED-VAULT-BATCH]"),
+            "hvb. token with '+' should be redacted; got: {out}"
+        );
+        assert!(map.secrets_count >= 1);
+    }
+
+    /// Regression: Vault service token without special chars still redacts.
+    #[test]
+    fn vault_service_token_alnum_only_is_redacted() {
+        // 90-char alphanumeric payload — regression guard
+        let token = "hvs.AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa";
+        let input = format!("token={token}");
+        let (out, map) = obfuscate_text(&input, ObfuscationLevel::Minimal);
+        assert!(
+            out.contains("[REDACTED-VAULT-SERVICE]"),
+            "hvs. token with alnum-only payload should be redacted; got: {out}"
+        );
+        assert!(map.secrets_count >= 1);
+    }
+}
+
 // obfsck-21: RFC 1918 / loopback / link-local IPv4 classification tests
 mod ipv4_classification {
     use obfsck::{ObfuscationLevel, obfuscate_text};

@@ -1,8 +1,12 @@
 project: obfsck
 id: obfsck
-updated: 2026-05-23
+updated: 2026-06-24
 items: []
 log:
+- date: 20260625:000000
+  summary: Quality refactoring — raised rustqual score from 74.0% to 91.2%. Consolidated YAML parser tests into build.rs, eliminated duplication. Enhanced test coverage with regression guards for base64 chars, double-count detection, and entropy allowlist threading. Added clippy::unwrap_used denial to CI gate against bare panics in runtime.
+  commits: ["4b8def5", "501c709", "b661352", "8055372", "d2cc811"]
+  session: 1
 - date: 20260422:215703
   summary: Released v0.1.0. Added richer error messages (line numbers in findings, invalid pattern warnings). Wired obfsck-scan into pre-commit hook (local .githooks + global ~/.config/git/hooks). Added two CLI integration tests. Moved handoff SQLite DB to ~/.ctx/handoff.db.
   commits: []

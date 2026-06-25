@@ -2,11 +2,16 @@
 
 use obfsck::mcp::{FilterSuggester, FilterSuggestion, PatternSuggester};
 
-// Trait object safety.
+// Trait object safety: FilterSuggester can be used as dyn FilterSuggester and methods dispatch correctly.
 #[test]
 fn filter_suggester_is_object_safe() {
     let adapter = PatternSuggester;
-    let _dyn_ref: &dyn FilterSuggester = &adapter;
+    let dyn_ref: &dyn FilterSuggester = &adapter;
+    let suggestions = dyn_ref.suggest(&[]);
+    assert!(
+        suggestions.is_empty(),
+        "dyn FilterSuggester::suggest(&[]) must return no suggestions"
+    );
 }
 
 // Contract: suggest(&[]) returns no suggestions.

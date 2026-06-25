@@ -43,6 +43,7 @@ pub struct Allowlist {
 }
 
 impl Allowlist {
+    // qual:allow(iosp) reason: "constructor — partitions entries by type; logic and construction are inseparable"
     pub fn new(entries: impl IntoIterator<Item = String>) -> Self {
         let mut exact = HashSet::new();
         let mut globs = Vec::new();
@@ -57,13 +58,13 @@ impl Allowlist {
     }
 
     /// Returns true if `value` is an exact match or matches any glob pattern.
+    // qual:allow(iosp) reason: "pure boolean short-circuit — || combines two delegate calls, no mixed logic"
     pub fn contains(&self, value: &str) -> bool {
-        if self.exact.contains(value) {
-            return true;
-        }
-        self.globs
-            .iter()
-            .any(|pat| glob_match::glob_match(pat, value))
+        self.exact.contains(value)
+            || self
+                .globs
+                .iter()
+                .any(|pat| glob_match::glob_match(pat, value))
     }
 
     /// Returns true if `text` contains any exact allowlist entry as a
@@ -77,6 +78,7 @@ impl Allowlist {
             .any(|pat| glob_match::glob_match(pat, text))
     }
 
+    // qual:allow(iosp) reason: "pure boolean conjunction — && combines two delegate calls, no mixed logic"
     pub fn is_empty(&self) -> bool {
         self.exact.is_empty() && self.globs.is_empty()
     }
@@ -126,14 +128,20 @@ pub struct ObfuscationMap {
 
 impl ObfuscationMap {
     pub fn export(&self) -> ObfuscationMapExport {
-        ObfuscationMapExport {
-            ips: self.ips.clone(),
-            hostnames: self.hostnames.clone(),
-            users: self.users.clone(),
-            containers: self.containers.clone(),
-            paths: self.paths.clone(),
-            emails: self.emails.clone(),
-            secrets_count: self.secrets.len(),
+        ObfuscationMapExport::from(self)
+    }
+}
+
+impl From<&ObfuscationMap> for ObfuscationMapExport {
+    fn from(m: &ObfuscationMap) -> Self {
+        Self {
+            ips: m.ips.clone(),
+            hostnames: m.hostnames.clone(),
+            users: m.users.clone(),
+            containers: m.containers.clone(),
+            paths: m.paths.clone(),
+            emails: m.emails.clone(),
+            secrets_count: m.secrets.len(),
         }
     }
 }
@@ -267,10 +275,18 @@ impl Obfuscator {
 
         s = Cow::Owned(self.obfuscate_users(s.as_ref()));
 
+        // Second secrets pass at paranoid: structural passes (paths, hostnames)
+        // can reshape text so that secret patterns that matched on the original
+        // no longer match. Re-running secrets catches any that survived.
+        if self.level == ObfuscationLevel::Paranoid {
+            s = Cow::Owned(self.obfuscate_secrets(s.as_ref()));
+        }
+
         s.into_owned()
     }
 
     // IPv6 private-range bitmasks
+    const HEX_RADIX: u32 = 16;
     const IPV6_ULA_MASK: u16 = 0xFE00;
     const IPV6_ULA_PREFIX: u16 = 0xFC00;
     const IPV6_LINK_LOCAL_MASK: u16 = 0xFFC0;
@@ -280,7 +296,7 @@ impl Obfuscator {
         // Parse the first group of a full-form IPv6 address (8 colon-separated
         // groups of hex digits). Handles only the full form produced by ipv6_re().
         let first_group = ip.split(':').next().unwrap_or("");
-        let Ok(g0) = u16::from_str_radix(first_group, 16) else {
+        let Ok(g0) = u16::from_str_radix(first_group, Self::HEX_RADIX) else {
             return false;
         };
         // ::1 loopback — all groups zero except last; detect by checking the whole string
@@ -453,6 +469,9 @@ impl Obfuscator {
                 .replace_all(s.as_ref(), |caps: &regex::Captures<'_>| {
                     let prefix = caps.get(1).map_or("", |m| m.as_str());
                     let user = caps.get(2).map_or("", |m| m.as_str());
+                    if self.allowlist.contains(user) {
+                        return caps[0].to_string();
+                    }
                     if Self::is_system_user(user) {
                         caps[0].to_string()
                     } else {
@@ -479,6 +498,9 @@ impl Obfuscator {
             .replace_all(text, |caps: &regex::Captures<'_>| {
                 let prefix = caps.get(1).map_or("", |m| m.as_str());
                 let user = caps.get(2).map_or("", |m| m.as_str());
+                if self.allowlist.contains(user) {
+                    return caps[0].to_string();
+                }
                 if Self::is_system_user(user) {
                     caps[0].to_string()
                 } else {
@@ -498,7 +520,7 @@ impl Obfuscator {
         path_re()
             .replace_all(text, |caps: &regex::Captures<'_>| {
                 let path = &caps[0];
-                if is_sensitive_path(path) {
+                if self.allowlist.contains(path) || is_sensitive_path(path) {
                     return path.to_string();
                 }
 
@@ -521,6 +543,9 @@ impl Obfuscator {
         hostname_re()
             .replace_all(text, |caps: &regex::Captures<'_>| {
                 let hostname = &caps[0];
+                if self.allowlist.contains(hostname) {
+                    return hostname.to_string();
+                }
                 match hostname.to_ascii_lowercase().as_str() {
                     "localhost" | "localhost.localdomain" => hostname.to_string(),
                     _ => get_or_create_token(counters, TokenCategory::Host, hostname, hostnames),

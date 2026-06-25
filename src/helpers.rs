@@ -43,6 +43,7 @@ pub(super) fn is_sensitive_path(path: &str) -> bool {
     SENSITIVE.iter().any(|s| normalized.contains(s))
 }
 
+// qual:allow(iosp) reason: "complex string transformation — path-type detection and redaction are inseparably coupled"
 pub(super) fn obfuscate_path_value(path: &str) -> String {
     let (separator, prefix, preserve_count, parts) =
         if let Some(trimmed) = path.strip_prefix("\\\\") {

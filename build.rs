@@ -37,6 +37,7 @@ struct PatternEntry {
 ///
 /// Call this before `validate_patterns`, passing the raw YAML length so the error only
 /// fires when the input was non-empty.
+// qual:allow(iosp) reason: "build script validator — panic on invariant violation is intentional I/O"
 fn validate_nonempty_pattern_list(patterns: &[PatternEntry]) {
     if patterns.is_empty() {
         panic!(
@@ -49,6 +50,7 @@ fn validate_nonempty_pattern_list(patterns: &[PatternEntry]) {
 
 /// Validate that all patterns have required fields (name, pattern, label).
 /// Errors loudly instead of silently dropping patterns on indentation mismatches.
+// qual:allow(iosp) reason: "build script validator — collects errors then panics; inherently mixes logic and error emission"
 fn validate_patterns(patterns: &[PatternEntry]) {
     let mut errors = Vec::new();
     for (idx, pat) in patterns.iter().enumerate() {
@@ -78,6 +80,7 @@ fn validate_patterns(patterns: &[PatternEntry]) {
 
 /// Minimal line-by-line parser for config/secrets.yaml.
 /// Handles the specific structure of this file — not a general YAML parser.
+// qual:allow(iosp) reason: "line-by-line state machine parser — logic and mutation are inseparable"
 fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
     let mut patterns: Vec<PatternEntry> = Vec::new();
     let mut current: Option<PatternEntry> = None;

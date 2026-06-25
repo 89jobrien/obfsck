@@ -19,6 +19,7 @@ impl VictoriaLogsClient {
 }
 
 impl LogClient for VictoriaLogsClient {
+    // qual:allow(iosp) reason: "I/O boundary — HTTP request with response parsing"
     #[instrument(skip(self), fields(query = %query, limit = %limit))]
     fn query_range(
         &self,

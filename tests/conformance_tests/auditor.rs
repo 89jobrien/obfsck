@@ -2,11 +2,16 @@
 
 use obfsck::mcp::{AuditHit, Auditor, ObfsckAuditor};
 
-// Trait object safety.
+// Trait object safety: Auditor can be used as dyn Auditor and methods dispatch correctly.
 #[test]
 fn auditor_is_object_safe() {
     let adapter = ObfsckAuditor;
-    let _dyn_ref: &dyn Auditor = &adapter;
+    let dyn_ref: &dyn Auditor = &adapter;
+    let hits = dyn_ref.audit("");
+    assert!(
+        hits.is_empty(),
+        "dyn Auditor::audit(\"\") must return no hits"
+    );
 }
 
 // Contract: audit("") returns no hits.

@@ -39,6 +39,33 @@ pub struct Finding {
     pub source: String,
 }
 
+impl Finding {
+    /// Construct a finding with no location information.
+    pub fn new(source: impl Into<String>, description: impl Into<String>) -> Self {
+        Self {
+            description: description.into(),
+            location: None,
+            line_number: None,
+            source: source.into(),
+        }
+    }
+
+    /// Construct a finding with source, description, location, and line number.
+    pub fn with_location(
+        source: impl Into<String>,
+        description: impl Into<String>,
+        location: String,
+        line_number: usize,
+    ) -> Self {
+        Self {
+            description: description.into(),
+            location: Some(location),
+            line_number: Some(line_number),
+            source: source.into(),
+        }
+    }
+}
+
 /// Port: abstraction for scanning diff text for secrets.
 ///
 /// Adapters implement this for the native Obfuscator scanner, gitleaks, etc.

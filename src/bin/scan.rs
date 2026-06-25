@@ -47,6 +47,7 @@ struct Args {
 ///   2. `.obfsck.toml` in the repo root (per-repo, `[allowlist] patterns = [...]`)
 ///
 /// Entries containing `*` or `?` are treated as glob patterns.
+// qual:allow(iosp) reason: "I/O boundary — reads files and parses TOML; cannot cleanly separate"
 fn load_allowlist() -> Allowlist {
     let mut entries = Vec::new();
 
@@ -153,12 +154,12 @@ impl SecretScanner for ObfsckScanner {
             // Run YAML patterns.
             for (re, label) in &patterns {
                 if re.is_match(content) {
-                    findings.push(Finding {
-                        description: format!("[REDACTED-{label}] pattern matched"),
-                        location: Some(line.chars().take(MAX_LOCATION_LEN).collect()),
-                        line_number: Some(line_no + 1),
-                        source: "obfsck".to_string(),
-                    });
+                    findings.push(Finding::with_location(
+                        "obfsck",
+                        format!("[REDACTED-{label}] pattern matched"),
+                        line.chars().take(MAX_LOCATION_LEN).collect(),
+                        line_no + 1,
+                    ));
                 }
             }
 
@@ -167,12 +168,12 @@ impl SecretScanner for ObfsckScanner {
                 Obfuscator::new(level).with_allowlist(self.allowlist.exact_entries());
             let obfuscated = obfuscator.obfuscate(content);
             if obfuscated != content {
-                findings.push(Finding {
-                    description: "structural secret/PII detected by obfsck".to_string(),
-                    location: Some(line.chars().take(MAX_LOCATION_LEN).collect()),
-                    line_number: Some(line_no + 1),
-                    source: "obfsck".to_string(),
-                });
+                findings.push(Finding::with_location(
+                    "obfsck",
+                    "structural secret/PII detected by obfsck",
+                    line.chars().take(MAX_LOCATION_LEN).collect(),
+                    line_no + 1,
+                ));
             }
         }
 

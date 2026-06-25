@@ -20,6 +20,19 @@ fn payload_with_char_at_middle(special: char, total_len: usize) -> String {
     format!("{prefix}{special}{suffix}")
 }
 
+fn hvs_token(payload: &str) -> String {
+    format!("hvs.{payload}")
+}
+fn hvb_token(payload: &str) -> String {
+    format!("hvb.{payload}")
+}
+fn secret_line(token: &str) -> String {
+    format!("secret: {token}")
+}
+fn batch_line(token: &str) -> String {
+    format!("batch: {token}")
+}
+
 // ---------------------------------------------------------------------------
 // hvs. (vault service token) -- 90-120 char payload
 // ---------------------------------------------------------------------------
@@ -27,8 +40,8 @@ fn payload_with_char_at_middle(special: char, total_len: usize) -> String {
 #[test]
 fn vault_service_token_alphanumeric_only() {
     let payload = make_payload(b"abcdefABCDEF0123456789", 100);
-    let token = format!("hvs.{payload}");
-    let input = format!("secret: {token}");
+    let token = hvs_token(&payload);
+    let input = secret_line(&token);
     let (out, map) = obfuscate_text(&input, ObfuscationLevel::Minimal);
     assert!(
         out.contains("[REDACTED-VAULT-SERVICE]"),
@@ -40,8 +53,8 @@ fn vault_service_token_alphanumeric_only() {
 #[test]
 fn vault_service_token_with_underscore_and_dash() {
     let payload = make_payload(b"abcABC012_-", 100);
-    let token = format!("hvs.{payload}");
-    let input = format!("secret: {token}");
+    let token = hvs_token(&payload);
+    let input = secret_line(&token);
     let (out, _) = obfuscate_text(&input, ObfuscationLevel::Minimal);
     assert!(
         out.contains("[REDACTED-VAULT-SERVICE]"),
@@ -53,8 +66,8 @@ fn vault_service_token_with_underscore_and_dash() {
 fn vault_service_token_with_plus_in_middle() {
     // `+` at position 50 of a 100-char payload -- regex must match through it
     let payload = payload_with_char_at_middle('+', 100);
-    let token = format!("hvs.{payload}");
-    let input = format!("secret: {token}");
+    let token = hvs_token(&payload);
+    let input = secret_line(&token);
     let (out, _) = obfuscate_text(&input, ObfuscationLevel::Minimal);
     assert!(
         out.contains("[REDACTED-VAULT-SERVICE]"),
@@ -72,8 +85,8 @@ fn vault_service_token_with_plus_in_middle() {
 fn vault_service_token_with_slash_in_middle() {
     // `/` at position 50 of a 100-char payload
     let payload = payload_with_char_at_middle('/', 100);
-    let token = format!("hvs.{payload}");
-    let input = format!("secret: {token}");
+    let token = hvs_token(&payload);
+    let input = secret_line(&token);
     let (out, _) = obfuscate_text(&input, ObfuscationLevel::Minimal);
     assert!(
         out.contains("[REDACTED-VAULT-SERVICE]"),
@@ -93,8 +106,8 @@ fn vault_service_token_with_slash_in_middle() {
 #[test]
 fn vault_batch_token_alphanumeric_only() {
     let payload = make_payload(b"abcdefABCDEF0123456789", 150);
-    let token = format!("hvb.{payload}");
-    let input = format!("batch: {token}");
+    let token = hvb_token(&payload);
+    let input = batch_line(&token);
     let (out, map) = obfuscate_text(&input, ObfuscationLevel::Minimal);
     assert!(
         out.contains("[REDACTED-VAULT-BATCH]"),
@@ -106,8 +119,8 @@ fn vault_batch_token_alphanumeric_only() {
 #[test]
 fn vault_batch_token_with_underscore_and_dash() {
     let payload = make_payload(b"abcABC012_-", 150);
-    let token = format!("hvb.{payload}");
-    let input = format!("batch: {token}");
+    let token = hvb_token(&payload);
+    let input = batch_line(&token);
     let (out, _) = obfuscate_text(&input, ObfuscationLevel::Minimal);
     assert!(
         out.contains("[REDACTED-VAULT-BATCH]"),
@@ -118,8 +131,8 @@ fn vault_batch_token_with_underscore_and_dash() {
 #[test]
 fn vault_batch_token_with_plus_in_middle() {
     let payload = payload_with_char_at_middle('+', 150);
-    let token = format!("hvb.{payload}");
-    let input = format!("batch: {token}");
+    let token = hvb_token(&payload);
+    let input = batch_line(&token);
     let (out, _) = obfuscate_text(&input, ObfuscationLevel::Minimal);
     assert!(
         out.contains("[REDACTED-VAULT-BATCH]"),
@@ -135,8 +148,8 @@ fn vault_batch_token_with_plus_in_middle() {
 #[test]
 fn vault_batch_token_with_slash_in_middle() {
     let payload = payload_with_char_at_middle('/', 150);
-    let token = format!("hvb.{payload}");
-    let input = format!("batch: {token}");
+    let token = hvb_token(&payload);
+    let input = batch_line(&token);
     let (out, _) = obfuscate_text(&input, ObfuscationLevel::Minimal);
     assert!(
         out.contains("[REDACTED-VAULT-BATCH]"),

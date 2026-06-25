@@ -1,4 +1,6 @@
 use super::{AlertAnalyzer, Result, load_config};
+
+const SEPARATOR: &str = "======================================================================";
 use clap::Parser;
 use serde_json::Value;
 use tracing::{debug, error, info, warn};
@@ -89,9 +91,9 @@ fn print_analysis(result: &Value, verbose: bool) {
         return;
     }
 
-    println!("======================================================================");
+    println!("{SEPARATOR}");
     println!("SECURITY ALERT ANALYSIS");
-    println!("======================================================================");
+    println!("{SEPARATOR}");
 
     println!(
         "attack vector: {}",
@@ -183,5 +185,5 @@ fn print_analysis(result: &Value, verbose: bool) {
         );
     }
 
-    println!("======================================================================");
+    println!("{SEPARATOR}");
 }

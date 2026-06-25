@@ -14,6 +14,10 @@ pub(super) struct BlockingHttp {
 }
 
 impl BlockingHttp {
+    fn url(&self, path: &str) -> String {
+        format!("{}{}", self.base_url, path)
+    }
+
     pub(super) fn new(url: impl Into<String>) -> Result<Self> {
         let client = Client::builder()
             .connect_timeout(StdDuration::from_secs(CONNECT_TIMEOUT_SECS))
@@ -25,13 +29,13 @@ impl BlockingHttp {
         })
     }
 
-    #[instrument(skip(self), fields(url = %format!("{}{}", self.base_url, path)))]
+    #[instrument(skip(self), fields(url = %self.url(path)))]
     pub(super) fn get_json<T: DeserializeOwned>(
         &self,
         path: &str,
         query: &[(&str, String)],
     ) -> Result<T> {
-        let url = format!("{}{}", self.base_url, path);
+        let url = self.url(path);
         let response = self
             .client
             .get(&url)
@@ -52,9 +56,9 @@ impl BlockingHttp {
         })
     }
 
-    #[instrument(skip(self), fields(url = %format!("{}{}", self.base_url, path)))]
+    #[instrument(skip(self), fields(url = %self.url(path)))]
     pub(super) fn get_bytes(&self, path: &str, query: &[(&str, String)]) -> Result<Vec<u8>> {
-        let url = format!("{}{}", self.base_url, path);
+        let url = self.url(path);
         let response = self
             .client
             .get(&url)
@@ -72,9 +76,9 @@ impl BlockingHttp {
         Ok(response.bytes()?.to_vec())
     }
 
-    #[instrument(skip(self, payload), fields(url = %format!("{}{}", self.base_url, path)))]
+    #[instrument(skip(self, payload), fields(url = %self.url(path)))]
     pub(super) fn post_json_unit(&self, path: &str, payload: &Value) -> Result<()> {
-        let url = format!("{}{}", self.base_url, path);
+        let url = self.url(path);
         self.client
             .post(&url)
             .json(payload)
@@ -90,9 +94,9 @@ impl BlockingHttp {
         Ok(())
     }
 
-    #[instrument(skip(self, body), fields(url = %format!("{}{}", self.base_url, path), body_len = body.len()))]
+    #[instrument(skip(self, body), fields(url = %self.url(path), body_len = body.len()))]
     pub(super) fn post_ndjson_unit(&self, path: &str, body: &str) -> Result<()> {
-        let url = format!("{}{}", self.base_url, path);
+        let url = self.url(path);
         self.client
             .post(&url)
             .header("Content-Type", "application/stream+x-ndjson")

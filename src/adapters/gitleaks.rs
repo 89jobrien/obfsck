@@ -75,6 +75,7 @@ impl Default for GitleaksAdapter {
 }
 
 impl SecretScanner for GitleaksAdapter {
+    // qual:allow(iosp) reason: "I/O boundary — shells out to gitleaks, parses output, handles exit codes"
     fn scan_diff(&self, diff: &str) -> Result<Vec<Finding>> {
         // `gitleaks detect --pipe` reads a diff from stdin.
         // Exit code 1 means findings; exit code 0 means clean.
@@ -149,23 +150,16 @@ impl SecretScanner for GitleaksAdapter {
             {
                 continue;
             }
-            findings.push(Finding {
-                description: trimmed.to_string(),
-                location: None,
-                line_number: None,
-                source: "gitleaks".to_string(),
-            });
+            findings.push(Finding::new("gitleaks", trimmed));
         }
 
         // Exit code 1 from gitleaks means secrets found (even if findings is empty from parsing).
         // If gitleaks exits 1 but we got no parseable findings, synthesize a generic finding.
         if !output.status.success() && findings.is_empty() {
-            findings.push(Finding {
-                description: "gitleaks detected secrets in diff (no parseable output)".to_string(),
-                location: None,
-                line_number: None,
-                source: "gitleaks".to_string(),
-            });
+            findings.push(Finding::new(
+                "gitleaks",
+                "gitleaks detected secrets in diff (no parseable output)",
+            ));
         }
 
         Ok(findings)

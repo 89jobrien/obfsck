@@ -3,11 +3,15 @@
 use obfsck::adapters::regex_patterns::RegexPatternSource;
 use obfsck::ports::PatternSource;
 
-// Trait object safety: PatternSource can be used as dyn PatternSource.
+// Trait object safety: PatternSource can be used as dyn PatternSource and methods dispatch correctly.
 #[test]
 fn pattern_source_is_object_safe() {
     let adapter = RegexPatternSource;
-    let _dyn_ref: &dyn PatternSource = &adapter;
+    let dyn_ref: &dyn PatternSource = &adapter;
+    assert!(
+        !dyn_ref.patterns().is_empty(),
+        "dyn PatternSource::patterns() must return at least one pattern"
+    );
 }
 
 // Contract: patterns() must return a non-empty slice.

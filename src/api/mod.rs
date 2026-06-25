@@ -24,6 +24,15 @@ mod render;
 
 use render::{html_escape, render_analysis_html};
 
+const DEFAULT_CACHE_TTL_SECS: i64 = 86_400;
+const DEFAULT_HEALTH_TIMEOUT: f64 = 3.0;
+const MIN_HEALTH_TIMEOUT: f64 = 0.5;
+const MAX_HEALTH_TIMEOUT: f64 = 30.0;
+const HISTORY_PAGE_LIMIT: usize = 100;
+const TIMESTAMP_DISPLAY_LEN: usize = 19;
+const API_HISTORY_DEFAULT_LIMIT: usize = 50;
+const API_HISTORY_MAX_LIMIT: usize = 500;
+
 #[derive(Debug, Error)]
 pub enum ApiError {
     #[error("analyzer error: {0}")]
@@ -138,7 +147,7 @@ pub async fn run_server(host: String, port: u16) -> Result<(), ApiError> {
         .ok()
         .and_then(|s| s.parse::<i64>().ok())
         .filter(|v| *v > 0)
-        .unwrap_or(86_400);
+        .unwrap_or(DEFAULT_CACHE_TTL_SECS);
 
     let state = Arc::new(AppState {
         analyzer,
@@ -180,7 +189,10 @@ async fn health_all(
     State(state): State<Arc<AppState>>,
     Query(query): Query<HealthAllQuery>,
 ) -> impl IntoResponse {
-    let timeout = query.timeout.unwrap_or(3.0).clamp(0.5, 30.0);
+    let timeout = query
+        .timeout
+        .unwrap_or(DEFAULT_HEALTH_TIMEOUT)
+        .clamp(MIN_HEALTH_TIMEOUT, MAX_HEALTH_TIMEOUT);
     let stack = std::env::var("STACK")
         .ok()
         .unwrap_or_else(|| state.backend_name.clone());
@@ -311,6 +323,7 @@ async fn analyze_api(
     }
 }
 
+// qual:allow(iosp) reason: "async web handler — I/O boundary orchestrating request parsing, analysis, and rendering"
 async fn analyze_page(
     State(state): State<Arc<AppState>>,
     Query(query): Query<AnalyzeQuery>,
@@ -409,12 +422,17 @@ async fn analyze_page(
 }
 
 async fn history_page(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let analyses = list_cached_analyses(&state, 100).unwrap_or_default();
+    let analyses = list_cached_analyses(&state, HISTORY_PAGE_LIMIT).unwrap_or_default();
     let mut rows = String::new();
 
     for a in analyses {
         let key = html_escape(&a.cache_key);
-        let timestamp = html_escape(&a.timestamp.chars().take(19).collect::<String>());
+        let timestamp = html_escape(
+            &a.timestamp
+                .chars()
+                .take(TIMESTAMP_DISPLAY_LEN)
+                .collect::<String>(),
+        );
         let rule = html_escape(&a.rule);
         let priority = html_escape(&a.priority);
         let hostname = html_escape(&a.hostname);
@@ -462,7 +480,10 @@ async fn api_history(
     State(state): State<Arc<AppState>>,
     Query(query): Query<HistoryQuery>,
 ) -> impl IntoResponse {
-    let limit = query.limit.unwrap_or(50).clamp(1, 500);
+    let limit = query
+        .limit
+        .unwrap_or(API_HISTORY_DEFAULT_LIMIT)
+        .clamp(1, API_HISTORY_MAX_LIMIT);
     match list_cached_analyses(&state, limit) {
         Ok(items) => Json(items).into_response(),
         Err(err) => (

@@ -10,6 +10,7 @@ pub(super) fn html_escape(input: &str) -> String {
         .replace('\'', "&#39;")
 }
 
+// qual:allow(iosp) reason: "HTML template renderer — data extraction and string building are intentionally co-located"
 pub(super) fn render_analysis_html(view: &AnalysisPageView<'_>) -> String {
     let severity = view
         .analysis

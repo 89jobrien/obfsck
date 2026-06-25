@@ -77,6 +77,7 @@ impl Auditor for ObfsckAuditor {
 pub struct PatternSuggester;
 
 impl FilterSuggester for PatternSuggester {
+    // qual:allow(iosp) reason: "integration function — audits examples and maps hits to pattern defs"
     fn suggest(&self, examples: &[String]) -> Vec<FilterSuggestion> {
         // Strategy: run audit on each example; for every hit, propose the
         // compiled pattern from SECRET_PATTERN_DEFS as the suggested filter.

@@ -93,9 +93,12 @@ scratch/
 # handoff-begin
 .ctx/*
 !.ctx/HANDOFF.*.yaml
+!.ctx/rustqual-baseline.json
 .ctx/HANDOFF*.state.yaml
 !.ctx/handoff.*.config.toml.example
 .ctx/.initialized
 .ctx/HANDOFF.state.yaml
 # handoff-end
 .claude/worktrees/
+.ctx/HANDOFF.obfsck.obfsck.yaml
+.ctx/HANDOFF.md

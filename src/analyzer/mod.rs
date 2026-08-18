@@ -1,6 +1,6 @@
 use crate::clients::{LogClient, LokiClient, VictoriaLogsClient};
 use crate::schema::AnalysisOutput;
-use crate::{ObfuscationLevel, obfuscate_alert};
+use crate::{ObfuscationLevel, obfuscate_alert, obfuscate_text};
 use chrono::{DateTime, Utc};
 use serde_json::{Value, json};
 use simplify_baml::{BamlSchema, FieldType, IR, parse_llm_response_with_ir};
@@ -215,7 +215,13 @@ impl AlertAnalyzer {
             "output_fields": obf_fields,
         });
 
-        let user_prompt = build_user_prompt(alert, &labels, &obf_output, &obf_fields);
+        let user_prompt = build_user_prompt(
+            alert,
+            &labels,
+            &obf_output,
+            &obf_fields,
+            self.obfuscation_level,
+        );
         let mapping_json = obfuscation_mapping_value(&mapping);
 
         if dry_run {
@@ -415,33 +421,43 @@ fn build_user_prompt(
     labels: &HashMap<String, String>,
     obf_output: &Option<String>,
     obf_fields: &Option<HashMap<String, String>>,
+    level: ObfuscationLevel,
 ) -> String {
+    let rule_name = obfuscate_text(
+        labels.get("rule").map(String::as_str).unwrap_or("Unknown"),
+        level,
+    )
+    .0;
+    let priority = obfuscate_text(
+        labels
+            .get("priority")
+            .map(String::as_str)
+            .unwrap_or("Unknown"),
+        level,
+    )
+    .0;
+    let timestamp = obfuscate_text(
+        alert
+            .get("_timestamp")
+            .and_then(Value::as_str)
+            .unwrap_or("Unknown"),
+        level,
+    )
+    .0;
+    let source = obfuscate_text(
+        labels
+            .get("source")
+            .map(String::as_str)
+            .unwrap_or("syscall"),
+        level,
+    )
+    .0;
+
     USER_PROMPT_TEMPLATE
-        .replace(
-            "{rule_name}",
-            labels.get("rule").map(String::as_str).unwrap_or("Unknown"),
-        )
-        .replace(
-            "{priority}",
-            labels
-                .get("priority")
-                .map(String::as_str)
-                .unwrap_or("Unknown"),
-        )
-        .replace(
-            "{timestamp}",
-            alert
-                .get("_timestamp")
-                .and_then(Value::as_str)
-                .unwrap_or("Unknown"),
-        )
-        .replace(
-            "{source}",
-            labels
-                .get("source")
-                .map(String::as_str)
-                .unwrap_or("syscall"),
-        )
+        .replace("{rule_name}", &rule_name)
+        .replace("{priority}", &priority)
+        .replace("{timestamp}", &timestamp)
+        .replace("{source}", &source)
         .replace(
             "{obfuscated_output}",
             obf_output.as_deref().unwrap_or_default(),

@@ -87,18 +87,26 @@ impl SecretScanner for GitleaksAdapter {
             .spawn()
             .map_err(|e| format!("failed to spawn gitleaks binary '{}': {e}", self.binary))?;
 
-        // Write diff to stdin, then close it.
-        if let Some(stdin) = child.stdin.take() {
-            let mut stdin = stdin;
-            stdin
-                .write_all(diff.as_bytes())
-                .map_err(|e| format!("failed to write diff to gitleaks stdin: {e}"))?;
-            // stdin dropped here — EOF sent
-        }
+        // Write diff to stdin on a separate thread. gitleaks may start writing
+        // findings to stdout before we've finished writing the diff; if both
+        // pipes fill their OS buffers, writer and reader deadlock unless
+        // stdin-writing and stdout/stderr-reading happen concurrently.
+        let mut stdin = child.stdin.take().ok_or("failed to open gitleaks stdin")?;
+        let diff_owned = diff.to_string();
+        let writer = std::thread::spawn(move || stdin.write_all(diff_owned.as_bytes()));
 
         let output = child
             .wait_with_output()
             .map_err(|e| format!("failed to wait for gitleaks process: {e}"))?;
+
+        // Only surface a stdin-write error if the process didn't still produce
+        // usable output (e.g. it exited early after reading a partial diff).
+        if let Ok(Err(e)) = writer.join()
+            && output.stdout.is_empty()
+            && output.stderr.is_empty()
+        {
+            return Err(format!("failed to write diff to gitleaks stdin: {e}").into());
+        }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);

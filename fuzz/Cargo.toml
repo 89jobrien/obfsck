@@ -9,6 +9,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
+serde_yaml = "0.9"
 
 [dependencies.obfsck]
 path = ".."
@@ -22,6 +23,21 @@ doc = false
 [[bin]]
 name = "fuzz_strip_ansi"
 path = "fuzz_targets/fuzz_strip_ansi.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_level_monotonicity"
+path = "fuzz_targets/fuzz_level_monotonicity.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_allowlist"
+path = "fuzz_targets/fuzz_allowlist.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_yaml_config"
+path = "fuzz_targets/fuzz_yaml_config.rs"
 doc = false
 
 [workspace]

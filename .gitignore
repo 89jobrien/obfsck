@@ -6,6 +6,7 @@
 debug/
 release/
 *.rs.bk
+fuzz/
 
 # --- Node / JavaScript / TypeScript ---
 node_modules/

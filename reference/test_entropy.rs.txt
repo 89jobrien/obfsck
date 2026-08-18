@@ -1,0 +1,12 @@
+use obfsck::{ObfuscationLevel, Obfuscator};
+
+fn main() {
+    let high_entropy = "aB3xK9mQ2wR7tY1nP4sL6vC0dF8jH5uE";
+    let mut ob = Obfuscator::new(ObfuscationLevel::Paranoid)
+        .with_allowlist(vec![high_entropy.to_string()]);
+    let input = format!("token={high_entropy}");
+    eprintln!("allowlist len: checking containment");
+    let out = ob.obfuscate(&input);
+    eprintln!("input: {input}");
+    eprintln!("output: {out}");
+}

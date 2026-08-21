@@ -9,6 +9,7 @@ fn main() {
         Ok(code) => std::process::exit(code),
         Err(err) => {
             error!(error = %err, "Fatal error");
+            eprintln!("{:?}", miette::Report::new(err));
             std::process::exit(1);
         }
     }

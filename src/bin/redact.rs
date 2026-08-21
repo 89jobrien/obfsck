@@ -1,4 +1,5 @@
 use clap::Parser;
+use miette::{Context, IntoDiagnostic, Result};
 use obfsck::yaml_config::SecretsConfig;
 use obfsck::{ObfuscationLevel, Obfuscator};
 use regex::{Regex, RegexBuilder};
@@ -81,7 +82,7 @@ fn apply_profile(config: &mut SecretsConfig, profile: &str, level: &mut Obfuscat
     }
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
 
     let mut level = ObfuscationLevel::parse(&args.level).unwrap_or_else(|| {
@@ -89,11 +90,10 @@ fn main() {
         ObfuscationLevel::Minimal
     });
 
-    let yaml = load_config(args.config.as_deref());
-    let mut config: SecretsConfig = serde_yaml::from_str(&yaml).unwrap_or_else(|e| {
-        eprintln!("Failed to parse secrets config: {e}");
-        std::process::exit(1);
-    });
+    let yaml = load_config(args.config.as_deref())?;
+    let mut config: SecretsConfig = serde_yaml::from_str(&yaml)
+        .into_diagnostic()
+        .wrap_err("failed to parse secrets config")?;
 
     let pii_enabled = !matches!(
         args.pii.to_ascii_lowercase().as_str(),
@@ -143,18 +143,15 @@ fn main() {
     // Build allowlist: CLI flags + allowlist-file + ~/.config/obfsck/allowlist
     let mut allowlist = args.allowlist;
     if let Some(path) = &args.allowlist_file {
-        match std::fs::read_to_string(path) {
-            Ok(content) => allowlist.extend(
-                content
-                    .lines()
-                    .map(|l| l.trim().to_string())
-                    .filter(|l| !l.is_empty() && !l.starts_with('#')),
-            ),
-            Err(e) => {
-                eprintln!("Cannot read allowlist-file '{}': {e}", path.display());
-                std::process::exit(1);
-            }
-        }
+        let content = std::fs::read_to_string(path)
+            .into_diagnostic()
+            .wrap_err_with(|| format!("cannot read allowlist-file '{}'", path.display()))?;
+        allowlist.extend(
+            content
+                .lines()
+                .map(|l| l.trim().to_string())
+                .filter(|l| !l.is_empty() && !l.starts_with('#')),
+        );
     }
     let user_allowlist = shellexpand::tilde("~/.config/obfsck/allowlist").into_owned();
     if let Ok(content) = std::fs::read_to_string(&user_allowlist) {
@@ -176,15 +173,14 @@ fn main() {
     // Audit counts accumulated across all lines.
     let mut audit_counts: HashMap<String, usize> = HashMap::new();
 
-    let reader = open_reader(args.input.as_deref());
-    let writer = open_writer(args.output.as_deref());
+    let reader = open_reader(args.input.as_deref())?;
+    let writer = open_writer(args.output.as_deref())?;
     let mut writer = BufWriter::new(writer);
 
     for (line_no, line) in reader.lines().enumerate() {
-        let line = line.unwrap_or_else(|e| {
-            eprintln!("Failed to read input at line {}: {e}", line_no + 1);
-            std::process::exit(1);
-        });
+        let line = line
+            .into_diagnostic()
+            .wrap_err_with(|| format!("failed to read input at line {}", line_no + 1))?;
 
         // Apply YAML secret patterns first (compiled once above, reused per line).
         let mut text = line;
@@ -213,10 +209,9 @@ fn main() {
         // Structural obfuscation (IPs, emails, hostnames, etc.).
         let out = obfuscator.obfuscate(&text);
 
-        writeln!(writer, "{out}").unwrap_or_else(|e| {
-            eprintln!("Failed to write output: {e}");
-            std::process::exit(1);
-        });
+        writeln!(writer, "{out}")
+            .into_diagnostic()
+            .wrap_err("failed to write output")?;
     }
 
     if args.audit {
@@ -232,41 +227,40 @@ fn main() {
             eprintln!("  {:<35} {}", label, count);
         }
     }
+
+    Ok(())
 }
 
-fn open_reader(path: Option<&std::path::Path>) -> Box<dyn BufRead> {
+fn open_reader(path: Option<&std::path::Path>) -> Result<Box<dyn BufRead>> {
     match path {
         Some(p) => {
-            let f = std::fs::File::open(p).unwrap_or_else(|e| {
-                eprintln!("Cannot read '{}': {e}", p.display());
-                std::process::exit(1);
-            });
-            Box::new(BufReader::new(f))
+            let f = std::fs::File::open(p)
+                .into_diagnostic()
+                .wrap_err_with(|| format!("cannot read '{}'", p.display()))?;
+            Ok(Box::new(BufReader::new(f)))
         }
-        None => Box::new(BufReader::new(io::stdin())),
+        None => Ok(Box::new(BufReader::new(io::stdin()))),
     }
 }
 
-fn open_writer(path: Option<&std::path::Path>) -> Box<dyn Write> {
+fn open_writer(path: Option<&std::path::Path>) -> Result<Box<dyn Write>> {
     match path {
         Some(p) => {
-            let f = std::fs::File::create(p).unwrap_or_else(|e| {
-                eprintln!("Cannot create '{}': {e}", p.display());
-                std::process::exit(1);
-            });
-            Box::new(f)
+            let f = std::fs::File::create(p)
+                .into_diagnostic()
+                .wrap_err_with(|| format!("cannot create '{}'", p.display()))?;
+            Ok(Box::new(f))
         }
-        None => Box::new(io::stdout()),
+        None => Ok(Box::new(io::stdout())),
     }
 }
 
-fn load_config(explicit_path: Option<&str>) -> String {
+fn load_config(explicit_path: Option<&str>) -> Result<String> {
     if let Some(path) = explicit_path {
         let expanded = shellexpand::tilde(path);
-        return std::fs::read_to_string(expanded.as_ref()).unwrap_or_else(|e| {
-            eprintln!("Cannot read config {path}: {e}");
-            std::process::exit(1);
-        });
+        return std::fs::read_to_string(expanded.as_ref())
+            .into_diagnostic()
+            .wrap_err_with(|| format!("cannot read config {path}"));
     }
 
     let user_config = shellexpand::tilde("~/.config/obfsck/secrets.yaml").into_owned();
@@ -274,9 +268,9 @@ fn load_config(explicit_path: Option<&str>) -> String {
         // Only use user config if it has meaningful content (not just an empty scaffold)
         let trimmed = content.trim();
         if !trimmed.is_empty() && trimmed != "groups: {}\ncustom: []" {
-            return content;
+            return Ok(content);
         }
     }
 
-    BUNDLED_CONFIG.to_string()
+    Ok(BUNDLED_CONFIG.to_string())
 }

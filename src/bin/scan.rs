@@ -225,7 +225,8 @@ fn main() {
     match obfsck.scan_diff(&diff) {
         Ok(findings) => all_findings.extend(findings),
         Err(e) => {
-            eprintln!("scan: obfsck scanner error: {e}");
+            eprintln!("scan: obfsck scanner error");
+            eprintln!("{:?}", miette::Report::new(e));
             process::exit(2);
         }
     }
@@ -237,7 +238,8 @@ fn main() {
             match gitleaks.scan_diff(&diff) {
                 Ok(findings) => all_findings.extend(findings),
                 Err(e) => {
-                    eprintln!("scan: gitleaks scanner error: {e}");
+                    eprintln!("scan: gitleaks scanner error");
+                    eprintln!("{:?}", miette::Report::new(e));
                     process::exit(2);
                 }
             }

@@ -25,6 +25,7 @@ async fn main() {
 
     if let Err(err) = run_server(args.host, args.port).await {
         error!(error = %err, "Server error");
+        eprintln!("{:?}", miette::Report::new(err));
         std::process::exit(1);
     }
 }

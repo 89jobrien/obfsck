@@ -8,6 +8,7 @@ use tracing::{error, instrument};
 const CONNECT_TIMEOUT_SECS: u64 = 5;
 const REQUEST_TIMEOUT_SECS: u64 = 60;
 
+#[derive(Debug)]
 pub(super) struct BlockingHttp {
     base_url: String,
     client: Client,

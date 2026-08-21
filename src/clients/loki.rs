@@ -7,6 +7,7 @@ use serde_json::{Map, Value, json};
 use std::collections::HashMap;
 use tracing::{info, instrument};
 
+#[derive(Debug)]
 pub struct LokiClient {
     http: BlockingHttp,
 }

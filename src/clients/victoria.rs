@@ -6,6 +6,7 @@ use serde_json::{Map, Value};
 use std::collections::HashMap;
 use tracing::{info, instrument, warn};
 
+#[derive(Debug)]
 pub struct VictoriaLogsClient {
     http: BlockingHttp,
 }

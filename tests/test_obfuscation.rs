@@ -323,7 +323,7 @@ fn obfuscate_paths_populates_map() {
     let input = "error reading /home/alice/projects/myapp/config.toml";
     let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid);
     let out = obfuscator.obfuscate(input);
-    let map = obfuscator.get_mapping();
+    let map = obfuscator.mapping();
 
     assert!(
         !map.paths.is_empty(),
@@ -344,7 +344,7 @@ fn obfuscate_paths_map_value_differs_from_key() {
     let input = "loading /home/alice/projects/myapp/config.toml";
     let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid);
     let _out = obfuscator.obfuscate(input);
-    let map = obfuscator.get_mapping();
+    let map = obfuscator.mapping();
 
     let original = "/home/alice/projects/myapp/config.toml";
     let redacted = map.paths.get(original).expect("path must be in map");
@@ -493,7 +493,7 @@ fn repeated_path_maps_to_single_entry() {
     let input = format!("reading {path} and also {path}");
     let mut obfuscator = Obfuscator::new(ObfuscationLevel::Paranoid);
     let _out = obfuscator.obfuscate(&input);
-    let map = obfuscator.get_mapping();
+    let map = obfuscator.mapping();
 
     assert_eq!(
         map.paths.len(),

@@ -35,7 +35,7 @@ pub trait FilterSuggester {
 // ObfsckAuditor adapter
 // ---------------------------------------------------------------------------
 
-#[derive(Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct ObfsckAuditor;
 
 impl Auditor for ObfsckAuditor {
@@ -73,7 +73,7 @@ impl Auditor for ObfsckAuditor {
 // The YAML config groups are generated from the same source at build time;
 // iterating both would double-count every hit. Tests below enforce this invariant.
 
-#[derive(Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct PatternSuggester;
 
 impl FilterSuggester for PatternSuggester {

@@ -37,6 +37,7 @@ fn strip_ansi(s: &str) -> String {
 ///
 /// If `gitleaks` is not on `PATH`, `scan_diff` returns an error. Callers can
 /// treat this as non-fatal (skip gitleaks) or fatal depending on policy.
+#[derive(Debug, Clone)]
 pub struct GitleaksAdapter {
     /// Path to the gitleaks binary. Defaults to `"gitleaks"` (resolved via PATH).
     pub binary: String,

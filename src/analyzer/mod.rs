@@ -44,6 +44,7 @@ pub enum AnalyzerError {
 
 type Result<T> = std::result::Result<T, AnalyzerError>;
 
+#[derive(Debug)]
 pub struct AlertAnalyzer {
     backend: String,
     log_client: Box<dyn LogClient>,

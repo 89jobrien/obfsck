@@ -205,6 +205,7 @@ impl Counters {
     }
 }
 
+#[derive(Debug)]
 pub struct Obfuscator {
     level: ObfuscationLevel,
     /// When false, structural PII (emails, IPs, users) is skipped even at
@@ -245,7 +246,7 @@ impl Obfuscator {
         self.level
     }
 
-    pub fn get_mapping(&self) -> ObfuscationMapExport {
+    pub fn mapping(&self) -> ObfuscationMapExport {
         self.map.export()
     }
 
@@ -652,7 +653,7 @@ fn get_or_create_token(
 pub fn obfuscate_text(text: &str, level: ObfuscationLevel) -> (String, ObfuscationMapExport) {
     let mut obfuscator = Obfuscator::new(level);
     let out = obfuscator.obfuscate(text);
-    (out, obfuscator.get_mapping())
+    (out, obfuscator.mapping())
 }
 
 pub fn obfuscate_alert(
@@ -673,7 +674,7 @@ pub fn obfuscate_alert(
             .collect::<HashMap<_, _>>()
     });
 
-    (out, fields, obfuscator.get_mapping())
+    (out, fields, obfuscator.mapping())
 }
 
 struct SecretPattern {
@@ -682,6 +683,7 @@ struct SecretPattern {
     re: Regex,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct SecretPatternDef {
     pub name: &'static str,
     pub pattern: &'static str,
@@ -818,14 +820,14 @@ pub mod yaml_config {
         Paranoid,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Debug, Deserialize)]
     pub struct SecretsConfig {
         pub groups: IndexMap<String, Group>,
         #[serde(default)]
         pub custom: Vec<PatternDef>,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Debug, Deserialize)]
     pub struct Group {
         pub enabled: bool,
         #[serde(default)]
@@ -850,7 +852,7 @@ pub mod yaml_config {
         }
     }
 
-    #[derive(Deserialize)]
+    #[derive(Debug, Deserialize)]
     pub struct PatternDef {
         pub name: String,
         pub pattern: String,

@@ -13,7 +13,7 @@ pub use victoria::VictoriaLogsClient;
 
 type Result<T> = std::result::Result<T, AnalyzerError>;
 
-pub trait LogClient: Send + Sync {
+pub trait LogClient: Send + Sync + std::fmt::Debug {
     fn query_range(
         &self,
         query: &str,

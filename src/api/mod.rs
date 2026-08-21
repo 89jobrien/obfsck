@@ -49,7 +49,7 @@ pub enum ApiError {
     InvalidCacheKey(String),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AppState {
     analyzer: Arc<AlertAnalyzer>,
     backend_name: String,

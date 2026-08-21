@@ -4,10 +4,11 @@ use serde_json::{Value, json};
 use std::time::Duration as StdDuration;
 use tracing::{error, info, instrument};
 
-pub(super) trait LlmProvider: Send + Sync {
+pub(super) trait LlmProvider: Send + Sync + std::fmt::Debug {
     fn analyze(&self, system_prompt: &str, user_prompt: &str) -> Result<String>;
 }
 
+#[derive(Debug)]
 pub(super) struct OllamaProvider {
     url: String,
     model: String,
@@ -78,6 +79,15 @@ pub(super) struct OpenAiProvider {
     client: Client,
 }
 
+impl std::fmt::Debug for OpenAiProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OpenAiProvider")
+            .field("api_key", &"[REDACTED]")
+            .field("model", &self.model)
+            .finish()
+    }
+}
+
 impl OpenAiProvider {
     pub(super) fn new(api_key: impl Into<String>, model: impl Into<String>) -> Result<Self> {
         Ok(Self {
@@ -143,6 +153,15 @@ pub(super) struct AnthropicProvider {
     api_key: String,
     model: String,
     client: Client,
+}
+
+impl std::fmt::Debug for AnthropicProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AnthropicProvider")
+            .field("api_key", &"[REDACTED]")
+            .field("model", &self.model)
+            .finish()
+    }
 }
 
 impl AnthropicProvider {

@@ -5,6 +5,7 @@ use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use chrono::{DateTime, Utc};
+use miette::Diagnostic;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -33,19 +34,28 @@ const TIMESTAMP_DISPLAY_LEN: usize = 19;
 const API_HISTORY_DEFAULT_LIMIT: usize = 50;
 const API_HISTORY_MAX_LIMIT: usize = 500;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Diagnostic)]
 pub enum ApiError {
     #[error("analyzer error: {0}")]
+    #[diagnostic(code(obfsck::api::analyzer))]
     Analyzer(#[from] AnalyzerError),
     #[error("io error: {0}")]
+    #[diagnostic(code(obfsck::api::io))]
     Io(#[from] std::io::Error),
     #[error("json error: {0}")]
+    #[diagnostic(code(obfsck::api::json))]
     Json(#[from] serde_json::Error),
     #[error("http error: {0}")]
+    #[diagnostic(code(obfsck::api::http))]
     Http(#[from] reqwest::Error),
     #[error("join error: {0}")]
+    #[diagnostic(code(obfsck::api::join))]
     Join(String),
     #[error("invalid cache key: {0}")]
+    #[diagnostic(
+        code(obfsck::api::invalid_cache_key),
+        help("cache keys must be a plain hex/alphanumeric string, no path separators")
+    )]
     InvalidCacheKey(String),
 }
 

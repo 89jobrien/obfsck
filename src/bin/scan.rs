@@ -11,7 +11,7 @@
 
 use clap::Parser;
 use obfsck::adapters::GitleaksAdapter;
-use obfsck::ports::{Finding, SecretScanner};
+use obfsck::ports::{Finding, PortsError, SecretScanner};
 use obfsck::yaml_config::SecretsConfig;
 use obfsck::{Allowlist, ObfuscationLevel, Obfuscator};
 use regex::RegexBuilder;
@@ -106,8 +106,8 @@ struct ObfsckScanner {
 impl SecretScanner for ObfsckScanner {
     fn scan_diff(&self, diff: &str) -> obfsck::ports::Result<Vec<Finding>> {
         let yaml = BUNDLED_CONFIG;
-        let config: SecretsConfig = serde_yaml::from_str(yaml)
-            .map_err(|e| format!("failed to parse bundled secrets config: {e}"))?;
+        let config: SecretsConfig =
+            serde_yaml::from_str(yaml).map_err(|e| PortsError::Config(Box::new(e)))?;
 
         let level = self.level;
         let is_paranoid = level == ObfuscationLevel::Paranoid;

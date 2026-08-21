@@ -2,6 +2,7 @@ use crate::clients::{LogClient, LokiClient, VictoriaLogsClient};
 use crate::schema::AnalysisOutput;
 use crate::{ObfuscationLevel, obfuscate_alert, obfuscate_text};
 use chrono::{DateTime, Utc};
+use miette::Diagnostic;
 use serde_json::{Value, json};
 use simplify_baml::{BamlSchema, FieldType, IR, parse_llm_response_with_ir};
 use std::collections::HashMap;
@@ -24,21 +25,34 @@ use parsing::{value_to_string_map, value_to_string_map_optional};
 pub use prompts::{SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, mitre_mapping};
 use providers::{AnthropicProvider, LlmProvider, OllamaProvider, OpenAiProvider};
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Diagnostic)]
 pub enum AnalyzerError {
     #[error("http error: {0}")]
+    #[diagnostic(code(obfsck::analyzer::http))]
     Http(#[from] reqwest::Error),
     #[error("io error: {0}")]
+    #[diagnostic(code(obfsck::analyzer::io))]
     Io(#[from] std::io::Error),
     #[error("json error: {0}")]
+    #[diagnostic(code(obfsck::analyzer::json))]
     Json(#[from] serde_json::Error),
     #[error("yaml error: {0}")]
+    #[diagnostic(code(obfsck::analyzer::yaml))]
     Yaml(#[from] serde_yaml::Error),
     #[error("invalid config: {0}")]
+    #[diagnostic(
+        code(obfsck::analyzer::invalid_config),
+        help("check the analyzer config file for typos or unsupported values")
+    )]
     InvalidConfig(String),
     #[error("invalid argument: {0}")]
+    #[diagnostic(code(obfsck::analyzer::invalid_argument))]
     InvalidArgument(String),
     #[error("response parse error: {0}")]
+    #[diagnostic(
+        code(obfsck::analyzer::response_parse),
+        help("the LLM provider's response did not match the expected schema")
+    )]
     ResponseParse(String),
 }
 

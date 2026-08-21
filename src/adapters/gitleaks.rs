@@ -4,7 +4,7 @@
 //! and parses the exit code. Gitleaks prints findings to stdout; we capture
 //! them and surface each line as a `Finding`.
 
-use crate::ports::{Finding, Result, SecretScanner};
+use crate::ports::{Finding, PortsError, Result, SecretScanner};
 use std::io::Write;
 use std::process::{Command, Stdio};
 
@@ -86,19 +86,20 @@ impl SecretScanner for GitleaksAdapter {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| format!("failed to spawn gitleaks binary '{}': {e}", self.binary))?;
+            .map_err(PortsError::Spawn)?;
 
         // Write diff to stdin on a separate thread. gitleaks may start writing
         // findings to stdout before we've finished writing the diff; if both
         // pipes fill their OS buffers, writer and reader deadlock unless
         // stdin-writing and stdout/stderr-reading happen concurrently.
-        let mut stdin = child.stdin.take().ok_or("failed to open gitleaks stdin")?;
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| PortsError::Other("failed to open gitleaks stdin".to_string()))?;
         let diff_owned = diff.to_string();
         let writer = std::thread::spawn(move || stdin.write_all(diff_owned.as_bytes()));
 
-        let output = child
-            .wait_with_output()
-            .map_err(|e| format!("failed to wait for gitleaks process: {e}"))?;
+        let output = child.wait_with_output().map_err(PortsError::Io)?;
 
         // Only surface a stdin-write error if the process didn't still produce
         // usable output (e.g. it exited early after reading a partial diff).
@@ -106,7 +107,7 @@ impl SecretScanner for GitleaksAdapter {
             && output.stdout.is_empty()
             && output.stderr.is_empty()
         {
-            return Err(format!("failed to write diff to gitleaks stdin: {e}").into());
+            return Err(PortsError::Io(e));
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);

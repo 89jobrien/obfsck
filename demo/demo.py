@@ -9,9 +9,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
+import socket
 import subprocess
 import sys
+import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -23,9 +28,41 @@ from rich.rule import Rule
 from rich.table import Table
 from rich.text import Text
 
-BINARY = Path(__file__).parent.parent / "target" / "release" / "redact"
+BIN_DIR = Path(__file__).parent.parent / "target" / "release"
+BINARY = BIN_DIR / "redact"
 EXAMPLES_DIR = Path(__file__).parent / "examples"
 console = Console()
+
+
+def bin_path(name: str) -> Path:
+    return BIN_DIR / name
+
+
+def check_bin(name: str) -> Path:
+    path = bin_path(name)
+    if not path.exists():
+        console.print(
+            f"[bold red]Error:[/bold red] binary not found at [bold]{path}[/bold]\n"
+            "Run [bold]cargo build --release --features analyzer[/bold] first.",
+            highlight=False,
+        )
+        sys.exit(1)
+    return path
+
+
+def run_bin(
+    name: str, args: list[str], stdin: Optional[str] = None, timeout: float = 10.0
+) -> subprocess.CompletedProcess:
+    path = check_bin(name)
+    return subprocess.run(
+        [str(path), *args], input=stdin, capture_output=True, text=True, timeout=timeout
+    )
+
+
+def free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
 
 
 @dataclass
@@ -185,13 +222,183 @@ def file_mode(path: Path, level: str) -> None:
 
 
 def check_binary() -> None:
-    if not BINARY.exists():
-        console.print(
-            f"[bold red]Error:[/bold red] binary not found at [bold]{BINARY}[/bold]\n"
-            "Run [bold]cargo build --release[/bold] first.",
-            highlight=False,
+    check_bin("redact")
+
+
+# ---------------------------------------------------------------------------
+# scan — unified diff scanner combining the native obfsck patterns + gitleaks
+# ---------------------------------------------------------------------------
+
+SAMPLE_DIFF = """\
+diff --git a/config.py b/config.py
+index 1234567..89abcde 100644
+--- a/config.py
++++ b/config.py
+@@ -1,3 +1,4 @@
+ import os
++AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
+ DEBUG = False
+ API_TIMEOUT = 30
+"""
+
+
+def demo_scan() -> None:
+    console.print(Rule("[bold cyan]scan[/bold cyan]  [dim]— unified diff secret scanner[/dim]"))
+    console.print(
+        Panel(
+            SAMPLE_DIFF.rstrip("\n"),
+            title="Sample `git diff --staged` input",
+            border_style="dim",
         )
-        sys.exit(1)
+    )
+    result = run_bin("scan", ["--level", "minimal", "--no-gitleaks"], stdin=SAMPLE_DIFF)
+    style = "red" if result.returncode == 1 else "green"
+    console.print(
+        Panel(
+            (result.stderr or result.stdout).rstrip("\n"),
+            title=f"scan output (exit {result.returncode})",
+            border_style=style,
+        )
+    )
+    console.print()
+
+
+# ---------------------------------------------------------------------------
+# obfsck-mcp — JSON-RPC stdio server (audit + generate-filters tools)
+# ---------------------------------------------------------------------------
+
+
+def mcp_request(method: str, params: Optional[dict] = None, req_id: int = 1) -> dict:
+    req = {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
+    result = run_bin("obfsck-mcp", [], stdin=json.dumps(req) + "\n")
+    return json.loads(result.stdout.strip().splitlines()[-1])
+
+
+def demo_mcp() -> None:
+    console.print(Rule("[bold cyan]obfsck-mcp[/bold cyan]  [dim]— JSON-RPC stdio MCP server[/dim]"))
+
+    tools_resp = mcp_request("tools/list")
+    console.print(
+        Panel(
+            json.dumps(tools_resp, indent=2),
+            title="tools/list",
+            border_style="dim",
+        )
+    )
+
+    audit_req = {
+        "name": "audit",
+        "arguments": {"text": SAMPLE_DIFF},
+    }
+    audit_resp = mcp_request("tools/call", audit_req, req_id=2)
+    console.print(
+        Panel(
+            json.dumps(audit_resp, indent=2),
+            title="tools/call → audit",
+            border_style="red",
+        )
+    )
+    console.print()
+
+
+# ---------------------------------------------------------------------------
+# analyzer — LLM-powered alert analysis CLI
+# ---------------------------------------------------------------------------
+
+
+def demo_analyzer() -> None:
+    console.print(
+        Rule("[bold cyan]analyzer[/bold cyan]  [dim]— LLM-powered alert analysis CLI[/dim]")
+    )
+    console.print(
+        Panel(
+            "No live Loki/VictoriaLogs backend is running in this demo environment, "
+            "so this run shows the [bold]miette[/bold] fancy diagnostic that surfaces "
+            "when the log backend is unreachable — the same path a real deployment "
+            "hits on a misconfigured LOKI_URL.",
+            border_style="dim",
+        )
+    )
+    result = run_bin(
+        "analyzer",
+        ["--dry-run", "--last", "5m", "--limit", "1", "--loki-url", "http://127.0.0.1:1"],
+        timeout=15,
+    )
+    console.print(
+        Panel(
+            result.stderr.rstrip("\n") or "(no output)",
+            title=f"analyzer output (exit {result.returncode})",
+            border_style="yellow",
+        )
+    )
+    console.print()
+
+
+# ---------------------------------------------------------------------------
+# api — axum REST server
+# ---------------------------------------------------------------------------
+
+
+def http_get(url: str, timeout: float = 2.0) -> tuple[int, str]:
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as resp:
+            return resp.status, resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", errors="replace")
+
+
+def demo_api() -> None:
+    console.print(Rule("[bold cyan]api[/bold cyan]  [dim]— axum REST server[/dim]"))
+    path = check_bin("api")
+    port = free_port()
+    proc = subprocess.Popen(
+        [str(path), "--host", "127.0.0.1", "--port", str(port)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        base = f"http://127.0.0.1:{port}"
+        deadline = time.monotonic() + 5.0
+        status, body = 0, ""
+        while time.monotonic() < deadline:
+            try:
+                status, body = http_get(f"{base}/health")
+                break
+            except (urllib.error.URLError, ConnectionError):
+                time.sleep(0.1)
+        console.print(
+            Panel(body or "(server did not respond)", title=f"GET /health ({status})", border_style="green")
+        )
+
+        _, index_body = http_get(f"{base}/")
+        snippet = index_body[:300] + ("…" if len(index_body) > 300 else "")
+        console.print(Panel(snippet, title="GET / (first 300 chars)", border_style="dim"))
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+    console.print()
+
+
+# ---------------------------------------------------------------------------
+# tour — run every binary in sequence
+# ---------------------------------------------------------------------------
+
+
+def tour_mode() -> None:
+    console.print(Rule("[bold cyan]obfsck — full binary tour[/bold cyan]"))
+    console.print(
+        Panel(BANNER, title="redact", border_style="cyan")
+    )
+    render_fixture(load_fixture(EXAMPLES_DIR / "00_levels.yaml"))
+    demo_scan()
+    demo_mcp()
+    demo_analyzer()
+    demo_api()
+    console.print(Rule("[bold green]tour complete[/bold green]"))
 
 
 def parse_args() -> argparse.Namespace:
@@ -206,11 +413,34 @@ def parse_args() -> argparse.Namespace:
         default="standard",
         help="Obfuscation level for file mode (default: standard)",
     )
+    parser.add_argument(
+        "--bin",
+        choices=["redact", "scan", "mcp", "analyzer", "api", "all"],
+        default="redact",
+        help="Which binary to showcase (default: redact). 'all' tours every binary.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+
+    if args.bin == "all":
+        tour_mode()
+        return
+    if args.bin == "scan":
+        demo_scan()
+        return
+    if args.bin == "mcp":
+        demo_mcp()
+        return
+    if args.bin == "analyzer":
+        demo_analyzer()
+        return
+    if args.bin == "api":
+        demo_api()
+        return
+
     check_binary()
     if args.file:
         path = Path(args.file)

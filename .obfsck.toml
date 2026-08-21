@@ -1,0 +1,10 @@
+# Repo-local allowlist for the pre-commit scan-diff hook.
+# See CLAUDE.md "Pre-commit Hook" — merged with ~/.config/obfsck/allowlist.
+
+[allowlist]
+patterns = [
+    # AWS's own documented example access key ID (docs.aws.amazon.com), used
+    # throughout demo/examples/*.yaml and demo/demo.py as a deterministic
+    # secret-detection fixture — not a real credential.
+    "AKIAIOSFODNN7EXAMPLE",
+]

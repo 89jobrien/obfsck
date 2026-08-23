@@ -85,6 +85,7 @@ scratch/
 !README.md
 !*.plan.md
 !docs/superpowers/**/*.md
+!.claude/skills/**/*.md
 .envrc
 *.local.md
 *.local.json

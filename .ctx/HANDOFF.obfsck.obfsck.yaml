@@ -1,30 +1,53 @@
 project: obfsck
 id: obfsck
-updated: 2026-08-18
+updated: 2026-08-23
 items:
 - id: uncommitted-work
   name: uncommitted-work
   priority: P1
   status: open
-  title: Uncommitted changes (2 files)
+  title: Uncommitted changes (handoff-only, pre-existing untracked files ignored)
   description: |-
-    Working tree has uncommitted changes:
+    Working tree has uncommitted changes (HANDOFF files only tracked):
     .ctx/HANDOFF.md
     .ctx/HANDOFF.obfsck.obfsck.yaml
+
+    Pre-existing uncommitted local changes (NOT tracked in HANDOFF):
+    .kgx/data/documents.json
+    .kgx/data/graph.json
+    scripts/preflight.nu
+    scripts/demo-analyzer.nu (untracked)
   files:
   - .ctx/HANDOFF.md
   - .ctx/HANDOFF.obfsck.obfsck.yaml
 log:
-- date: '20260818.181732'
-  summary: done=7 running=0 pending=0 blocked=0
+- date: '20260823.140210'
+  summary: "tests: 223 passed, 1 ignored; version: 0.2.0; features: miette diagnostics, run-obfsck skill, multi-bin demo"
+  tests_passed: 223
+  tests_ignored: 1
+  tests_failed: 0
+  version: '0.2.0'
   commits:
+  - 7f675437f0cd340c286029b9dcf9d9bdf3167704
+  - 2a99b0741a305b708e1d22d92dee7da3e71b3b31
+  - a0b601b50e8aa7144842a7ba98d8c104e64a098e
+  - f2ce9a0c3a887d416c6b552a41fc7c32182aad26
+  - 7f0510843f454874fee5e573ab7d310ef1b5079a
+  - 0da6931570c89eef5d68a5270201cd82130fccf7
   - 32e4426ad68afa7cca4c2bc9c0fec8d2eaee0491
   - f9d38e773053fd180653dfc2dcb9ec49847c10ec
   - 6c28218291544be88292bdd8ad3e5a753396ba45
   - d9c1ce53f5c1ccfd0bdb65082a7bf8c68886eb0e
-  - 4b8def5070b2f50af981e82df0edd8841ac0980a
-  - 501c70930c5264eb6bc57e14984c094c52a99a68
-  - b661352bf2f34495255cae8d8f8de5a1882ee841
-  - 80553729fcdd02c3bea7bfa398cac9880fc330fe
-  - d2cc8110c8afe90421d3ac671cfdf1586eecc60b
-  - 6294c1164f1fa4f975e84449405b5c39c70ce520
+- date: '20260823.140001'
+  summary: done=7 running=0 pending=0 blocked=0
+  commits:
+  - 7f675437f0cd340c286029b9dcf9d9bdf3167704
+  - 2a99b0741a305b708e1d22d92dee7da3e71b3b31
+  - a0b601b50e8aa7144842a7ba98d8c104e64a098e
+  - f2ce9a0c3a887d416c6b552a41fc7c32182aad26
+  - 7f0510843f454874fee5e573ab7d310ef1b5079a
+  - 0da6931570c89eef5d68a5270201cd82130fccf7
+  - 32e4426ad68afa7cca4c2bc9c0fec8d2eaee0491
+  - f9d38e773053fd180653dfc2dcb9ec49847c10ec
+  - 6c28218291544be88292bdd8ad3e5a753396ba45
+  - d9c1ce53f5c1ccfd0bdb65082a7bf8c68886eb0e

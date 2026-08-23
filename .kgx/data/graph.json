@@ -1,64 +1,10 @@
 {
   "nodes": [
     {
-      "id": "d0f974d0-452f-495b-9df9-cfeeb766ab74",
-      "name": "scan",
-      "type": "binary",
-      "supporting_text": "CLI: pre-commit secret scanner",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "d7beae14-ffb4-4296-9aab-98aa60397fed",
-      "name": "loki_client",
-      "type": "adapter",
-      "supporting_text": "Log client for Grafana Loki",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "650b85af-748f-4f64-b0c6-a5af451ff164",
-      "name": "property_tests.rs",
-      "type": "test_file",
-      "supporting_text": "10 proptest property tests for obfuscation invariants",
-      "source_docs": [
-        "session_2026_05_23"
-      ]
-    },
-    {
-      "id": "84392762-dba1-405f-8964-5eb7a469d1f5",
-      "name": "fuzz_strip_ansi",
-      "type": "fuzz_target",
-      "supporting_text": "Fuzzes ANSI escape sequence stripper",
-      "source_docs": [
-        "session_2026_05_23"
-      ]
-    },
-    {
-      "id": "61fb0f00-a274-46ba-b369-01ce9170ea41",
-      "name": "RegexPatternSource",
-      "type": "adapter",
-      "supporting_text": "Implements PatternSource using SECRET_PATTERN_DEFS",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "efea457b-0d73-4240-adcc-21026f189776",
-      "name": "obfuscate_text",
-      "type": "function",
-      "supporting_text": "Public API function returning (String, ObfuscationMap)",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "fbdcf6a7-e4c7-4094-8d86-9b8a0490e2f7",
-      "name": "LogClient",
+      "id": "75d7080c-f829-4224-a660-062ac42a4675",
+      "name": "Auditor",
       "type": "trait",
-      "supporting_text": "Port trait for fetching log entries from backends",
+      "supporting_text": "Port trait for auditing text against secret patterns",
       "source_docs": [
         "obfsck_architecture"
       ]
@@ -73,19 +19,28 @@
       ]
     },
     {
-      "id": "7dbabf8d-29aa-4554-85a0-e4294afc4369",
-      "name": "config/secrets.yaml",
-      "type": "config",
-      "supporting_text": "YAML config defining secret detection patterns",
+      "id": "5e604090-8464-4936-913e-712416347619",
+      "name": "GitleaksAdapter",
+      "type": "adapter",
+      "supporting_text": null,
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "9286ea09-741e-48d4-9f05-627e61d6cf47",
+      "name": "GitleaksScanner",
+      "type": "adapter",
+      "supporting_text": "Implements SecretScanner by shelling out to gitleaks",
       "source_docs": [
         "obfsck_architecture"
       ]
     },
     {
-      "id": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
-      "name": "obfsck",
-      "type": "crate",
-      "supporting_text": "Rust crate for obfuscating/redacting sensitive data in log text",
+      "id": "fbdcf6a7-e4c7-4094-8d86-9b8a0490e2f7",
+      "name": "LogClient",
+      "type": "trait",
+      "supporting_text": "Port trait for fetching log entries from backends",
       "source_docs": [
         "obfsck_architecture"
       ]
@@ -100,127 +55,10 @@
       ]
     },
     {
-      "id": "75d7080c-f829-4224-a660-062ac42a4675",
-      "name": "Auditor",
-      "type": "trait",
-      "supporting_text": "Port trait for auditing text against secret patterns",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "87f55e95-5bf1-41e6-ba98-62a9d15443d1",
-      "name": "build.rs",
-      "type": "build_script",
-      "supporting_text": "Compiles secrets.yaml into SECRET_PATTERN_DEFS",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "ab052101-f672-43a6-9d98-258f66ae942b",
-      "name": "victoria_client",
-      "type": "adapter",
-      "supporting_text": "Log client for VictoriaLogs",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
       "id": "31d5d3cd-4a1f-4522-9b9c-93ebf956ba2e",
       "name": "ObfuscationMap",
       "type": "struct",
       "supporting_text": "Maps original values to redacted tokens",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "0493fbb3-372d-4009-908d-b9d290fbcace",
-      "name": "lib.rs",
-      "type": "module",
-      "supporting_text": "Public API, IP classification, regex, obfuscation engine",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "a11f3750-8f3b-46b5-a035-d5c7c0c73795",
-      "name": "fuzz_obfuscate",
-      "type": "fuzz_target",
-      "supporting_text": "Fuzzes Obfuscator::obfuscate with arbitrary UTF-8",
-      "source_docs": [
-        "session_2026_05_23"
-      ]
-    },
-    {
-      "id": "d10dfe9d-cf4f-499f-8132-969a22dbb9f3",
-      "name": "obfuscate_alert",
-      "type": "function",
-      "supporting_text": "Public API function for alert obfuscation",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "96eeecc9-6a73-4e67-b002-4cfc72e60da0",
-      "name": "obfsck-mcp",
-      "type": "binary",
-      "supporting_text": "CLI: MCP server",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "ece39f0f-8823-44f8-9cd4-76b6e50a1dc9",
-      "name": "SecretScanner",
-      "type": "trait",
-      "supporting_text": "Port trait for scanning diffs for secrets",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "99d3e9a9-cf52-4b39-b15b-d3085d2ce147",
-      "name": "PatternSource",
-      "type": "trait",
-      "supporting_text": "Port trait providing compiled regex patterns",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "fe0a2eaa-000e-4d53-a33e-4795ff57874b",
-      "name": "helpers.rs",
-      "type": "module",
-      "supporting_text": "shannon_entropy, is_sensitive_path, obfuscate_path_value",
-      "source_docs": [
-        "obfsck_architecture"
-      ]
-    },
-    {
-      "id": "55ec42d4-5558-4038-a55b-b413d4db85fb",
-      "name": "rustqual.toml",
-      "type": "config",
-      "supporting_text": "rustqual config: ignore_functions, detect_dead_code=false, exclude_files",
-      "source_docs": [
-        "session_2026_05_23"
-      ]
-    },
-    {
-      "id": "dbd50052-0784-462b-8ee8-a852809cf147",
-      "name": "static_regex macro",
-      "type": "macro",
-      "supporting_text": "Replaced lazy-regex with static_regex! using OnceLock<Regex>",
-      "source_docs": [
-        "session_2026_05_23"
-      ]
-    },
-    {
-      "id": "2e35c800-78ac-4a91-8278-e02b9f183874",
-      "name": "ports.rs",
-      "type": "module",
-      "supporting_text": "Trait definitions: SecretScanner, PatternSource, Auditor, FilterSuggester, LogClient, LlmProvider",
       "source_docs": [
         "obfsck_architecture"
       ]
@@ -235,19 +73,164 @@
       ]
     },
     {
-      "id": "46145156-32bc-4267-8f11-5d9106d4a778",
-      "name": "secrets.rs",
-      "type": "module",
-      "supporting_text": "Generated from config/secrets.yaml via build.rs",
+      "id": "99d3e9a9-cf52-4b39-b15b-d3085d2ce147",
+      "name": "PatternSource",
+      "type": "trait",
+      "supporting_text": "Port trait providing compiled regex patterns",
       "source_docs": [
         "obfsck_architecture"
       ]
     },
     {
-      "id": "c761f217-d8c7-488b-bbd2-60f455e36e82",
-      "name": "redact",
-      "type": "binary",
-      "supporting_text": "CLI: pipe text through obfuscation",
+      "id": "61fb0f00-a274-46ba-b369-01ce9170ea41",
+      "name": "RegexPatternSource",
+      "type": "adapter",
+      "supporting_text": "Implements PatternSource using SECRET_PATTERN_DEFS",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "ece39f0f-8823-44f8-9cd4-76b6e50a1dc9",
+      "name": "SecretScanner",
+      "type": "trait",
+      "supporting_text": "Port trait for scanning diffs for secrets",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "d1acb226-93ac-492e-baa5-1fa7a26d64ea",
+      "name": "alertanalyzer",
+      "type": "concept",
+      "supporting_text": "AlertAnalyzer held Box<dyn LogClient> and Box<dyn LlmProvider>",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "61d60450-7b12-40e4-8b0e-f97bce1be913",
+      "name": "analyzer",
+      "type": "feature",
+      "supporting_text": "Feature flag enabling LLM analysis, API server, all binaries",
+      "source_docs": [
+        "obfsck_architecture",
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "60da3187-17a9-4bfc-adce-f325a06952e2",
+      "name": "anthropicprovider",
+      "type": "concept",
+      "supporting_text": "hand-writing Debug impls for ... AnthropicProvider that redact the api_key field",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "ca44a428-16b8-49ca-8862-7b3d4bc64a80",
+      "name": "api",
+      "type": "tool",
+      "supporting_text": "api starts the axum server on a free port",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "322d6928-f266-4b3c-8c35-f4d407678559",
+      "name": "api key leak via derive debug",
+      "type": "issue",
+      "supporting_text": "deriving would have leaked the key in logs",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "109138b4-a621-438e-a09e-d8cb26e8aeac",
+      "name": "appstate",
+      "type": "concept",
+      "supporting_text": "AppState held Arc<AlertAnalyzer>",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "4ecc08ab-c54d-43cc-bbfc-572f7cc969fd",
+      "name": "axum_api",
+      "type": "component",
+      "supporting_text": "axum REST server",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "87f55e95-5bf1-41e6-ba98-62a9d15443d1",
+      "name": "build.rs",
+      "type": "build_script",
+      "supporting_text": "Compiles secrets.yaml into SECRET_PATTERN_DEFS",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "7dbabf8d-29aa-4554-85a0-e4294afc4369",
+      "name": "config/secrets.yaml",
+      "type": "config",
+      "supporting_text": "YAML config defining secret detection patterns",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "2b4b8bcb-0b46-4512-b973-7612efa36612",
+      "name": "demo.py",
+      "type": "file",
+      "supporting_text": "extended demo/demo.py ... with a --bin flag",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "a11f3750-8f3b-46b5-a035-d5c7c0c73795",
+      "name": "fuzz_obfuscate",
+      "type": "fuzz_target",
+      "supporting_text": "Fuzzes Obfuscator::obfuscate with arbitrary UTF-8",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "84392762-dba1-405f-8964-5eb7a469d1f5",
+      "name": "fuzz_strip_ansi",
+      "type": "fuzz_target",
+      "supporting_text": "Fuzzes ANSI escape sequence stripper",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "fe0a2eaa-000e-4d53-a33e-4795ff57874b",
+      "name": "helpers.rs",
+      "type": "module",
+      "supporting_text": "shannon_entropy, is_sensitive_path, obfuscate_path_value",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "0493fbb3-372d-4009-908d-b9d290fbcace",
+      "name": "lib.rs",
+      "type": "module",
+      "supporting_text": "Public API, IP classification, regex, obfuscation engine",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "d7beae14-ffb4-4296-9aab-98aa60397fed",
+      "name": "loki_client",
+      "type": "adapter",
+      "supporting_text": "Log client for Grafana Loki",
       "source_docs": [
         "obfsck_architecture"
       ]
@@ -262,35 +245,158 @@
       ]
     },
     {
-      "id": "5e604090-8464-4936-913e-712416347619",
-      "name": "GitleaksAdapter",
-      "type": "adapter",
-      "supporting_text": null,
-      "source_docs": []
+      "id": "4d7ab6c8-511a-4fc4-95e2-7d47250bfb36",
+      "name": "miette",
+      "type": "tool",
+      "supporting_text": "added miette as a dependency with the fancy feature",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
     },
     {
-      "id": "61d60450-7b12-40e4-8b0e-f97bce1be913",
-      "name": "analyzer",
-      "type": "feature",
-      "supporting_text": "Feature flag enabling LLM analysis, API server, all binaries",
+      "id": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "name": "obfsck",
+      "type": "crate",
+      "supporting_text": "Rust crate for obfuscating/redacting sensitive data in log text",
+      "source_docs": [
+        "obfsck_architecture",
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "96eeecc9-6a73-4e67-b002-4cfc72e60da0",
+      "name": "obfsck-mcp",
+      "type": "binary",
+      "supporting_text": "CLI: MCP server",
+      "source_docs": [
+        "obfsck_architecture",
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "d10dfe9d-cf4f-499f-8132-969a22dbb9f3",
+      "name": "obfuscate_alert",
+      "type": "function",
+      "supporting_text": "Public API function for alert obfuscation",
       "source_docs": [
         "obfsck_architecture"
       ]
     },
     {
-      "id": "9286ea09-741e-48d4-9f05-627e61d6cf47",
-      "name": "GitleaksScanner",
-      "type": "adapter",
-      "supporting_text": "Implements SecretScanner by shelling out to gitleaks",
+      "id": "efea457b-0d73-4240-adcc-21026f189776",
+      "name": "obfuscate_text",
+      "type": "function",
+      "supporting_text": "Public API function returning (String, ObfuscationMap)",
       "source_docs": [
         "obfsck_architecture"
       ]
     },
     {
-      "id": "4ecc08ab-c54d-43cc-bbfc-572f7cc969fd",
-      "name": "axum_api",
-      "type": "component",
-      "supporting_text": "axum REST server",
+      "id": "08ad082f-7a25-4074-a9f3-c391ed87b67f",
+      "name": "openaiprovider",
+      "type": "concept",
+      "supporting_text": "hand-writing Debug impls for OpenAiProvider ... that redact the api_key field",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "2e35c800-78ac-4a91-8278-e02b9f183874",
+      "name": "ports.rs",
+      "type": "module",
+      "supporting_text": "Trait definitions: SecretScanner, PatternSource, Auditor, FilterSuggester, LogClient, LlmProvider",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "c5695af2-791f-4317-9cea-b4fced1af46c",
+      "name": "portserror",
+      "type": "concept",
+      "supporting_text": "PortsError enum (Spawn, Io, Config, Other variants)",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "650b85af-748f-4f64-b0c6-a5af451ff164",
+      "name": "property_tests.rs",
+      "type": "test_file",
+      "supporting_text": "10 proptest property tests for obfuscation invariants",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "c761f217-d8c7-488b-bbd2-60f455e36e82",
+      "name": "redact",
+      "type": "binary",
+      "supporting_text": "CLI: pipe text through obfuscation",
+      "source_docs": [
+        "obfsck_architecture",
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "1f904240-839e-48dc-8d4a-5df6efb50136",
+      "name": "rust-audit",
+      "type": "event",
+      "supporting_text": "Ran rust-audit on obfsck. Two P2 findings blocked Debug derivation",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "55ec42d4-5558-4038-a55b-b413d4db85fb",
+      "name": "rustqual.toml",
+      "type": "config",
+      "supporting_text": "rustqual config: ignore_functions, detect_dead_code=false, exclude_files",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "d0f974d0-452f-495b-9df9-cfeeb766ab74",
+      "name": "scan",
+      "type": "binary",
+      "supporting_text": "CLI: pre-commit secret scanner",
+      "source_docs": [
+        "obfsck_architecture",
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "46145156-32bc-4267-8f11-5d9106d4a778",
+      "name": "secrets.rs",
+      "type": "module",
+      "supporting_text": "Generated from config/secrets.yaml via build.rs",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "dbd50052-0784-462b-8ee8-a852809cf147",
+      "name": "static_regex macro",
+      "type": "macro",
+      "supporting_text": "Replaced lazy-regex with static_regex! using OnceLock<Regex>",
+      "source_docs": [
+        "session_2026_05_23"
+      ]
+    },
+    {
+      "id": "fa44c22b-76d0-4ea4-a097-f05bd4b5e1eb",
+      "name": "thiserror",
+      "type": "tool",
+      "supporting_text": "deriving thiserror::Error and miette::Diagnostic",
+      "source_docs": [
+        "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "ab052101-f672-43a6-9d98-258f66ae942b",
+      "name": "victoria_client",
+      "type": "adapter",
+      "supporting_text": "Log client for VictoriaLogs",
       "source_docs": [
         "obfsck_architecture"
       ]
@@ -530,6 +636,168 @@
       "confidence": 1.0,
       "supporting_text": null,
       "source_doc": null
+    },
+    {
+      "id": "edf100df-0e1e-49ca-aa9e-d7e6f62a2a84",
+      "source": "1f904240-839e-48dc-8d4a-5df6efb50136",
+      "target": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "type": "related_to",
+      "confidence": 0.9,
+      "supporting_text": "Ran rust-audit on obfsck",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "d44e31b3-62e3-4d98-a397-afec8af04745",
+      "source": "109138b4-a621-438e-a09e-d8cb26e8aeac",
+      "target": "d1acb226-93ac-492e-baa5-1fa7a26d64ea",
+      "type": "contains",
+      "confidence": 0.9,
+      "supporting_text": "AppState held Arc<AlertAnalyzer>",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "75dff5ba-2a08-478c-a3ad-62f54644dc31",
+      "source": "08ad082f-7a25-4074-a9f3-c391ed87b67f",
+      "target": "322d6928-f266-4b3c-8c35-f4d407678559",
+      "type": "causes",
+      "confidence": 0.85,
+      "supporting_text": "deriving would have leaked the key in logs",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "0012ef9a-391c-43b8-8d00-463e3eeb54d2",
+      "source": "60da3187-17a9-4bfc-adce-f325a06952e2",
+      "target": "322d6928-f266-4b3c-8c35-f4d407678559",
+      "type": "causes",
+      "confidence": 0.85,
+      "supporting_text": "deriving would have leaked the key in logs",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "84481092-4295-4eef-9c0d-cc020f3322ea",
+      "source": "c5695af2-791f-4317-9cea-b4fced1af46c",
+      "target": "fa44c22b-76d0-4ea4-a097-f05bd4b5e1eb",
+      "type": "implements",
+      "confidence": 0.9,
+      "supporting_text": "PortsError enum ... deriving thiserror::Error and miette::Diagnostic",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "36f27f11-60a3-43b7-9c8e-4c469ac6d2f8",
+      "source": "c5695af2-791f-4317-9cea-b4fced1af46c",
+      "target": "4d7ab6c8-511a-4fc4-95e2-7d47250bfb36",
+      "type": "implements",
+      "confidence": 0.9,
+      "supporting_text": "PortsError enum ... deriving thiserror::Error and miette::Diagnostic",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "97135ac2-1c27-4c66-a478-7126e525a62a",
+      "source": "5e604090-8464-4936-913e-712416347619",
+      "target": "c5695af2-791f-4317-9cea-b4fced1af46c",
+      "type": "uses",
+      "confidence": 0.9,
+      "supporting_text": "GitleaksAdapter::scan_diff and the scan binary's ObfsckScanner now construct PortsError variants directly",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "b61f4c1b-a1fb-44ec-b488-f6ca1322dfe5",
+      "source": "d0f974d0-452f-495b-9df9-cfeeb766ab74",
+      "target": "5e604090-8464-4936-913e-712416347619",
+      "type": "uses",
+      "confidence": 0.7,
+      "supporting_text": "scan prints a miette::Report for PortsError from either scanner",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "e2e551e2-1cd1-412b-9578-5e81e95a107a",
+      "source": "c761f217-d8c7-488b-bbd2-60f455e36e82",
+      "target": "4d7ab6c8-511a-4fc4-95e2-7d47250bfb36",
+      "type": "uses",
+      "confidence": 0.9,
+      "supporting_text": "redact's main now returns miette::Result<()> using IntoDiagnostic/WrapErr",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "26f37c7f-1ab8-4cf5-987e-c1ef59befbee",
+      "source": "61d60450-7b12-40e4-8b0e-f97bce1be913",
+      "target": "4d7ab6c8-511a-4fc4-95e2-7d47250bfb36",
+      "type": "uses",
+      "confidence": 0.8,
+      "supporting_text": "analyzer and api ... additionally print a miette::Report to stderr",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "05544294-b10c-4f47-8a1e-6b3c1e9fc89a",
+      "source": "ca44a428-16b8-49ca-8862-7b3d4bc64a80",
+      "target": "4d7ab6c8-511a-4fc4-95e2-7d47250bfb36",
+      "type": "uses",
+      "confidence": 0.8,
+      "supporting_text": "analyzer and api ... additionally print a miette::Report to stderr",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "922e4698-b7f2-482f-8840-ba11adb96886",
+      "source": "96eeecc9-6a73-4e67-b002-4cfc72e60da0",
+      "target": "4d7ab6c8-511a-4fc4-95e2-7d47250bfb36",
+      "type": "conflicts_with",
+      "confidence": 0.75,
+      "supporting_text": "obfsck-mcp was left untouched because it is a JSON-RPC stdio protocol server and must not emit human-formatted diagnostic text",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "deb73705-a03d-45e6-8cfe-21515991fe38",
+      "source": "2b4b8bcb-0b46-4512-b973-7612efa36612",
+      "target": "c761f217-d8c7-488b-bbd2-60f455e36e82",
+      "type": "uses",
+      "confidence": 0.9,
+      "supporting_text": "showcases every obfsck binary",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "bcdf9554-92c9-4629-8723-dcb9afd86ef4",
+      "source": "2b4b8bcb-0b46-4512-b973-7612efa36612",
+      "target": "d0f974d0-452f-495b-9df9-cfeeb766ab74",
+      "type": "uses",
+      "confidence": 0.9,
+      "supporting_text": "scan runs a synthetic diff containing an AWS access key through the native scanner",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "5aa3ae40-7224-4ce2-8672-c4c64d90e57d",
+      "source": "2b4b8bcb-0b46-4512-b973-7612efa36612",
+      "target": "96eeecc9-6a73-4e67-b002-4cfc72e60da0",
+      "type": "uses",
+      "confidence": 0.9,
+      "supporting_text": "mcp sends tools/list and a tools/call audit request over JSON-RPC stdio",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "d8601169-0ff9-426c-ae1b-6268c0a4e538",
+      "source": "2b4b8bcb-0b46-4512-b973-7612efa36612",
+      "target": "61d60450-7b12-40e4-8b0e-f97bce1be913",
+      "type": "uses",
+      "confidence": 0.9,
+      "supporting_text": "analyzer runs --dry-run against an unreachable Loki URL",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "c9dd6290-a298-4ae8-ac07-6757301e71e7",
+      "source": "2b4b8bcb-0b46-4512-b973-7612efa36612",
+      "target": "ca44a428-16b8-49ca-8862-7b3d4bc64a80",
+      "type": "uses",
+      "confidence": 0.9,
+      "supporting_text": "api starts the axum server on a free port and hits /health and /",
+      "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "21b7a3e3-f882-4a44-b74f-b4bf632c83b0",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "c5695af2-791f-4317-9cea-b4fced1af46c",
+      "type": "contains",
+      "confidence": 0.8,
+      "supporting_text": "Replaced ports::Result<T> = Result<T, Box<dyn Error>> with a concrete PortsError enum",
+      "source_doc": "session_2026_08_21_miette_and_demo"
     }
   ]
 }

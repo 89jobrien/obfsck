@@ -110,15 +110,21 @@ integration + property + golden suites). 5 tests are `ignored` by design
   subprocess timeout (hit a 10s `TimeoutExpired` in `subprocess.run`
   before adding the flag). The driver always passes `--no-gitleaks`.
 - **The repo's own `.obfsck.toml` allowlist can silently neuter your own
-  demo fixtures.** This repo added `.obfsck.toml` allowlisting
-  `AKIAIOSFODNN7EXAMPLE` (AWS's canonical example key) so the pre-commit
-  hook wouldn't flag it in `demo/examples/`. That allowlist is loaded by
-  *every* `scan` invocation from this repo, including the demo driver — so
-  a `scan` demo fixture using that exact key now reports "clean" with exit
-  0 instead of finding it. The demo fixture was switched to a Slack bot
-  token (`xoxb-...`, not on the allowlist) specifically to avoid this.
-  If you add a new `scan` example, check `.obfsck.toml` and
-  `~/.config/obfsck/allowlist` first or it'll silently pass through.
+  demo fixtures.** `.obfsck.toml` allowlists `AKIAIOSFODNN7EXAMPLE` (AWS's
+  canonical example key) so the pre-commit hook doesn't flag it in
+  `demo/examples/`. That allowlist is loaded by *every* `scan` invocation
+  from this repo, including the demo driver — a `scan` demo fixture using
+  that exact key silently reports "clean" (exit 0) instead of finding it.
+  Check `.obfsck.toml` and `~/.config/obfsck/allowlist` before picking a
+  fixture value, or the demo will quietly stop demonstrating anything.
+- **A fixture secret literal in `demo.py`'s own source trips the
+  pre-commit `scan-diff` hook on *this* repo** — the hook scans the
+  staged diff of every commit, including edits to the demo file itself.
+  `SAMPLE_DIFF`'s Slack token is built via `"-".join([...])` instead of
+  one contiguous string literal so the source bytes don't match the
+  pattern, while the *assembled* value (used at runtime, piped into
+  `scan`) still does. If you add a new fixture secret to `demo.py`, split
+  it the same way or the commit will fail its own pre-commit hook.
 - **`redact` has no `--version` flag.** `target/release/redact --version`
   exits 2 with a clap "unrecognized argument" error, not a version string.
 - **`api`/`analyzer` construct their backend clients at startup without

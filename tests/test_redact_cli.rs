@@ -5,7 +5,9 @@ use std::io::Write;
 use std::process::Command;
 
 fn redact_bin() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_redact"))
+    let mut command = Command::new(env!("CARGO_BIN_EXE_obfsck"));
+    command.arg("redact");
+    command
 }
 
 /// Write content to a named temp file; caller owns cleanup.
@@ -230,8 +232,8 @@ fn pii_fixture_path() -> String {
 
 fn run_redact_stdin(input: &str, level: &str) -> String {
     use std::io::Write;
-    use std::process::{Command, Stdio};
-    let mut child = Command::new(env!("CARGO_BIN_EXE_redact"))
+    use std::process::Stdio;
+    let mut child = redact_bin()
         .args(["--level", level])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -376,8 +378,8 @@ fn structural_pii_untouched_at_minimal() {
 
 fn run_redact_stdin_args(input: &str, args: &[&str]) -> std::process::Output {
     use std::io::Write;
-    use std::process::{Command, Stdio};
-    let mut child = Command::new(env!("CARGO_BIN_EXE_redact"))
+    use std::process::Stdio;
+    let mut child = redact_bin()
         .args(args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -446,7 +448,7 @@ fn pii_off_does_not_suppress_secrets() {
         let manifest = env!("CARGO_MANIFEST_DIR");
         format!("{manifest}/tests/fixtures/inputs/secrets_sample.txt")
     };
-    let out = std::process::Command::new(env!("CARGO_BIN_EXE_redact"))
+    let out = redact_bin()
         .args(["--level", "standard", "--pii", "off", &input_path])
         .output()
         .expect("run redact");

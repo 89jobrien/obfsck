@@ -78,3 +78,22 @@ fn canonical_analyze_subcommand_has_help() {
         "missing analyzer options: {stdout}"
     );
 }
+
+#[test]
+fn deprecated_analyzer_binary_warns() {
+    let missing_config = format!(
+        "{}/tests/fixtures/missing-analyzer-config.yaml",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    let output = Command::new(env!("CARGO_BIN_EXE_analyzer"))
+        .args(["--config", &missing_config])
+        .output()
+        .expect("run deprecated analyzer binary");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("warning: 'analyzer' is deprecated; use 'obfsck analyze' instead"),
+        "missing deprecation warning: {stderr}"
+    );
+}

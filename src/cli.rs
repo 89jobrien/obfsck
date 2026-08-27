@@ -40,7 +40,6 @@ enum ObfsckCommand {
 #[command(
     about = "Redact secrets and PII from a file or stdin. Output goes to stdout unless -o is given."
 )]
-#[command(override_usage = "redact [OPTIONS] [INPUT]\n       cat file | redact [OPTIONS]")]
 pub struct RedactArgs {
     /// Input file to redact. Reads from stdin if omitted.
     input: Option<PathBuf>,

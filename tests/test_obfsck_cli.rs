@@ -65,6 +65,21 @@ fn canonical_redact_subcommand_redacts() {
 }
 
 #[test]
+fn canonical_redact_help_uses_canonical_invocation() {
+    let output = obfsck_bin()
+        .args(["redact", "--help"])
+        .output()
+        .expect("run obfsck redact help");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("Usage: obfsck redact"),
+        "help advertises the wrong invocation: {stdout}"
+    );
+}
+
+#[test]
 fn canonical_analyze_subcommand_has_help() {
     let output = obfsck_bin()
         .args(["analyze", "--help"])

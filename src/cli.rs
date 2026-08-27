@@ -1,6 +1,6 @@
 use crate::yaml_config::{MinLevel, SecretsConfig};
 use crate::{ObfuscationLevel, Obfuscator};
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use miette::{Context, IntoDiagnostic, Result};
 use regex::{Regex, RegexBuilder};
 use std::collections::HashMap;
@@ -9,7 +9,34 @@ use std::path::PathBuf;
 
 static BUNDLED_CONFIG: &str = include_str!("../config/secrets.yaml");
 
-#[derive(Parser)]
+/// Arguments accepted by the canonical `obfsck` executable.
+#[derive(Debug, Parser)]
+#[command(
+    name = "obfsck",
+    version,
+    about = "Redact and analyze sensitive log data"
+)]
+pub struct ObfsckArgs {
+    #[command(subcommand)]
+    command: ObfsckCommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum ObfsckCommand {
+    /// Redact secrets and PII from a file or stdin.
+    Redact {
+        #[command(flatten)]
+        args: RedactArgs,
+    },
+    /// Fetch and analyze security alerts.
+    Analyze {
+        #[command(flatten)]
+        args: crate::analyzer::CliArgs,
+    },
+}
+
+/// Arguments accepted by the redaction command.
+#[derive(Debug, Parser)]
 #[command(
     about = "Redact secrets and PII from a file or stdin. Output goes to stdout unless -o is given."
 )]
@@ -81,6 +108,21 @@ fn apply_profile(config: &mut SecretsConfig, profile: &str, level: &mut Obfuscat
     }
 }
 
+/// Dispatch a canonical `obfsck` command and return its process exit code.
+pub fn run_from_args(args: ObfsckArgs) -> Result<i32> {
+    match args.command {
+        ObfsckCommand::Redact { args } => {
+            run_redact_from_args(args)?;
+            Ok(0)
+        }
+        ObfsckCommand::Analyze { args } => {
+            crate::logging::init(crate::ANALYZER_DEFAULT_FILTER);
+            crate::analyzer::run_from_args(args).map_err(miette::Report::new)
+        }
+    }
+}
+
+/// Run redaction using already-parsed command arguments.
 pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
     let mut level = ObfuscationLevel::parse(&args.level).unwrap_or_else(|| {
         eprintln!("Unknown level '{}', using minimal", args.level);

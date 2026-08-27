@@ -61,6 +61,11 @@ serde_yaml = "0.9"
 tempfile = "3"
 
 [[bin]]
+name = "obfsck"
+path = "src/bin/obfsck.rs"
+required-features = ["analyzer"]
+
+[[bin]]
 name = "redact"
 path = "src/bin/redact.rs"
 required-features = ["analyzer"]

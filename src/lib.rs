@@ -12,6 +12,8 @@ pub mod analyzer;
 #[cfg(feature = "analyzer")]
 pub mod api;
 #[cfg(feature = "analyzer")]
+pub mod cli;
+#[cfg(feature = "analyzer")]
 pub mod clients;
 #[cfg(feature = "analyzer")]
 pub mod logging;

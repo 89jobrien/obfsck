@@ -39,29 +39,29 @@ Preserved path segments include common roots like `home`, `usr`, `etc`,
 `standard` is the privacy-forward default for sharing logs externally.
 `minimal` is safe for internal tooling where structural identifiers are useful.
 
-## redact CLI
+## obfsck CLI
 
 Redact secrets and PII from a file or stdin.
 
 ```bash
 # Stdin -> stdout (default level: minimal — secrets only)
-echo "key=sk-ant-api03-ABCDEF..." | redact
+echo "key=sk-ant-api03-ABCDEF..." | obfsck redact
 
 # File input
-redact path/to/logfile.txt
+obfsck redact path/to/logfile.txt
 
 # Write to output file
-redact input.txt --output redacted.txt
+obfsck redact input.txt --output redacted.txt
 
 # Increase level
-redact input.txt --level standard   # + IPs, emails, usernames, PII
-redact input.txt --level paranoid   # + paths, hostnames, high-entropy
+obfsck redact input.txt --level standard   # + IPs, emails, usernames, PII
+obfsck redact input.txt --level paranoid   # + paths, hostnames, high-entropy
 
 # Audit mode — report findings to stderr without redacting
-redact input.txt --audit
+obfsck redact input.txt --audit
 
 # Custom secrets config (overrides bundled config)
-redact input.txt --config ~/.config/obfsck/secrets.yaml
+obfsck redact input.txt --config ~/.config/obfsck/secrets.yaml
 ```
 
 ### Flags
@@ -132,8 +132,11 @@ Fetches alerts from Loki or VictoriaLogs, obfuscates them, and sends
 to an LLM for analysis. Behind the `analyzer` feature flag.
 
 ```bash
-cargo run --bin analyzer -- --last 1h --limit 5 --dry-run
+cargo run --bin obfsck -- analyze --last 1h --limit 5 --dry-run
 ```
+
+The standalone `redact` and `analyzer` binaries are deprecated compatibility aliases.
+New scripts should use `obfsck redact` and `obfsck analyze`.
 
 Common options:
 

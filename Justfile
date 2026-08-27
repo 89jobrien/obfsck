@@ -123,30 +123,30 @@ ci: lint test build
 # Verify PII is NOT redacted at --level minimal
 probe-pii-minimal:
     @echo "--- PII probe at minimal (expect: names/SSN/phone/card unchanged) ---"
-    cargo run --bin redact -- --level minimal tests/fixtures/inputs/pii_sample.txt
+    cargo run --bin obfsck -- redact --level minimal tests/fixtures/inputs/pii_sample.txt
 
 # Verify PII IS redacted at --level standard
 probe-pii-standard:
     @echo "--- PII probe at standard (expect: [REDACTED-*] tokens present) ---"
-    cargo run --bin redact -- --level standard tests/fixtures/inputs/pii_sample.txt
+    cargo run --bin obfsck -- redact --level standard tests/fixtures/inputs/pii_sample.txt
 
 # Verify paranoid_only patterns fire only at --level paranoid
 probe-paranoid:
     @echo "--- Paranoid probe (expect: IBAN/passport redacted only at paranoid) ---"
-    @echo "=== minimal ===" && cargo run --bin redact -- --level minimal \
+    @echo "=== minimal ===" && cargo run --bin obfsck -- redact --level minimal \
         tests/fixtures/inputs/paranoid_sample.txt
-    @echo "=== standard ===" && cargo run --bin redact -- --level standard \
+    @echo "=== standard ===" && cargo run --bin obfsck -- redact --level standard \
         tests/fixtures/inputs/paranoid_sample.txt
-    @echo "=== paranoid ===" && cargo run --bin redact -- --level paranoid \
+    @echo "=== paranoid ===" && cargo run --bin obfsck -- redact --level paranoid \
         tests/fixtures/inputs/paranoid_sample.txt
 
 # Redact a specific file at a given level: just redact <file> <level>
 redact FILE LEVEL="minimal":
-    cargo run --bin redact -- --level {{LEVEL}} {{FILE}}
+    cargo run --bin obfsck -- redact --level {{LEVEL}} {{FILE}}
 
 # Redact stdin at a given level: echo "text" | just redact-stdin standard
 redact-stdin LEVEL="minimal":
-    cargo run --bin redact -- --level {{LEVEL}}
+    cargo run --bin obfsck -- redact --level {{LEVEL}}
 
 # ---------------------------------------------------------------------------
 # Secrets config
@@ -154,11 +154,11 @@ redact-stdin LEVEL="minimal":
 
 # Show which patterns are active at each level (dry-run via audit flag)
 audit-levels:
-    @echo "=== minimal ===" && cargo run --bin redact -- --level minimal --audit \
+    @echo "=== minimal ===" && cargo run --bin obfsck -- redact --level minimal --audit \
         tests/fixtures/inputs/mixed_sample.txt > /dev/null
-    @echo "=== standard ===" && cargo run --bin redact -- --level standard --audit \
+    @echo "=== standard ===" && cargo run --bin obfsck -- redact --level standard --audit \
         tests/fixtures/inputs/mixed_sample.txt > /dev/null
-    @echo "=== paranoid ===" && cargo run --bin redact -- --level paranoid --audit \
+    @echo "=== paranoid ===" && cargo run --bin obfsck -- redact --level paranoid --audit \
         tests/fixtures/inputs/mixed_sample.txt > /dev/null
 
 # ---------------------------------------------------------------------------

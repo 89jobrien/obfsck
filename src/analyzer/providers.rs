@@ -1,3 +1,9 @@
+// TODO(bamlish): the three provider impls below each hand-roll request construction, JSON-mode
+// coercion, and response-shape digging (message.content for Ollama, choices[0].message.content
+// for OpenAI, content[0].text for Anthropic). bamlish gives typed function calls over pooled
+// clients with retry policies already configured, which would delete most of this file along
+// with the AnalyzerError::ResponseParse path.
+
 use super::{AnalyzerError, Result};
 use reqwest::blocking::Client;
 use serde_json::{Value, json};

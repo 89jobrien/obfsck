@@ -1,53 +1,32 @@
 project: obfsck
 id: obfsck
-updated: 2026-08-23
+updated: 2026-08-28
 items:
 - id: uncommitted-work
   name: uncommitted-work
   priority: P1
   status: open
-  title: Uncommitted changes (handoff-only, pre-existing untracked files ignored)
+  title: Uncommitted changes (3 files)
   description: |-
-    Working tree has uncommitted changes (HANDOFF files only tracked):
+    Working tree has uncommitted changes:
     .ctx/HANDOFF.md
     .ctx/HANDOFF.obfsck.obfsck.yaml
-
-    Pre-existing uncommitted local changes (NOT tracked in HANDOFF):
-    .kgx/data/documents.json
-    .kgx/data/graph.json
-    scripts/preflight.nu
-    scripts/demo-analyzer.nu (untracked)
+    src/analyzer/providers.rs
   files:
   - .ctx/HANDOFF.md
   - .ctx/HANDOFF.obfsck.obfsck.yaml
+  - src/analyzer/providers.rs
 log:
-- date: '20260823.140210'
-  summary: "tests: 223 passed, 1 ignored; version: 0.2.0; features: miette diagnostics, run-obfsck skill, multi-bin demo"
-  tests_passed: 223
-  tests_ignored: 1
-  tests_failed: 0
-  version: '0.2.0'
+- date: '20260828.193649'
+  summary: done=11 running=0 pending=0 blocked=0
   commits:
+  - 350d25b443f142e366fc591a3c76c2b451f7d649
+  - 32c420f998399c5ff96dde66fe312b2d175cb3d3
+  - cae479f36880d7115447324f2feb9c994aff2b28
+  - d47ca3781f3b646eac372ed04677bee36b190672
+  - 635f6968689376d466dc506780706cf7f0963db2
+  - 1a1550e97d7a5019aebac43ed2ddcc094249eb58
+  - 6763c6b416d2425f11484a3a0f6f6c1dc4d07bbd
+  - 4f2f7b4e042026d12aa279eb17fccbef87658dff
   - 7f675437f0cd340c286029b9dcf9d9bdf3167704
   - 2a99b0741a305b708e1d22d92dee7da3e71b3b31
-  - a0b601b50e8aa7144842a7ba98d8c104e64a098e
-  - f2ce9a0c3a887d416c6b552a41fc7c32182aad26
-  - 7f0510843f454874fee5e573ab7d310ef1b5079a
-  - 0da6931570c89eef5d68a5270201cd82130fccf7
-  - 32e4426ad68afa7cca4c2bc9c0fec8d2eaee0491
-  - f9d38e773053fd180653dfc2dcb9ec49847c10ec
-  - 6c28218291544be88292bdd8ad3e5a753396ba45
-  - d9c1ce53f5c1ccfd0bdb65082a7bf8c68886eb0e
-- date: '20260823.140001'
-  summary: done=7 running=0 pending=0 blocked=0
-  commits:
-  - 7f675437f0cd340c286029b9dcf9d9bdf3167704
-  - 2a99b0741a305b708e1d22d92dee7da3e71b3b31
-  - a0b601b50e8aa7144842a7ba98d8c104e64a098e
-  - f2ce9a0c3a887d416c6b552a41fc7c32182aad26
-  - 7f0510843f454874fee5e573ab7d310ef1b5079a
-  - 0da6931570c89eef5d68a5270201cd82130fccf7
-  - 32e4426ad68afa7cca4c2bc9c0fec8d2eaee0491
-  - f9d38e773053fd180653dfc2dcb9ec49847c10ec
-  - 6c28218291544be88292bdd8ad3e5a753396ba45
-  - d9c1ce53f5c1ccfd0bdb65082a7bf8c68886eb0e

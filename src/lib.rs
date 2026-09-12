@@ -25,6 +25,9 @@ pub mod schema;
 pub mod adapters;
 pub mod ports;
 
+mod patterns;
+pub use patterns::{Pattern, PatternCompileError, PatternSet};
+
 mod helpers;
 use helpers::{is_sensitive_path, obfuscate_path_value, shannon_entropy};
 pub(crate) mod json_utils;

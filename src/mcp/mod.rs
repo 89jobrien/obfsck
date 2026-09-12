@@ -1,5 +1,7 @@
 pub mod protocol;
 
+// TODO(roadmap-mcp): Complete the level-aware audit and filter-generation contract.
+
 use crate::SECRET_PATTERN_DEFS;
 use regex::RegexBuilder;
 

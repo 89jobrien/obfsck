@@ -4,6 +4,7 @@
 //! runs both the native obfsck pattern scanner and the GitleaksAdapter,
 //! merges all findings, prints them to stderr, and exits non-zero if any
 //! finding is reported by either scanner.
+// TODO(roadmap-scan-path): Add recursive file and repository scanning alongside diff scanning.
 //!
 //! Usage:
 //!   git diff --staged | scan [OPTIONS]
@@ -137,28 +138,42 @@ impl SecretScanner for ObfsckScanner {
 
         let mut findings = Vec::new();
 
+        let mut current_path: Option<String> = None;
+        let mut next_source_line: Option<usize> = None;
+
         for (line_no, line) in diff.lines().enumerate() {
+            if let Some(path) = line.strip_prefix("+++ ") {
+                current_path = diff_path(path);
+                continue;
+            }
+            if line.starts_with("@@ ") {
+                next_source_line = hunk_new_line_start(line);
+                continue;
+            }
+
             // Only scan added lines in the diff (lines starting with '+' but not '+++').
-            if !line.starts_with('+') || line.starts_with("+++") {
+            if !line.starts_with('+') {
+                if !line.starts_with('-') && next_source_line.is_some() {
+                    next_source_line = next_source_line.map(|line| line + 1);
+                }
                 continue;
             }
             let content = &line[1..]; // strip leading '+'
+            let source_line = next_source_line.unwrap_or(line_no + 1);
+            next_source_line = next_source_line.map(|line| line + 1);
 
             // Skip lines that match any allowlisted value or glob pattern.
             if self.allowlist.matches_line(content) {
                 continue;
             }
 
-            const MAX_LOCATION_LEN: usize = 120;
-
             // Run YAML patterns.
             for (re, label) in &patterns {
                 if re.is_match(content) {
-                    findings.push(Finding::with_location(
-                        "obfsck",
+                    findings.push(finding_at(
                         format!("[REDACTED-{label}] pattern matched"),
-                        line.chars().take(MAX_LOCATION_LEN).collect(),
-                        line_no + 1,
+                        current_path.as_deref(),
+                        source_line,
                     ));
                 }
             }
@@ -168,16 +183,46 @@ impl SecretScanner for ObfsckScanner {
                 Obfuscator::new(level).with_allowlist(self.allowlist.exact_entries());
             let obfuscated = obfuscator.obfuscate(content);
             if obfuscated != content {
-                findings.push(Finding::with_location(
-                    "obfsck",
+                findings.push(finding_at(
                     "structural secret/PII detected by obfsck",
-                    line.chars().take(MAX_LOCATION_LEN).collect(),
-                    line_no + 1,
+                    current_path.as_deref(),
+                    source_line,
                 ));
             }
         }
 
         Ok(findings)
+    }
+}
+
+fn diff_path(raw: &str) -> Option<String> {
+    let path = raw.split('\t').next()?.trim();
+    if path == "/dev/null" {
+        return None;
+    }
+    Some(path.strip_prefix("b/").unwrap_or(path).to_string())
+}
+
+fn hunk_new_line_start(header: &str) -> Option<usize> {
+    let range = header
+        .split_whitespace()
+        .find(|part| part.starts_with('+'))?;
+    range
+        .trim_start_matches('+')
+        .split(',')
+        .next()?
+        .parse()
+        .ok()
+}
+
+fn finding_at(description: impl Into<String>, path: Option<&str>, line_number: usize) -> Finding {
+    match path {
+        Some(path) => Finding::with_location("obfsck", description, path.to_string(), line_number),
+        None => {
+            let mut finding = Finding::new("obfsck", description);
+            finding.line_number = Some(line_number);
+            finding
+        }
     }
 }
 
@@ -259,10 +304,13 @@ fn main() {
 
     eprintln!("scan: {} finding(s) detected:", all_findings.len());
     for f in &all_findings {
-        let loc = f.location.as_deref().unwrap_or("<unknown location>");
-        match f.line_number {
-            Some(n) => eprintln!("  [{}] line {}: {} — {}", f.source, n, f.description, loc),
-            None => eprintln!("  [{}] {} — {}", f.source, f.description, loc),
+        match (f.location.as_deref(), f.line_number) {
+            (Some(path), Some(line)) => {
+                eprintln!("  [{}] {path}:{line}: {}", f.source, f.description)
+            }
+            (Some(path), None) => eprintln!("  [{}] {path}: {}", f.source, f.description),
+            (None, Some(line)) => eprintln!("  [{}] line {line}: {}", f.source, f.description),
+            (None, None) => eprintln!("  [{}] {}", f.source, f.description),
         }
     }
     process::exit(1);

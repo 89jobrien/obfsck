@@ -1,5 +1,7 @@
 name: Release
 
+# TODO(roadmap-release): Ship every canonical binary with tested checksums and provenance.
+
 on:
   push:
     tags:

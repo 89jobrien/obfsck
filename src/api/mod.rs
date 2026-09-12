@@ -130,6 +130,7 @@ struct AnalysisPageView<'a> {
 }
 
 pub async fn run_server(host: String, port: u16) -> Result<(), ApiError> {
+    // TODO(roadmap-secure-api): Add auth, restrictive CORS, limits, and redacted-only cache modes.
     let config = load_config(None)?;
     let backend_name = config.storage.backend.to_ascii_lowercase();
     // Construct AlertAnalyzer in a blocking thread: reqwest::blocking::Client

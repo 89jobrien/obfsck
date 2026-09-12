@@ -317,6 +317,24 @@ fn ipv6_public_tagged_external() {
     );
 }
 
+#[test]
+fn compressed_ipv6_addresses_are_obfuscated() {
+    let cases = [
+        ("loopback ::1", "IP-INTERNAL"),
+        ("private fd12:3456::1", "IP-INTERNAL"),
+        ("public 2001:db8::1", "IP-EXTERNAL"),
+    ];
+
+    for (input, expected_label) in cases {
+        let (out, map) = obfuscate_text(input, ObfuscationLevel::Standard);
+        assert!(
+            out.contains(expected_label),
+            "expected {expected_label} for {input}, got: {out}"
+        );
+        assert_eq!(map.ips.len(), 1, "expected one IPv6 mapping for {input}");
+    }
+}
+
 // obfsck-16: obfuscate_paths() must populate ObfuscationMap.paths
 #[test]
 fn obfuscate_paths_populates_map() {

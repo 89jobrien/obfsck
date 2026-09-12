@@ -205,6 +205,7 @@ pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
         .with_pii(pii_enabled)
         .with_allowlist(allowlist_set.iter().cloned().collect());
 
+    // TODO(roadmap-audit): Provide structured, non-mutating findings for the full engine.
     // Audit counts accumulated across all lines.
     let mut audit_counts: HashMap<String, usize> = HashMap::new();
 

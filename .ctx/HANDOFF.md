@@ -1,9 +1,9 @@
-# Handoff — obfsck (2026-08-23)
+# Handoff — obfsck (2026-08-28)
 
 | ID | P | Status | Title |
 |---|---|---|---|
-| uncommitted-work | P1 | open | Uncommitted changes (6 files) |
+| uncommitted-work | P1 | open | Uncommitted changes (3 files) |
 
 ## Log
 
-- 20260823.140001: done=7 running=0 pending=0 blocked=0 [7f67543, 2a99b07, a0b601b, f2ce9a0, 7f05108, 0da6931, 32e4426, f9d38e7, 6c28218, d9c1ce5]
+- 20260828.193649: done=11 running=0 pending=0 blocked=0 [350d25b, 32c420f, cae479f, d47ca37, 635f696, 1a1550e, 6763c6b, 4f2f7b4, 7f67543, 2a99b07]

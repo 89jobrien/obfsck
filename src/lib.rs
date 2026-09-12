@@ -25,6 +25,9 @@ pub mod schema;
 pub mod adapters;
 pub mod ports;
 
+mod patterns;
+pub use patterns::{Pattern, PatternCompileError, PatternSet};
+
 mod helpers;
 use helpers::{is_sensitive_path, obfuscate_path_value, shannon_entropy};
 pub(crate) mod json_utils;
@@ -32,6 +35,7 @@ pub(crate) mod json_utils;
 use regex::{Regex, RegexBuilder};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
+use std::net::Ipv6Addr;
 use std::sync::OnceLock;
 
 /// Allowlist that supports both exact string matches and glob patterns.
@@ -289,23 +293,16 @@ impl Obfuscator {
     }
 
     // IPv6 private-range bitmasks
-    const HEX_RADIX: u32 = 16;
     const IPV6_ULA_MASK: u16 = 0xFE00;
     const IPV6_ULA_PREFIX: u16 = 0xFC00;
     const IPV6_LINK_LOCAL_MASK: u16 = 0xFFC0;
     const IPV6_LINK_LOCAL_PREFIX: u16 = 0xFE80;
 
-    fn is_private_ipv6(ip: &str) -> bool {
-        // Parse the first group of a full-form IPv6 address (8 colon-separated
-        // groups of hex digits). Handles only the full form produced by ipv6_re().
-        let first_group = ip.split(':').next().unwrap_or("");
-        let Ok(g0) = u16::from_str_radix(first_group, Self::HEX_RADIX) else {
-            return false;
-        };
-        // ::1 loopback — all groups zero except last; detect by checking the whole string
-        if ip == "0000:0000:0000:0000:0000:0000:0000:0001" || ip == "::1" {
+    fn is_private_ipv6(ip: &Ipv6Addr) -> bool {
+        if ip.is_loopback() {
             return true;
         }
+        let g0 = ip.segments()[0];
         // fc00::/7 — Unique Local Addresses (ULA): first 7 bits == 1111110
         if g0 & Self::IPV6_ULA_MASK == Self::IPV6_ULA_PREFIX {
             return true;
@@ -378,16 +375,19 @@ impl Obfuscator {
             s = Cow::Owned(replaced);
         }
 
-        if ipv6_re().is_match(s.as_ref()) {
+        if ipv6_candidate_re().is_match(s.as_ref()) {
             let counters = &mut self.counters;
             let ips = &mut self.map.ips;
-            let replaced = ipv6_re()
+            let replaced = ipv6_candidate_re()
                 .replace_all(s.as_ref(), |caps: &regex::Captures<'_>| {
                     let ip = &caps[0];
+                    let Ok(parsed) = ip.parse::<Ipv6Addr>() else {
+                        return ip.to_string();
+                    };
                     if self.allowlist.contains(ip) {
                         return ip.to_string();
                     }
-                    let cat = if Self::is_private_ipv6(ip) {
+                    let cat = if Self::is_private_ipv6(&parsed) {
                         TokenCategory::IpInternal
                     } else {
                         TokenCategory::IpExternal
@@ -593,6 +593,7 @@ impl Obfuscator {
     const SECRET_TRUNCATE_LEN: usize = 20;
 
     fn obfuscate_secrets(&mut self, text: &str) -> String {
+        // TODO(roadmap-pattern-engine): Inject one configurable pattern set across all entry points.
         let mut s: Cow<'_, str> = Cow::Borrowed(text);
         for pat in secret_patterns() {
             let applies = match pat.min_level {
@@ -770,7 +771,7 @@ static_regex!(
     ipv4_re,
     r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
 );
-static_regex!(ipv6_re, r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b");
+static_regex!(ipv6_candidate_re, r"(?i)[0-9a-f]*:[0-9a-f:]+");
 static_regex!(
     email_re,
     r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"

@@ -21,7 +21,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo check --workspace
       - run: cargo fmt --all --check
-      - run: cargo clippy --workspace -- -D warnings
+      - run: cargo clippy --workspace --all-targets --features analyzer,legacy-user-scan,path-policy-home-user-redact -- -D warnings
+      - run: cargo clippy --workspace --all-targets --features analyzer,legacy-user-scan,path-policy-non-allowlisted-redact -- -D warnings
 
   test:
     name: Test
@@ -41,7 +42,6 @@ jobs:
     name: Audit & Deny
     runs-on: ubuntu-latest
     needs: compile-check
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/hotfix/')
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -56,7 +56,6 @@ jobs:
     name: Unused Dependencies
     runs-on: ubuntu-latest
     needs: compile-check
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/hotfix/')
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

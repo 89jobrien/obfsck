@@ -191,6 +191,7 @@ impl AlertAnalyzer {
         let end = Utc::now();
         let start = end - delta;
 
+        // TODO(roadmap-query): Accept safe user-configurable query templates and label filters.
         let query = if self.backend == "victorialogs" {
             if let Some(p) = priority {
                 format!("source:syscall AND priority:{p}")

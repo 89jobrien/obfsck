@@ -1,19 +1,19 @@
 ---
 name: run-obfsck
-description: Build, run, test, and demo obfsck — a secret/PII redaction toolkit with 5 binaries (redact, scan, analyzer, api, obfsck-mcp). Use when asked to run obfsck, build it, test it, demo it, screenshot its output, or drive any of its binaries (redact secrets, scan a diff, start the REST API, query the MCP server, or run the alert analyzer).
+description: Build, run, test, and demo obfsck — a secret/PII redaction toolkit with 6 binaries (obfsck, redact, scan, analyzer, api, obfsck-mcp). Use when asked to run obfsck, build it, test it, demo it, screenshot its output, or drive any of its binaries (redact secrets, scan a diff, start the REST API, query the MCP server, or run the alert analyzer).
 ---
 
-obfsck is a Rust workspace that builds 5 binaries around one redaction
-engine. Drive it via `demo/demo.py --bin <name>` (a `uv`-run Python/rich
-script) — that is the primary agent path below; it exercises every binary
-programmatically and is what this skill was verified against.
+obfsck is a Rust package that builds 6 binaries around one redaction engine.
+Drive the five specialized and compatibility entry points via
+`demo/demo.py --bin <name>` (a `uv`-run Python/rich script); use the canonical
+`obfsck redact` and `obfsck analyze` commands for direct invocation.
 
 All paths below are relative to the repo root (`obfsck/`).
 
 ## Prerequisites
 
 Rust toolchain and `uv` are expected to already be on `PATH` (this repo is
-mise-managed — `mise.toml` pins the Rust version). Nothing else to install;
+mise-managed — `mise.toml` selects the stable Rust channel). Nothing else to install;
 `uv run demo/demo.py` auto-installs its own deps (`rich`, `pyyaml`) from the
 PEP 723 header at the top of the file.
 
@@ -28,11 +28,10 @@ uv --version      # verified: uv 0.10.9
 cargo build --release --features analyzer
 ```
 
-Builds all 5 binaries to `target/release/`: `redact`, `scan`, `analyzer`,
-`api`, `obfsck-mcp`. `analyzer` is obfsck's own default feature (see
-`Cargo.toml`), so `--features analyzer` is technically redundant but keep it
-explicit — the 4 server/analyzer binaries have `required-features =
-["analyzer"]` and silently don't build without it.
+Builds all 6 binaries to `target/release/`: `obfsck`, `redact`, `scan`,
+`analyzer`, `api`, and `obfsck-mcp`. `analyzer` is obfsck's default feature
+(see `Cargo.toml`), so `--features analyzer` is technically redundant but
+kept explicit; every binary target requires that feature.
 
 ## Run (agent path)
 
@@ -51,7 +50,7 @@ Verified output for each mode:
 
 | `--bin` | What it does | Verified result |
 |---|---|---|
-| `redact` (default) | Pipes each `demo/examples/*.yaml` fixture through `redact` at 3 levels | Renders a before/after table per fixture; `[REDACTED-*]` tokens highlighted |
+| `redact` (default) | Pipes `demo/examples/*.yaml` fixtures through `redact` using each example's configured level | Renders a before/after table per example; `[REDACTED-*]` tokens highlighted |
 | `scan` | Feeds a synthetic `git diff` with a Slack bot token through `scan --no-gitleaks` | `scan: 2 finding(s) detected` (exit 1) — pattern hit + structural hit on the same line |
 | `mcp` | Sends `tools/list` then `tools/call` (`audit`) over stdio JSON-RPC to `obfsck-mcp` | `tools/list` returns the `audit`/`generate-filters` schema; `audit` returns `{"hits":[{"count":1,"label":"SLACK-BOT"}]}` |
 | `analyzer` | Runs `analyzer --dry-run --loki-url http://127.0.0.1:1` (deliberately unreachable) | Exit 1, prints the `miette` fancy diagnostic chain (`obfsck::analyzer::http` → `client error (Connect)` → `Connection refused`) |
@@ -66,10 +65,10 @@ uv run demo/demo.py --bin redact demo/examples/00_levels.yaml --level minimal
 Direct invocation without the driver, if you just need one binary:
 
 ```bash
-echo 'AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE' | target/release/redact --level minimal
+echo 'AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE' | target/release/obfsck redact --level minimal
 # → AWS_ACCESS_KEY_ID=[REDACTED-AWS-KEY]
 
-target/release/redact --level minimal  # exit 2, clap usage error — no --version flag exists
+target/release/redact --version  # exit 2, clap usage error — compatibility alias has no --version
 ```
 
 `obfsck-mcp` (note: crate/bin name is `obfsck-mcp`, not `mcp`) speaks
@@ -91,13 +90,12 @@ target/release/api --host 127.0.0.1 --port 5000   # Ctrl-C to stop
 ## Test
 
 ```bash
-cargo test --workspace --features analyzer
+cargo nextest run --workspace
 # or: just test
 ```
 
-Verified: 26 test binaries, all pass (203 individual tests across unit +
-integration + property + golden suites). 5 tests are `ignored` by design
-(network tests, gated behind explicit opt-in).
+Verified: 29 test binaries, 214 tests passed across unit, integration,
+property, and golden suites. 6 tests are skipped by design.
 
 ---
 

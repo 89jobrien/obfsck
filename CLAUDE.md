@@ -18,16 +18,21 @@ cargo bench             # criterion benchmarks
 
 ## Architecture
 
-- `src/lib.rs` — public API: `obfuscate_text`, `obfuscate_alert`, `ObfuscationLevel`
-- `src/secrets.rs` — secret pattern matching (loaded from `config/secrets.yaml`)
+- `src/lib.rs` — public API: redaction functions, `Obfuscator`, and pattern types
+- `src/patterns/mod.rs` — `Pattern`, `PatternSet`, and pattern diagnostics
+- `config/secrets.yaml` — authoritative bundled secret definitions compiled by `build.rs`
+- `src/cli.rs` — canonical `obfsck redact` / `obfsck analyze` routing
 - `src/helpers.rs` — path/entropy utilities
 - `src/analyzer/` — alert fetching + LLM analysis (behind `analyzer` feature)
 - `src/api/` — axum REST server (behind `analyzer` feature)
 - `src/clients/` — Loki / VictoriaLogs backends (behind `analyzer` feature)
 - `src/schema.rs` — BAML schema for structured LLM output
-- `src/bin/redact.rs` — CLI: pipe text through obfuscation
-- `src/bin/analyzer.rs` — CLI: fetch + analyze alerts
+- `src/bin/obfsck.rs` — canonical CLI entry point
+- `src/bin/redact.rs` — deprecated redaction compatibility alias
+- `src/bin/analyzer.rs` — deprecated analyzer compatibility alias
+- `src/bin/scan.rs` — unified-diff secret scanner
 - `src/bin/api.rs` — HTTP API server
+- `src/bin/mcp.rs` — MCP JSON-RPC server (`obfsck-mcp`)
 
 ## Features
 
@@ -55,31 +60,35 @@ VICTORIALOGS_URL=http://localhost:9428  # alternate backend
 ## Running Binaries
 
 ```bash
-cargo run --bin redact -- --level standard < input.txt
-redact input.txt                          # installed binary (after cp target/release/redact ~/.local/bin/)
-redact input.txt -o redacted.txt          # file → file
-cat input.txt | redact                    # stdin → stdout
-cargo run --bin analyzer -- --last 1h --limit 5 --dry-run
+cargo run --bin obfsck -- redact --level standard < input.txt
+obfsck redact input.txt                    # installed canonical binary
+obfsck redact input.txt -o redacted.txt    # file → file
+cat input.txt | obfsck redact              # stdin → stdout
+cargo run --bin obfsck -- analyze --last 1h --limit 5 --dry-run
 mise run logs           # API server with pretty logs
 mise run baml:dry-run   # Analyzer without LLM calls (inspect prompt)
 ```
 
 ## Pattern Sources — Critical Dual-Location Gotcha
 
-Secret patterns live in **one place**: `config/secrets.yaml`. `src/secrets.rs` is generated
-from it at compile time via `build.rs` — do not edit `src/secrets.rs` directly.
+Secret patterns live in **one place**: `config/secrets.yaml`. `build.rs` generates Rust into
+Cargo's `OUT_DIR` and `src/lib.rs` includes it at compile time — do not edit generated output.
 
-`~/.config/obfsck/secrets.yaml` silently overrides the bundled config entirely — if it exists and is non-empty, the bundled config is ignored. Delete it to restore bundled defaults.
+`~/.config/obfsck/secrets.yaml` replaces the YAML selected for the CLI pattern pass, but
+`Obfuscator` currently applies compiled bundled definitions afterward. Custom config therefore
+does not disable bundled library patterns until the shared pattern-engine migration is complete.
 
 ## Issue Tracking
 
-Issues are tracked in `HANDOFF.obfsck.workspace.yaml` (not GitHub). Issue IDs use the format
-`obfsck-N`. Check `blocked_by` / `unblocks` fields for dependency chains.
+Work items are tracked in `.ctx/HANDOFF.obfsck.obfsck.yaml` and
+`.ctx/godmode/tasks.yaml`. Check dependency fields before starting chained work.
 
 ## Pre-commit Hook
 
-The global git hook pipes the staged diff through `obfsck --level minimal`. Fake test tokens
-(e.g. `ghp_aaa...`) trigger it — add them to `~/.config/obfsck/allowlist` (one per line).
+The global git hook scans a filtered staged diff with `obfsck-scan` when available; its fallbacks
+extract added lines and use `obfsck redact --level minimal`, then the deprecated `redact` binary.
+Fake test tokens (e.g. `ghp_aaa...`) trigger it — add them to
+`~/.config/obfsck/allowlist` (one per line).
 
 ## Pattern Sources — Audit Pass
 
@@ -124,5 +133,5 @@ just probe-paranoid         # assert paranoid_only patterns fire only at paranoi
 ## Scanning Claude Session Files
 
 Session `.jsonl` files live at `~/.claude/projects/-Users-joe-dev-obfsck/*.jsonl`.
-Scan them for leaked secrets: `redact --level paranoid --audit <file>`.
+Scan them for leaked secrets: `obfsck redact --level paranoid --audit <file>`.
 `[REDACTED-*]` placeholders in output mean the pre-commit hook already caught them — expected.

@@ -72,7 +72,7 @@ impl PatternSet {
         let definitions = SECRET_PATTERN_DEFS.iter().map(|definition| {
             (
                 definition.name,
-                None,
+                definition.group,
                 definition.pattern,
                 definition.label,
                 definition.paranoid_only,

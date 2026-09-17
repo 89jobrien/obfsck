@@ -35,3 +35,15 @@ fn secret_pattern_defs_has_paranoid_only_flag() {
     let has_paranoid = defs.iter().any(|p| p.paranoid_only);
     assert!(has_paranoid, "Expected at least one paranoid_only pattern");
 }
+
+#[test]
+fn bundled_pattern_preserves_group_provenance() {
+    let patterns = obfsck::PatternSet::bundled();
+    let pattern = patterns
+        .patterns()
+        .iter()
+        .find(|pattern| pattern.name() == "aws_access_key")
+        .expect("bundled AWS pattern should exist");
+
+    assert_eq!(pattern.group(), Some("cloud"));
+}

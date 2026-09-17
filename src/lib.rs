@@ -689,6 +689,7 @@ struct SecretPattern {
 #[derive(Debug, Clone, Copy)]
 pub struct SecretPatternDef {
     pub name: &'static str,
+    pub group: Option<&'static str>,
     pub pattern: &'static str,
     pub label: &'static str,
     pub paranoid_only: bool,

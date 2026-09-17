@@ -112,3 +112,35 @@ fn deprecated_analyzer_binary_warns() {
         "missing deprecation warning: {stderr}"
     );
 }
+
+#[test]
+fn canonical_custom_patterns_honor_glob_allowlist() {
+    use std::io::Write;
+
+    let mut config = tempfile::NamedTempFile::new().expect("create config");
+    config
+        .write_all(
+            br#"groups: {}
+custom:
+  - name: custom_token
+    pattern: \bcustom-[0-9]+\b
+    label: CUSTOM
+"#,
+        )
+        .expect("write config");
+    let mut input = tempfile::NamedTempFile::new().expect("create input");
+    input.write_all(b"custom-123\n").expect("write input");
+
+    let output = obfsck_bin()
+        .arg("redact")
+        .arg("--config")
+        .arg(config.path())
+        .arg("--allowlist")
+        .arg("custom-*")
+        .arg(input.path())
+        .output()
+        .expect("run obfsck redact");
+
+    assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "custom-123\n");
+}

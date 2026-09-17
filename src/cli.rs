@@ -1,8 +1,7 @@
-use crate::yaml_config::{MinLevel, SecretsConfig};
-use crate::{ObfuscationLevel, Obfuscator};
+use crate::yaml_config::SecretsConfig;
+use crate::{Allowlist, ObfuscationLevel, Obfuscator, PatternSet};
 use clap::{Parser, Subcommand};
 use miette::{Context, IntoDiagnostic, Result};
-use regex::{Regex, RegexBuilder};
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::path::PathBuf;
@@ -140,40 +139,37 @@ pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
 
     apply_profile(&mut config, &args.profile, &mut level);
 
-    // When PII is disabled, skip YAML groups whose min_level is standard (PII groups).
-    if !pii_enabled {
-        for group in config.groups.values_mut() {
-            if matches!(group.min_level, Some(MinLevel::Standard)) {
-                group.enabled = false;
-            }
+    let pattern_set = PatternSet::from_config(&config);
+    for diagnostic in pattern_set.diagnostics() {
+        let definition = match diagnostic.group() {
+            Some(group) => config.groups.get(group).and_then(|group| {
+                group
+                    .patterns
+                    .iter()
+                    .find(|pattern| pattern.name == diagnostic.name())
+            }),
+            None => config
+                .custom
+                .iter()
+                .find(|pattern| pattern.name == diagnostic.name()),
+        };
+        if let Some(definition) = definition {
+            const PATTERN_SNIPPET_LEN: usize = 60;
+            let snippet: String = definition
+                .pattern
+                .chars()
+                .take(PATTERN_SNIPPET_LEN)
+                .collect();
+            eprintln!(
+                "warning: skipping invalid pattern '{}' ({}): {}",
+                definition.label,
+                snippet,
+                diagnostic.message()
+            );
+        } else {
+            eprintln!("warning: skipping {diagnostic}");
         }
     }
-
-    let is_paranoid = level == ObfuscationLevel::Paranoid;
-    let patterns: Vec<(Regex, String)> = config
-        .groups
-        .values()
-        .filter(|g| g.applies_at(level))
-        .flat_map(|g| g.patterns.iter())
-        .chain(config.custom.iter())
-        .filter(|p| !p.paranoid_only || is_paranoid)
-        .filter_map(|p| {
-            // Log invalid patterns (e.g. unsupported lookaheads) — they are skipped but
-            // the user should know which pattern caused the issue.
-            match RegexBuilder::new(&p.pattern).case_insensitive(true).build() {
-                Ok(re) => Some((re, format!("[REDACTED-{}]", p.label))),
-                Err(e) => {
-                    const PATTERN_SNIPPET_LEN: usize = 60;
-                    let snippet: String = p.pattern.chars().take(PATTERN_SNIPPET_LEN).collect();
-                    eprintln!(
-                        "warning: skipping invalid pattern '{}' ({}): {e}",
-                        p.label, snippet
-                    );
-                    None
-                }
-            }
-        })
-        .collect();
 
     // Build allowlist: CLI flags + allowlist-file + ~/.config/obfsck/allowlist
     let mut allowlist = args.allowlist;
@@ -197,13 +193,14 @@ pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
                 .filter(|l| !l.is_empty() && !l.starts_with('#')),
         );
     }
-    let allowlist_set: std::collections::HashSet<String> = allowlist.into_iter().collect();
+    let audit_allowlist = Allowlist::new(allowlist.clone());
 
     // Obfuscator persists token mappings across lines — same user/IP/host gets
     // the same stable token throughout the entire input.
     let mut obfuscator = Obfuscator::new(level)
         .with_pii(pii_enabled)
-        .with_allowlist(allowlist_set.iter().cloned().collect());
+        .with_pattern_set(pattern_set.clone())
+        .with_allowlist(allowlist);
 
     // TODO(roadmap-audit): Provide structured, non-mutating findings for the full engine.
     // Audit counts accumulated across all lines.
@@ -218,32 +215,36 @@ pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
             .into_diagnostic()
             .wrap_err_with(|| format!("failed to read input at line {}", line_no + 1))?;
 
-        // Apply YAML secret patterns first (compiled once above, reused per line).
-        let mut text = line;
-        for (re, replacement) in &patterns {
-            if args.audit {
-                let count = re
-                    .find_iter(&text)
-                    .filter(|m| !allowlist_set.contains(m.as_str()))
+        if args.audit {
+            let mut audit_text = line.clone();
+            for pattern in pattern_set.patterns() {
+                if !pattern.applies_at(level, pii_enabled) {
+                    continue;
+                }
+                let replacement = format!("[REDACTED-{}]", pattern.label());
+                let count = pattern
+                    .regex()
+                    .find_iter(&audit_text)
+                    .filter(|matched| !audit_allowlist.contains(matched.as_str()))
                     .count();
                 if count > 0 {
                     *audit_counts.entry(replacement.clone()).or_insert(0) += count;
                 }
+                audit_text = pattern
+                    .regex()
+                    .replace_all(&audit_text, |captures: &regex::Captures<'_>| {
+                        let matched = &captures[0];
+                        if audit_allowlist.contains(matched) {
+                            matched.to_string()
+                        } else {
+                            replacement.clone()
+                        }
+                    })
+                    .into_owned();
             }
-            text = re
-                .replace_all(&text, |caps: &regex::Captures<'_>| {
-                    let matched = &caps[0];
-                    if allowlist_set.contains(matched) {
-                        matched.to_string()
-                    } else {
-                        replacement.clone()
-                    }
-                })
-                .into_owned();
         }
 
-        // Structural obfuscation (IPs, emails, hostnames, etc.).
-        let out = obfuscator.obfuscate(&text);
+        let out = obfuscator.obfuscate(&line);
 
         writeln!(writer, "{out}")
             .into_diagnostic()

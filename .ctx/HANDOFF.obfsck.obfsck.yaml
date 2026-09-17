@@ -1,48 +1,50 @@
 project: obfsck
 id: obfsck
-updated: 2026-09-13
+updated: 2026-09-17
 items:
-- id: gh-27
-  name: feat-patterns---share-configurable-pattern-set
+- id: t5
+  name: authorize-before-protected-context-lookup
   priority: P2
-  status: open
-  title: 'feat(patterns): share configurable pattern set'
-  description: Umbrella task; design approved in docs/designs/2026-09-07-shared-pattern-engine-design.md
+  status: blocked
+  title: Authorize before protected context lookup
+  description: Central filtering Tasks 1-4 were not ingested because their t1-t4 IDs collided with completed CLI tasks; src/filtering and filtering tests are absent
+  extra:
+  - date: 2026-09-17
+    type: blocker
+    note: Central filtering Tasks 1-4 were not ingested because their t1-t4 IDs collided with completed CLI tasks; src/filtering and filtering tests are absent
+- id: t24
+  name: remove-reversible-state-from-api-and-cache
+  priority: P2
+  status: blocked
+  title: Remove reversible state from API and cache
+  description: Central filtering Tasks 1-23 are not complete; t24 incorrectly points to the unrelated completed CLI t23 after task-ID collision
+  extra:
+  - date: 2026-09-17
+    type: blocker
+    note: Central filtering Tasks 1-23 are not complete; t24 incorrectly points to the unrelated completed CLI t23 after task-ID collision
 - id: uncommitted-work
   name: uncommitted-work
   priority: P1
   status: open
-  title: Uncommitted changes (8 files)
+  title: Uncommitted changes (2 files)
   description: |-
     Working tree has uncommitted changes:
-    .claude/skills/run-obfsck/SKILL.md
     .ctx/HANDOFF.md
     .ctx/HANDOFF.obfsck.obfsck.yaml
-    .kgx/data/documents.json
-    .kgx/data/graph.json
-    CLAUDE.md
-    Justfile
-    README.md
   files:
-  - .claude/skills/run-obfsck/SKILL.md
   - .ctx/HANDOFF.md
   - .ctx/HANDOFF.obfsck.obfsck.yaml
-  - .kgx/data/documents.json
-  - .kgx/data/graph.json
-  - CLAUDE.md
-  - Justfile
-  - README.md
 log:
-- date: '20260913.072733'
-  summary: done=15 running=1 pending=11 blocked=0
+- date: '20260917.131959'
+  summary: done=21 running=0 pending=21 blocked=2
   commits:
+  - ae42cd71403c4607e7533605e19b886b059d4013
+  - e8a27570ea7ba4a6525b2cdea8772304b6105e4a
+  - cd41ae02d41c02c65c46d16a17dc9ff1632472d6
+  - 464b55769b29a6a2c858ceeb15cd61038fc7477c
+  - 3291c0c46e5f667a8340201bebf971e41d0bc181
+  - e03f0001aadc0fbcb5a274b12e644c6dfcf6a011
   - 5c887e8f67ce0f01fb92a292b01fc4e9519ab08d
   - 3f1b685d8cc48038da39e3cb5e2a75a672622fb2
   - e4e58a7a9871936e36d46730034f489035b178f6
   - 421d614465d8609463d46c589ffc310026aaae4e
-  - 350d25b443f142e366fc591a3c76c2b451f7d649
-  - 32c420f998399c5ff96dde66fe312b2d175cb3d3
-  - cae479f36880d7115447324f2feb9c994aff2b28
-  - d47ca3781f3b646eac372ed04677bee36b190672
-  - 635f6968689376d466dc506780706cf7f0963db2
-  - 1a1550e97d7a5019aebac43ed2ddcc094249eb58

@@ -32,7 +32,7 @@ mod helpers;
 use helpers::{is_sensitive_path, obfuscate_path_value, shannon_entropy};
 pub(crate) mod json_utils;
 
-use regex::{Regex, RegexBuilder};
+use regex::Regex;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::net::Ipv6Addr;
@@ -211,6 +211,11 @@ impl Counters {
     }
 }
 
+fn default_pattern_set() -> PatternSet {
+    static PATTERNS: OnceLock<PatternSet> = OnceLock::new();
+    PATTERNS.get_or_init(PatternSet::bundled).clone()
+}
+
 #[derive(Debug)]
 pub struct Obfuscator {
     level: ObfuscationLevel,
@@ -220,6 +225,7 @@ pub struct Obfuscator {
     /// Values in this set are never redacted even when they match a pattern.
     /// Supports exact strings and glob patterns (entries with `*` or `?`).
     allowlist: Allowlist,
+    pattern_set: PatternSet,
     map: ObfuscationMap,
     counters: Counters,
 }
@@ -230,6 +236,7 @@ impl Obfuscator {
             level,
             pii: true,
             allowlist: Allowlist::default(),
+            pattern_set: default_pattern_set(),
             map: ObfuscationMap::default(),
             counters: Counters::default(),
         }
@@ -238,6 +245,12 @@ impl Obfuscator {
     /// Disable PII redaction (structural emails, IPs, users). Secrets are unaffected.
     pub fn with_pii(mut self, pii: bool) -> Self {
         self.pii = pii;
+        self
+    }
+
+    /// Replaces the bundled secret patterns used by this obfuscator.
+    pub fn with_pattern_set(mut self, pattern_set: PatternSet) -> Self {
+        self.pattern_set = pattern_set;
         self
     }
 
@@ -593,47 +606,37 @@ impl Obfuscator {
     const SECRET_TRUNCATE_LEN: usize = 20;
 
     fn obfuscate_secrets(&mut self, text: &str) -> String {
-        // TODO(roadmap-pattern-engine): Inject one configurable pattern set across all entry points.
-        let mut s: Cow<'_, str> = Cow::Borrowed(text);
-        for pat in secret_patterns() {
-            let applies = match pat.min_level {
-                None | Some(ObfuscationLevel::Minimal) => true,
-                Some(ObfuscationLevel::Standard) => {
-                    // Standard-gated patterns are PII. Skip when pii=false.
-                    self.pii
-                        && matches!(
-                            self.level,
-                            ObfuscationLevel::Standard | ObfuscationLevel::Paranoid
-                        )
-                }
-                Some(ObfuscationLevel::Paranoid) => self.level == ObfuscationLevel::Paranoid,
-            };
-            if !applies {
+        let mut output: Cow<'_, str> = Cow::Borrowed(text);
+        let allowlist = &self.allowlist;
+        let secrets = &mut self.map.secrets;
+
+        for pattern in self.pattern_set.patterns() {
+            if !pattern.applies_at(self.level, self.pii)
+                || !pattern.regex().is_match(output.as_ref())
+            {
                 continue;
             }
-            if !pat.re.is_match(s.as_ref()) {
-                continue;
-            }
-            let label = pat.label;
-            let replaced = pat
-                .re
-                .replace_all(s.as_ref(), |caps: &regex::Captures<'_>| {
-                    let m = &caps[0];
-                    if self.allowlist.contains(m) {
-                        return m.to_string();
+
+            let label = pattern.label();
+            let replaced = pattern
+                .regex()
+                .replace_all(output.as_ref(), |captures: &regex::Captures<'_>| {
+                    let matched = &captures[0];
+                    if allowlist.contains(matched) {
+                        return matched.to_string();
                     }
-                    let mut truncated = m
+                    let mut truncated = matched
                         .chars()
                         .take(Self::SECRET_TRUNCATE_LEN)
                         .collect::<String>();
                     truncated.push_str("...");
-                    self.map.secrets.insert(truncated);
+                    secrets.insert(truncated);
                     format!("[REDACTED-{label}]")
                 })
                 .into_owned();
-            s = Cow::Owned(replaced);
+            output = Cow::Owned(replaced);
         }
-        s.into_owned()
+        output.into_owned()
     }
 }
 
@@ -680,12 +683,6 @@ pub fn obfuscate_alert(
     (out, fields, obfuscator.mapping())
 }
 
-struct SecretPattern {
-    label: &'static str,
-    min_level: Option<ObfuscationLevel>,
-    re: Regex,
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct SecretPatternDef {
     pub name: &'static str,
@@ -709,51 +706,24 @@ mod secrets {
 }
 pub use secrets::SECRET_PATTERN_DEFS;
 
-fn secret_patterns() -> &'static [SecretPattern] {
-    static PATS: OnceLock<Vec<SecretPattern>> = OnceLock::new();
-    PATS.get_or_init(|| {
-        let mut errors = Vec::new();
-        let patterns = SECRET_PATTERN_DEFS
-            .iter()
-            .filter_map(|d| {
-                let re = match RegexBuilder::new(d.pattern).case_insensitive(true).build() {
-                    Ok(re) => re,
-                    Err(err) => {
-                        errors.push(SecretPatternError {
-                            name: d.name,
-                            error: err.to_string(),
-                        });
-                        return None;
-                    }
-                };
-
-                // Derive min_level: paranoid_only=true overrides YAML min_level to Paranoid
-                let min_level = if d.paranoid_only {
-                    Some(ObfuscationLevel::Paranoid)
-                } else {
-                    d.min_level
-                };
-                Some(SecretPattern {
-                    label: d.label,
-                    min_level,
-                    re,
-                })
-            })
-            .collect();
-
-        let _ = SECRET_PATTERN_ERRORS.set(errors);
-        patterns
-    })
-}
-
 static SECRET_PATTERN_ERRORS: OnceLock<Vec<SecretPatternError>> = OnceLock::new();
 
 pub fn secret_pattern_errors() -> &'static [SecretPatternError] {
-    if SECRET_PATTERN_ERRORS.get().is_none() {
-        let _ = secret_patterns();
-    }
-
-    SECRET_PATTERN_ERRORS.get_or_init(Vec::new)
+    SECRET_PATTERN_ERRORS.get_or_init(|| {
+        default_pattern_set()
+            .diagnostics()
+            .iter()
+            .filter_map(|diagnostic| {
+                let definition = SECRET_PATTERN_DEFS
+                    .iter()
+                    .find(|definition| definition.name == diagnostic.name())?;
+                Some(SecretPatternError {
+                    name: definition.name,
+                    error: diagnostic.message().to_string(),
+                })
+            })
+            .collect()
+    })
 }
 
 /// Helper to create a `OnceLock`-backed static regex.

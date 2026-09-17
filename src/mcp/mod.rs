@@ -2,8 +2,13 @@ pub mod protocol;
 
 // TODO(roadmap-mcp): Complete the level-aware audit and filter-generation contract.
 
-use crate::SECRET_PATTERN_DEFS;
-use regex::RegexBuilder;
+use crate::{ObfuscationLevel, PatternSet};
+use std::sync::OnceLock;
+
+fn bundled_patterns() -> &'static PatternSet {
+    static PATTERNS: OnceLock<PatternSet> = OnceLock::new();
+    PATTERNS.get_or_init(PatternSet::bundled)
+}
 
 // ---------------------------------------------------------------------------
 // Domain types
@@ -37,25 +42,32 @@ pub trait FilterSuggester {
 // ObfsckAuditor adapter
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Default, Clone, Copy)]
-pub struct ObfsckAuditor;
+#[derive(Debug, Clone)]
+pub struct ObfsckAuditor {
+    patterns: PatternSet,
+    level: ObfuscationLevel,
+}
+
+impl Default for ObfsckAuditor {
+    fn default() -> Self {
+        Self {
+            patterns: bundled_patterns().clone(),
+            level: ObfuscationLevel::Minimal,
+        }
+    }
+}
 
 impl Auditor for ObfsckAuditor {
     fn audit(&self, text: &str) -> Vec<AuditHit> {
-        // Use the authoritative compiled pattern set (SECRET_PATTERN_DEFS) only.
-        // The YAML config patterns are generated from the same source, so using
-        // both would double-count every hit.
         let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
 
-        for def in SECRET_PATTERN_DEFS {
-            if let Ok(re) = RegexBuilder::new(def.pattern)
-                .case_insensitive(true)
-                .build()
-            {
-                let n = re.find_iter(text).count();
-                if n > 0 {
-                    *counts.entry(def.label.to_string()).or_insert(0) += n;
-                }
+        for pattern in self.patterns.patterns() {
+            if !pattern.applies_at(self.level, true) {
+                continue;
+            }
+            let count = pattern.regex().find_iter(text).count();
+            if count > 0 {
+                *counts.entry(pattern.label().to_string()).or_insert(0) += count;
             }
         }
 
@@ -71,20 +83,33 @@ impl Auditor for ObfsckAuditor {
 // ---------------------------------------------------------------------------
 // PatternSuggester adapter
 // ---------------------------------------------------------------------------
-// NOTE: The audit pass MUST iterate SECRET_PATTERN_DEFS exactly once.
+// NOTE: The audit pass MUST iterate the bundled PatternSet exactly once.
 // The YAML config groups are generated from the same source at build time;
 // iterating both would double-count every hit. Tests below enforce this invariant.
 
-#[derive(Debug, Default, Clone, Copy)]
-pub struct PatternSuggester;
+#[derive(Debug, Clone)]
+pub struct PatternSuggester {
+    patterns: PatternSet,
+}
+
+impl Default for PatternSuggester {
+    fn default() -> Self {
+        Self {
+            patterns: bundled_patterns().clone(),
+        }
+    }
+}
 
 impl FilterSuggester for PatternSuggester {
     // qual:allow(iosp) reason: "integration function — audits examples and maps hits to pattern defs"
     fn suggest(&self, examples: &[String]) -> Vec<FilterSuggestion> {
         // Strategy: run audit on each example; for every hit, propose the
-        // compiled pattern from SECRET_PATTERN_DEFS as the suggested filter.
+        // compiled pattern from the bundled PatternSet as the suggested filter.
         // De-duplicate by label.
-        let auditor = ObfsckAuditor;
+        let auditor = ObfsckAuditor {
+            patterns: self.patterns.clone(),
+            level: ObfuscationLevel::Minimal,
+        };
         let mut seen = std::collections::HashSet::new();
         let mut suggestions = Vec::new();
 
@@ -95,10 +120,15 @@ impl FilterSuggester for PatternSuggester {
                     continue;
                 }
                 // Find the source pattern def for this label
-                if let Some(def) = SECRET_PATTERN_DEFS.iter().find(|d| d.label == hit.label) {
+                if let Some(pattern) = self
+                    .patterns
+                    .patterns()
+                    .iter()
+                    .find(|pattern| pattern.label() == hit.label)
+                {
                     seen.insert(hit.label.clone());
                     suggestions.push(FilterSuggestion {
-                        pattern: def.pattern.to_string(),
+                        pattern: pattern.expression().to_string(),
                         label: hit.label,
                     });
                 }
@@ -119,7 +149,7 @@ mod tests {
 
     /// Asserts that no label appears more than once in the audit results.
     ///
-    /// SECRET_PATTERN_DEFS is the single source of patterns; if the audit pass
+    /// the bundled PatternSet is the single source of patterns; if the audit pass
     /// were also to iterate the YAML config groups (built from the same source),
     /// every label would appear twice. This test detects that regression by
     /// verifying the hits Vec contains no duplicate labels.
@@ -139,7 +169,7 @@ mod tests {
         let github = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
         let input = format!("key1={anthropic} key2={github}");
-        let auditor = ObfsckAuditor;
+        let auditor = ObfsckAuditor::default();
         let hits = auditor.audit(&input);
 
         // No label must appear more than once — double iteration of pattern
@@ -184,7 +214,7 @@ mod tests {
     #[test]
     fn audit_is_stateless_across_invocations() {
         let input = "token=ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-        let auditor = ObfsckAuditor;
+        let auditor = ObfsckAuditor::default();
 
         let first = auditor.audit(input);
         let second = auditor.audit(input);

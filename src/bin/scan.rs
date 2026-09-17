@@ -12,15 +12,11 @@
 
 use clap::Parser;
 use obfsck::adapters::GitleaksAdapter;
-use obfsck::ports::{Finding, PortsError, SecretScanner};
-use obfsck::yaml_config::SecretsConfig;
-use obfsck::{Allowlist, ObfuscationLevel, Obfuscator};
-use regex::RegexBuilder;
+use obfsck::ports::{Finding, SecretScanner};
+use obfsck::{Allowlist, ObfuscationLevel, Obfuscator, PatternSet};
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process;
-
-static BUNDLED_CONFIG: &str = include_str!("../../config/secrets.yaml");
 
 #[derive(Parser)]
 #[command(about = "Scan a diff for secrets using obfsck and gitleaks. \
@@ -102,40 +98,11 @@ fn load_repo_toml_allowlist() -> Option<Vec<String>> {
 struct ObfsckScanner {
     level: ObfuscationLevel,
     allowlist: Allowlist,
+    patterns: PatternSet,
 }
 
 impl SecretScanner for ObfsckScanner {
     fn scan_diff(&self, diff: &str) -> obfsck::ports::Result<Vec<Finding>> {
-        let yaml = BUNDLED_CONFIG;
-        let config: SecretsConfig =
-            serde_yaml::from_str(yaml).map_err(|e| PortsError::Config(Box::new(e)))?;
-
-        let level = self.level;
-        let is_paranoid = level == ObfuscationLevel::Paranoid;
-
-        let patterns: Vec<(regex::Regex, String)> = config
-            .groups
-            .values()
-            .filter(|g| g.applies_at(level))
-            .flat_map(|g| g.patterns.iter())
-            .chain(config.custom.iter())
-            .filter(|p| !p.paranoid_only || is_paranoid)
-            .filter_map(
-                |p| match RegexBuilder::new(&p.pattern).case_insensitive(true).build() {
-                    Ok(re) => Some((re, p.label.clone())),
-                    Err(e) => {
-                        const PATTERN_SNIPPET_LEN: usize = 60;
-                        let snippet: String = p.pattern.chars().take(PATTERN_SNIPPET_LEN).collect();
-                        eprintln!(
-                            "warning: skipping invalid pattern '{}' ({}): {e}",
-                            p.label, snippet
-                        );
-                        None
-                    }
-                },
-            )
-            .collect();
-
         let mut findings = Vec::new();
 
         let mut current_path: Option<String> = None;
@@ -167,11 +134,16 @@ impl SecretScanner for ObfsckScanner {
                 continue;
             }
 
-            // Run YAML patterns.
-            for (re, label) in &patterns {
-                if re.is_match(content) {
+            let mut matched_pattern = false;
+            for pattern in self.patterns.patterns() {
+                if pattern.applies_at(self.level, true) && pattern.regex().is_match(content) {
+                    matched_pattern = true;
+                    let provenance = pattern
+                        .group()
+                        .map(|group| format!(" (group: {group})"))
+                        .unwrap_or_default();
                     findings.push(finding_at(
-                        format!("[REDACTED-{label}] pattern matched"),
+                        format!("[REDACTED-{}] pattern matched{provenance}", pattern.label()),
                         current_path.as_deref(),
                         source_line,
                     ));
@@ -179,10 +151,11 @@ impl SecretScanner for ObfsckScanner {
             }
 
             // Run structural obfuscator — if any obfuscation happens the text changed.
-            let mut obfuscator =
-                Obfuscator::new(level).with_allowlist(self.allowlist.exact_entries());
+            let mut obfuscator = Obfuscator::new(self.level)
+                .with_pattern_set(self.patterns.clone())
+                .with_allowlist(self.allowlist.exact_entries());
             let obfuscated = obfuscator.obfuscate(content);
-            if obfuscated != content {
+            if obfuscated != content && !matched_pattern {
                 findings.push(finding_at(
                     "structural secret/PII detected by obfsck",
                     current_path.as_deref(),
@@ -266,7 +239,11 @@ fn main() {
 
     // Run native obfsck scanner.
     let allowlist = load_allowlist();
-    let obfsck = ObfsckScanner { level, allowlist };
+    let obfsck = ObfsckScanner {
+        level,
+        allowlist,
+        patterns: PatternSet::bundled(),
+    };
     match obfsck.scan_diff(&diff) {
         Ok(findings) => all_findings.extend(findings),
         Err(e) => {

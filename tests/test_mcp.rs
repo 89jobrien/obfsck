@@ -15,14 +15,14 @@ use obfsck::mcp::{
 
 #[test]
 fn auditor_returns_empty_hits_for_clean_input() {
-    let auditor = ObfsckAuditor;
+    let auditor = ObfsckAuditor::default();
     let hits = auditor.audit("no secrets here");
     assert!(hits.is_empty());
 }
 
 #[test]
 fn auditor_counts_hits_for_matching_pattern() {
-    let auditor = ObfsckAuditor;
+    let auditor = ObfsckAuditor::default();
     // A GitHub PAT triggers the gh-pat pattern.
     let hits = auditor.audit("token ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     assert!(!hits.is_empty(), "expected at least one hit");
@@ -32,7 +32,7 @@ fn auditor_counts_hits_for_matching_pattern() {
 
 #[test]
 fn auditor_aggregates_multiple_matches_of_same_pattern() {
-    let auditor = ObfsckAuditor;
+    let auditor = ObfsckAuditor::default();
     let input = "ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa and \
                  ghp_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
     let hits = auditor.audit(input);
@@ -42,11 +42,21 @@ fn auditor_aggregates_multiple_matches_of_same_pattern() {
 
 #[test]
 fn auditor_hit_has_label_and_count() {
-    let auditor = ObfsckAuditor;
+    let auditor = ObfsckAuditor::default();
     let hits = auditor.audit("ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     assert!(!hits.is_empty());
     assert!(!hits[0].label.is_empty());
     assert!(hits[0].count > 0);
+}
+
+#[test]
+fn default_auditor_excludes_paranoid_only_patterns() {
+    let auditor = ObfsckAuditor::default();
+    let input = "a".repeat(40);
+
+    let hits = auditor.audit(&input);
+
+    assert!(!hits.iter().any(|hit| hit.label == "SENDBIRD-TOKEN"));
 }
 
 // ---------------------------------------------------------------------------
@@ -55,14 +65,14 @@ fn auditor_hit_has_label_and_count() {
 
 #[test]
 fn suggester_returns_empty_for_clean_examples() {
-    let suggester = PatternSuggester;
+    let suggester = PatternSuggester::default();
     let suggestions = suggester.suggest(&["hello world".to_string(), "no secrets".to_string()]);
     assert!(suggestions.is_empty());
 }
 
 #[test]
 fn suggester_proposes_pattern_for_known_secret_example() {
-    let suggester = PatternSuggester;
+    let suggester = PatternSuggester::default();
     let examples = vec!["ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string()];
     let suggestions = suggester.suggest(&examples);
     assert!(!suggestions.is_empty(), "expected at least one suggestion");
@@ -72,7 +82,7 @@ fn suggester_proposes_pattern_for_known_secret_example() {
 
 #[test]
 fn suggestion_pattern_is_valid_regex() {
-    let suggester = PatternSuggester;
+    let suggester = PatternSuggester::default();
     let examples = vec!["ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string()];
     let suggestions = suggester.suggest(&examples);
     for s in &suggestions {

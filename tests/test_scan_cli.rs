@@ -42,4 +42,13 @@ fn scan_diagnostics_do_not_echo_secret_content() {
         stderr.contains("config.txt:7"),
         "missing source location: {stderr}"
     );
+    assert!(
+        stderr.contains("communication"),
+        "missing pattern group provenance: {stderr}"
+    );
+    assert_eq!(
+        stderr.matches("[obfsck]").count(),
+        1,
+        "pattern hit was counted more than once: {stderr}"
+    );
 }

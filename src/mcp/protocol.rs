@@ -132,7 +132,7 @@ fn dispatch_call(req: &JsonRpcRequest) -> JsonRpcResponse {
                     );
                 }
             };
-            let auditor = ObfsckAuditor;
+            let auditor = ObfsckAuditor::default();
             let hits: Vec<Value> = auditor
                 .audit(text)
                 .into_iter()
@@ -154,7 +154,7 @@ fn dispatch_call(req: &JsonRpcRequest) -> JsonRpcResponse {
                     );
                 }
             };
-            let suggester = PatternSuggester;
+            let suggester = PatternSuggester::default();
             let suggestions: Vec<Value> = suggester
                 .suggest(&examples)
                 .into_iter()

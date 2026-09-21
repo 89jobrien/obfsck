@@ -6,9 +6,7 @@
 use obfsck::{ObfuscationLevel, Obfuscator, obfuscate_text};
 use proptest::prelude::*;
 
-// ---------------------------------------------------------------------------
 // shannon_entropy invariants (tested via obfuscation behaviour)
-// ---------------------------------------------------------------------------
 
 proptest! {
     /// Obfuscating any valid UTF-8 string must not panic.
@@ -45,9 +43,7 @@ proptest! {
     }
 }
 
-// ---------------------------------------------------------------------------
 // IP classification invariants
-// ---------------------------------------------------------------------------
 
 proptest! {
     /// All RFC 1918 10.x.x.x addresses are classified as internal.
@@ -108,9 +104,7 @@ proptest! {
     }
 }
 
-// ---------------------------------------------------------------------------
 // ObfuscationLevel::parse invariants
-// ---------------------------------------------------------------------------
 
 proptest! {
     /// parse(level.to_string()) round-trips for known levels.
@@ -134,9 +128,7 @@ proptest! {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Allowlist invariant
-// ---------------------------------------------------------------------------
 
 proptest! {
     /// Any value in the allowlist passes through obfuscation unchanged.

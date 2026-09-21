@@ -1,3 +1,5 @@
+//! Redacts a fetched or synthetic large log payload and reports token totals.
+
 use obfsck::{ObfuscationLevel, obfuscate_text};
 use std::env;
 use std::process::Command;

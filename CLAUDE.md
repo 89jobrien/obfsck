@@ -48,7 +48,7 @@ mutually exclusive — enabling both is a compile error.
 
 Copy `.envrc.example` → `.envrc`. Key vars:
 
-```
+```text
 RUST_LOG=obfsck=info,tower_http=debug   # log level
 LOG_FORMAT=pretty|json                  # pretty for dev, json for prod sim
 LOG_DIR=~/logs/obfsck                   # enable file logging

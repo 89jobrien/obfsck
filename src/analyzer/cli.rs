@@ -1,3 +1,5 @@
+//! Parses analyzer CLI options and renders fetched alert analyses.
+
 use super::{AlertAnalyzer, Result, load_config};
 
 const SEPARATOR: &str = "======================================================================";
@@ -33,6 +35,7 @@ pub struct CliArgs {
     pub backend: Option<String>,
 }
 
+/// Applies CLI overrides, analyzes matching alerts, and returns the process exit code.
 pub fn run_from_args(args: CliArgs) -> Result<i32> {
     let mut config = load_config(args.config.as_deref())?;
 

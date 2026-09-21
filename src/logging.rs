@@ -1,3 +1,5 @@
+//! Configures structured or pretty tracing to stdout and optional log files.
+
 use std::path::PathBuf;
 use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -8,6 +10,7 @@ pub enum LogFormat {
 }
 
 impl LogFormat {
+    /// Parses `pretty`; all absent or unrecognized values select JSON output.
     pub fn parse(value: Option<&str>) -> Self {
         match value.map(str::trim).map(str::to_ascii_lowercase).as_deref() {
             Some("pretty") => Self::Pretty,

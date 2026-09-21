@@ -1,3 +1,5 @@
+//! Audits text with bundled patterns and suggests matching filters for MCP clients.
+
 pub mod protocol;
 
 // TODO(roadmap-mcp): Complete the level-aware audit and filter-generation contract.
@@ -10,9 +12,7 @@ fn bundled_patterns() -> &'static PatternSet {
     PATTERNS.get_or_init(PatternSet::bundled)
 }
 
-// ---------------------------------------------------------------------------
 // Domain types
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditHit {
@@ -26,21 +26,19 @@ pub struct FilterSuggestion {
     pub label: String,
 }
 
-// ---------------------------------------------------------------------------
 // Ports (traits)
-// ---------------------------------------------------------------------------
 
 pub trait Auditor {
+    /// Counts applicable bundled-pattern matches by redaction label.
     fn audit(&self, text: &str) -> Vec<AuditHit>;
 }
 
 pub trait FilterSuggester {
+    /// Suggests deduplicated pattern expressions that match the examples.
     fn suggest(&self, examples: &[String]) -> Vec<FilterSuggestion>;
 }
 
-// ---------------------------------------------------------------------------
 // ObfsckAuditor adapter
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
 pub struct ObfsckAuditor {
@@ -80,9 +78,7 @@ impl Auditor for ObfsckAuditor {
     }
 }
 
-// ---------------------------------------------------------------------------
 // PatternSuggester adapter
-// ---------------------------------------------------------------------------
 // NOTE: The audit pass MUST iterate the bundled PatternSet exactly once.
 // The YAML config groups are generated from the same source at build time;
 // iterating both would double-count every hit. Tests below enforce this invariant.
@@ -139,9 +135,7 @@ impl FilterSuggester for PatternSuggester {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Tests
-// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {

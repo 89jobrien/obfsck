@@ -1,3 +1,5 @@
+//! Verifies build-time secret pattern generation and bundled provenance metadata.
+
 // Smoke test: verifies the generated secrets.rs contains expected pattern names.
 // This test will PASS currently (src/secrets.rs exists). After Task 3 deletes
 // src/secrets.rs and wires build.rs, it must still pass.

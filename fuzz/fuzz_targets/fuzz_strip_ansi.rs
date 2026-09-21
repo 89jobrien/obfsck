@@ -1,3 +1,5 @@
+//! Fuzzes the ANSI escape stripping logic used by the Gitleaks adapter.
+
 #![no_main]
 use libfuzzer_sys::fuzz_target;
 

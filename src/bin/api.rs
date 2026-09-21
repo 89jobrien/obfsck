@@ -1,3 +1,5 @@
+//! Starts the alert-analysis HTTP API with configurable host and port.
+
 use clap::Parser;
 use obfsck::api::run_server;
 use tracing::{error, info};

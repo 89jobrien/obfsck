@@ -1,3 +1,5 @@
+//! Compares single-regex and legacy multi-regex user obfuscation throughput.
+
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use regex::Regex;
 use std::collections::HashMap;

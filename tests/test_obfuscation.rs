@@ -1,3 +1,5 @@
+//! Covers obfuscation levels, token mappings, pattern gates, and redaction behavior.
+
 use obfsck::{
     ObfuscationLevel, Obfuscator, obfuscate_alert, obfuscate_text, secret_pattern_errors,
 };

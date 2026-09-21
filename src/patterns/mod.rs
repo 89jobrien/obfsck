@@ -1,3 +1,5 @@
+//! Compiles bundled or configured secret patterns with level and provenance metadata.
+
 use crate::yaml_config::{MinLevel, SecretsConfig};
 use crate::{ObfuscationLevel, SECRET_PATTERN_DEFS};
 use regex::{Regex, RegexBuilder};

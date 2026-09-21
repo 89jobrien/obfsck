@@ -1,3 +1,5 @@
+//! Demonstrates paranoid redaction and mapping counts across synthetic log records.
+
 use obfsck::{ObfuscationLevel, obfuscate_text};
 
 fn main() {

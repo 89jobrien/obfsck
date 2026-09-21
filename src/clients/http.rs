@@ -1,3 +1,5 @@
+//! Provides blocking HTTP helpers shared by supported log backends.
+
 use super::Result;
 use reqwest::blocking::Client;
 use serde::de::DeserializeOwned;

@@ -1,3 +1,5 @@
+//! Defines security-analysis prompts and fallback MITRE ATT&CK mappings.
+
 use std::collections::HashMap;
 
 pub const SYSTEM_PROMPT: &str = r#"You are a senior security analyst and incident responder with deep expertise in:
@@ -71,6 +73,7 @@ Additional context:
 
 Return only strict JSON matching the required schema."#;
 
+/// Returns fallback MITRE ATT&CK mappings keyed by known alert rule names.
 pub fn mitre_mapping() -> HashMap<&'static str, &'static str> {
     HashMap::from([
         (

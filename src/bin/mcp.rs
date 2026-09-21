@@ -1,3 +1,5 @@
+//! Serves obfsck audit and filter-suggestion tools over JSON-RPC stdio.
+
 /// obfsck MCP server — exposes `audit` and `generate-filters` tools via JSON-RPC stdio.
 ///
 /// mcpipe launches this binary and routes tool calls through the normal MCP protocol.

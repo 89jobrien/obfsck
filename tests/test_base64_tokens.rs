@@ -33,9 +33,7 @@ fn batch_line(token: &str) -> String {
     format!("batch: {token}")
 }
 
-// ---------------------------------------------------------------------------
 // hvs. (vault service token) -- 90-120 char payload
-// ---------------------------------------------------------------------------
 
 #[test]
 fn vault_service_token_alphanumeric_only() {
@@ -99,9 +97,7 @@ fn vault_service_token_with_slash_in_middle() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // hvb. (vault batch token) -- 138-300 char payload
-// ---------------------------------------------------------------------------
 
 #[test]
 fn vault_batch_token_alphanumeric_only() {

@@ -1,3 +1,5 @@
+//! Routes canonical redaction and analysis commands and handles redaction I/O.
+
 use crate::yaml_config::SecretsConfig;
 use crate::{Allowlist, ObfuscationLevel, Obfuscator, PatternSet};
 use clap::{Parser, Subcommand};

@@ -1,3 +1,5 @@
+//! Verifies canonical CLI routing and deprecated binary compatibility warnings.
+
 #![cfg(feature = "analyzer")]
 
 use std::process::{Command, Stdio};

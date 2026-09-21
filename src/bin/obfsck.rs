@@ -1,3 +1,5 @@
+//! Canonical command-line entry point for redaction and alert analysis.
+
 use clap::Parser;
 use obfsck::cli::{ObfsckArgs, run_from_args};
 

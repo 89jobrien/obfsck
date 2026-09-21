@@ -1,3 +1,5 @@
+//! Covers analyzer duration parsing and environment placeholder expansion.
+
 #![cfg(feature = "analyzer")]
 
 use obfsck::analyzer::{expand_env_string, parse_last};

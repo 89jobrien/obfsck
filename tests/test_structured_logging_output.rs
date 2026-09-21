@@ -1,3 +1,5 @@
+//! Verifies API startup logs honor JSON and pretty output configuration.
+
 #![cfg(feature = "analyzer")]
 
 use serde_json::Value;

@@ -1,3 +1,5 @@
+//! Normalizes backend log entries, labels, and timestamps into analyzer alerts.
+
 use crate::json_utils::extract_json_object;
 use chrono::{DateTime, Utc};
 use serde_json::{Map, Value, json};

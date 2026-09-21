@@ -1,3 +1,5 @@
+//! Dispatches MCP JSON-RPC initialization, tool discovery, and tool calls.
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -91,6 +93,7 @@ fn tools_schema() -> Value {
 const JSONRPC_METHOD_NOT_FOUND: i32 = -32601;
 const JSONRPC_INVALID_PARAMS: i32 = -32602;
 
+/// Dispatches a supported MCP request and returns a JSON-RPC response.
 pub fn dispatch_tool(req: &JsonRpcRequest) -> JsonRpcResponse {
     match req.method.as_str() {
         "initialize" => JsonRpcResponse::ok(

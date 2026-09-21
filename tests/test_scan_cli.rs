@@ -1,3 +1,5 @@
+//! Verifies diff-scanner diagnostics identify findings without echoing secrets.
+
 #![cfg(feature = "analyzer")]
 
 use std::io::Write;

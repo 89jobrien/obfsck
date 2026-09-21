@@ -1,3 +1,5 @@
+//! Exercises redaction audit output, profiles, and custom configuration through the CLI.
+
 #![cfg(feature = "analyzer")]
 
 use std::process::Command;

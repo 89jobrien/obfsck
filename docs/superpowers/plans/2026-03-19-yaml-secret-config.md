@@ -26,6 +26,7 @@
 ## Task 1: Create `config/secrets.yaml` with grouped patterns
 
 **Files:**
+
 - Create: `config/secrets.yaml`
 
 This file is the single source of truth for secret patterns. Include every pattern currently in `secrets.rs`, grouped by category. `paranoid_only: true` patterns are only applied when `--level paranoid` is set. `pagerduty_api_key` (a broad 20-char base64 pattern) is moved to the `paranoid` group due to false-positive risk.
@@ -385,6 +386,7 @@ git commit -m "feat: add grouped secrets.yaml with ai_apis, pii, and paranoid gr
 ## Task 2: Wire `redact` binary to load YAML config
 
 **Files:**
+
 - Modify: `Cargo.toml`
 - Rewrite: `src/bin/redact.rs`
 - Create: `tests/redact_yaml.rs`

@@ -9,7 +9,7 @@ A data-driven Python demo script that showcases every redaction feature of the `
 
 ## CLI
 
-```
+```text
 uv run demo/demo.py [FILE] [--level minimal|standard|paranoid]
 ```
 
@@ -21,7 +21,7 @@ uv run demo/demo.py [FILE] [--level minimal|standard|paranoid]
 
 ## File Structure
 
-```
+```text
 demo/
   demo.py                      # PEP 723 inline-metadata script (uv run)
   examples/
@@ -42,6 +42,7 @@ demo/
 ```
 
 Note: there are two distinct uses of "paranoid" in this codebase:
+
 - `paranoid_only: true` in `config/secrets.yaml` — pattern-matched secrets gated behind `--level paranoid` (e.g. AWS secret key, Datadog API key, base64 blobs). Covered in `10_paranoid_patterns.yaml`.
 - `ObfuscationLevel::Paranoid` structural features — paths, hostnames, high-entropy strings. Covered in `12_structural.yaml` with per-example level overrides.
 
@@ -93,7 +94,7 @@ examples:
 
 ### Showcase mode
 
-```
+```text
 ━━━━━━━━━━━━━━━━━━ obfsck demo ━━━━━━━━━━━━━━━━━━
   Redact secrets & PII before LLM analysis
 
@@ -125,7 +126,7 @@ examples:
 
 When a fixture file sets `disabled: true` at the file scope, the demo renders the examples but adds a caption beneath the panel:
 
-```
+```text
   ⚠  This group is disabled by default. Enable it in config/secrets.yaml under groups.pii.
 ```
 
@@ -133,7 +134,7 @@ This makes clear that identical before/after output is expected behaviour, not a
 
 ### File mode
 
-```
+```text
 ━━━━ demo.log  (level: standard) ━━━━
 
 ┌─ Input ──────────┐
@@ -150,7 +151,7 @@ No banner. One rule showing filename and level, then the panels.
 
 The script resolves the binary path relative to its own location (`demo/../target/release/redact`). If the binary does not exist, it prints a human-readable error and exits with code 1:
 
-```
+```text
 Error: binary not found at target/release/redact
 Run `cargo build --release` first.
 ```
@@ -207,6 +208,7 @@ examples:
 ```
 
 Level summary printed as a legend above the table:
+
 - **minimal** — secrets patterns only (YAML config groups)
 - **standard** — + IPs, emails, containers, users
 - **paranoid** — + paths, hostnames, high-entropy strings; also unlocks `paranoid_only: true` patterns

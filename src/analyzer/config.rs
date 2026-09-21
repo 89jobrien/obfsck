@@ -1,3 +1,5 @@
+//! Loads analyzer provider and log-backend configuration with environment expansion.
+
 use super::{AnalyzerError, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -162,6 +164,7 @@ fn default_anthropic_model() -> String {
     "claude-3-haiku-20240307".to_string()
 }
 
+/// Loads analyzer configuration from an explicit or default path, falling back to defaults.
 #[instrument(fields(config_path = ?config_path))]
 pub fn load_config(config_path: Option<&str>) -> Result<AnalyzerConfig> {
     let mut raw = None;
@@ -231,6 +234,7 @@ fn read_secret(env_var: &str) -> Option<String> {
     env::var(env_var).ok()
 }
 
+/// Expands `${VAR}` and `${VAR:-default}` references, including file-backed secrets.
 pub fn expand_env_string(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
     let mut rest = input;

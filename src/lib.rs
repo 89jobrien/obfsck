@@ -50,6 +50,7 @@ pub struct Allowlist {
 
 impl Allowlist {
     // qual:allow(iosp) reason: "constructor — partitions entries by type; logic and construction are inseparable"
+    /// Partitions entries into exact matches and glob patterns.
     pub fn new(entries: impl IntoIterator<Item = String>) -> Self {
         let mut exact = HashSet::new();
         let mut globs = Vec::new();
@@ -85,6 +86,7 @@ impl Allowlist {
     }
 
     // qual:allow(iosp) reason: "pure boolean conjunction — && combines two delegate calls, no mixed logic"
+    /// Returns whether the allowlist contains no exact or glob entries.
     pub fn is_empty(&self) -> bool {
         self.exact.is_empty() && self.globs.is_empty()
     }
@@ -111,6 +113,7 @@ pub enum ObfuscationLevel {
 }
 
 impl ObfuscationLevel {
+    /// Parses a case-insensitive obfuscation level name.
     pub fn parse(s: &str) -> Option<Self> {
         match s.trim().to_ascii_lowercase().as_str() {
             "minimal" => Some(Self::Minimal),
@@ -133,6 +136,7 @@ pub struct ObfuscationMap {
 }
 
 impl ObfuscationMap {
+    /// Returns an owned, public snapshot of the current token mappings.
     pub fn export(&self) -> ObfuscationMapExport {
         ObfuscationMapExport::from(self)
     }
@@ -231,6 +235,7 @@ pub struct Obfuscator {
 }
 
 impl Obfuscator {
+    /// Creates an obfuscator with bundled patterns and PII redaction enabled.
     pub fn new(level: ObfuscationLevel) -> Self {
         Self {
             level,
@@ -261,14 +266,17 @@ impl Obfuscator {
         self
     }
 
+    /// Returns the configured obfuscation level.
     pub fn level(&self) -> ObfuscationLevel {
         self.level
     }
 
+    /// Returns an owned snapshot of mappings accumulated so far.
     pub fn mapping(&self) -> ObfuscationMapExport {
         self.map.export()
     }
 
+    /// Redacts secrets and level-appropriate PII while preserving stable token mappings.
     pub fn obfuscate(&mut self, text: &str) -> String {
         if text.is_empty() {
             return text.to_string();
@@ -656,12 +664,14 @@ fn get_or_create_token(
     token
 }
 
+/// Redacts one text value and returns the redacted output with its token mappings.
 pub fn obfuscate_text(text: &str, level: ObfuscationLevel) -> (String, ObfuscationMapExport) {
     let mut obfuscator = Obfuscator::new(level);
     let out = obfuscator.obfuscate(text);
     (out, obfuscator.mapping())
 }
 
+/// Redacts an alert message and all field values with one shared mapping.
 pub fn obfuscate_alert(
     output: Option<&str>,
     output_fields: Option<&HashMap<String, String>>,
@@ -708,6 +718,7 @@ pub use secrets::SECRET_PATTERN_DEFS;
 
 static SECRET_PATTERN_ERRORS: OnceLock<Vec<SecretPatternError>> = OnceLock::new();
 
+/// Returns cached compilation errors for bundled secret patterns.
 pub fn secret_pattern_errors() -> &'static [SecretPatternError] {
     SECRET_PATTERN_ERRORS.get_or_init(|| {
         default_pattern_set()

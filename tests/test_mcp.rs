@@ -1,3 +1,5 @@
+//! Exercises MCP auditing, filter suggestions, and JSON-RPC dispatch.
+
 /// Tests for obfsck MCP server mode (obfsck-11).
 ///
 /// Test order follows the TDD cycle:
@@ -9,9 +11,7 @@ use obfsck::mcp::{
     protocol::{JsonRpcRequest, dispatch_tool},
 };
 
-// ---------------------------------------------------------------------------
 // Auditor port
-// ---------------------------------------------------------------------------
 
 #[test]
 fn auditor_returns_empty_hits_for_clean_input() {
@@ -59,9 +59,7 @@ fn default_auditor_excludes_paranoid_only_patterns() {
     assert!(!hits.iter().any(|hit| hit.label == "SENDBIRD-TOKEN"));
 }
 
-// ---------------------------------------------------------------------------
 // FilterSuggester port
-// ---------------------------------------------------------------------------
 
 #[test]
 fn suggester_returns_empty_for_clean_examples() {
@@ -94,9 +92,7 @@ fn suggestion_pattern_is_valid_regex() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // MCP JSON-RPC protocol
-// ---------------------------------------------------------------------------
 
 #[test]
 fn dispatch_tool_handles_initialize_request() {

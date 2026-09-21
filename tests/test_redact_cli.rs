@@ -84,9 +84,7 @@ fn nonexistent_input_file_exits_nonzero() {
     assert!(!status.success(), "should have failed with nonzero exit");
 }
 
-// =============================================================================
 // File I/O failure modes
-// =============================================================================
 
 /// Unreadable input file exits nonzero and emits an error message to stderr.
 #[test]
@@ -206,13 +204,10 @@ fn stdin_to_stdout_pipeline() {
     );
 }
 
-// =============================================================================
 // PII level-gating invariants
-//
 // The `pii` group in config/secrets.yaml has `min_level: standard`.
 // These tests lock in the guarantee that --level minimal leaves PII untouched,
 // and that --level standard (the privacy-forward default) redacts it.
-// =============================================================================
 
 /// Input containing representative PII. Reads from the committed fixture file
 /// so no PII literals appear in this source file (which would trigger the
@@ -369,12 +364,9 @@ fn structural_pii_untouched_at_minimal() {
     );
 }
 
-// =============================================================================
 // --pii off flag
-//
 // When --pii off is passed, PII redaction (YAML pii group + structural email/IP)
 // must be suppressed even at standard or paranoid level. Secrets are unaffected.
-// =============================================================================
 
 fn run_redact_stdin_args(input: &str, args: &[&str]) -> std::process::Output {
     use std::io::Write;
@@ -460,9 +452,7 @@ fn pii_off_does_not_suppress_secrets() {
     );
 }
 
-// =============================================================================
 // Richer error messages (feat: richer errors with offending line context)
-// =============================================================================
 
 /// An invalid regex pattern in a custom config emits a warning to stderr
 /// that includes the pattern label and a snippet of the bad regex.

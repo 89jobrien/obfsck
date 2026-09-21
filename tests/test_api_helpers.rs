@@ -1,3 +1,5 @@
+//! Covers API query parsing, cache normalization, and stable cache keys.
+
 #![cfg(feature = "analyzer")]
 
 use obfsck::api::{get_cache_key, normalize_output, parse_boolish};

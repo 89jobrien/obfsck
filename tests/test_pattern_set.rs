@@ -1,3 +1,5 @@
+//! Verifies pattern provenance, level normalization, ordering, and diagnostics.
+
 use obfsck::{ObfuscationLevel, PatternSet, yaml_config::SecretsConfig};
 
 fn parse_config(yaml: &str) -> SecretsConfig {

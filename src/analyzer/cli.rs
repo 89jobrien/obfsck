@@ -6,7 +6,7 @@ use serde_json::Value;
 use tracing::{debug, error, info, warn};
 
 #[derive(Debug, Parser, Clone)]
-#[command(name = "alert-analyzer")]
+#[command(name = "alert-analyzer", version)]
 #[command(about = "Alert Analyzer - LLM-powered security alert analysis")]
 pub struct CliArgs {
     #[arg(short = 'c', long = "config")]

@@ -23,6 +23,7 @@ use std::process;
 static BUNDLED_CONFIG: &str = include_str!("../../config/secrets.yaml");
 
 #[derive(Parser)]
+#[command(name = "scan", version)]
 #[command(about = "Scan a diff for secrets using obfsck and gitleaks. \
              Reads unified diff from stdin or uses --staged to capture git diff automatically.")]
 struct Args {

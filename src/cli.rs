@@ -38,6 +38,8 @@ enum ObfsckCommand {
 /// Arguments accepted by the redaction command.
 #[derive(Debug, Parser)]
 #[command(
+    name = "redact",
+    version,
     about = "Redact secrets and PII from a file or stdin. Output goes to stdout unless -o is given."
 )]
 pub struct RedactArgs {

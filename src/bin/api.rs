@@ -3,7 +3,7 @@ use obfsck::api::run_server;
 use tracing::{error, info};
 
 #[derive(Debug, Parser)]
-#[command(name = "analysis-api")]
+#[command(name = "analysis-api", version)]
 #[command(about = "REST API for AI-powered alert analysis")]
 struct Args {
     #[arg(long, default_value = "0.0.0.0")]

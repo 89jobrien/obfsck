@@ -9,6 +9,11 @@ use obfsck::mcp::protocol::{JsonRpcRequest, dispatch_tool};
 use std::io::{self, BufRead, Write};
 
 fn main() {
+    if std::env::args().any(|arg| arg == "--version" || arg == "-V") {
+        println!("obfsck-mcp {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
+
     let stdin = io::stdin();
     let stdout = io::stdout();
     let mut out = io::BufWriter::new(stdout.lock());

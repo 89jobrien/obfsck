@@ -19,6 +19,7 @@ use std::path::PathBuf;
 use std::process;
 
 #[derive(Parser)]
+#[command(name = "scan", version)]
 #[command(about = "Scan a diff for secrets using obfsck and gitleaks. \
              Reads unified diff from stdin or uses --staged to capture git diff automatically.")]
 struct Args {

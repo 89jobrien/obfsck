@@ -2,7 +2,7 @@
 
 use crate::yaml_config::SecretsConfig;
 use crate::{Allowlist, ObfuscationLevel, Obfuscator, PatternSet};
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use miette::{Context, IntoDiagnostic, Result};
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
@@ -55,6 +55,10 @@ pub struct RedactArgs {
     #[arg(short, long, default_value = "minimal")]
     level: String,
 
+    /// Redaction policy. Model-ingress uses only bundled patterns and ignores allowlists.
+    #[arg(long, value_enum, default_value_t = RedactionPolicy::Default)]
+    policy: RedactionPolicy,
+
     /// Path to secrets YAML config.
     /// Lookup order: explicit path → ~/.config/obfsck/secrets.yaml → bundled config.
     #[arg(short, long)]
@@ -82,6 +86,12 @@ pub struct RedactArgs {
     /// File containing allowlist entries, one per line.
     #[arg(long = "allowlist-file", value_name = "PATH")]
     allowlist_file: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum RedactionPolicy {
+    Default,
+    ModelIngress,
 }
 
 fn apply_profile(config: &mut SecretsConfig, profile: &str, level: &mut ObfuscationLevel) {
@@ -131,7 +141,12 @@ pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
         ObfuscationLevel::Minimal
     });
 
-    let yaml = load_config(args.config.as_deref())?;
+    let model_ingress = args.policy == RedactionPolicy::ModelIngress;
+    let yaml = if model_ingress {
+        BUNDLED_CONFIG.to_string()
+    } else {
+        load_config(args.config.as_deref())?
+    };
     let mut config: SecretsConfig = serde_yaml::from_str(&yaml)
         .into_diagnostic()
         .wrap_err("failed to parse secrets config")?;
@@ -164,6 +179,17 @@ pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
                 .chars()
                 .take(PATTERN_SNIPPET_LEN)
                 .collect();
+            // Default mode reports and skips the invalid pattern. Model-ingress
+            // fails closed: a pattern that cannot compile is a pattern that will
+            // silently not redact, so refuse to run rather than pass text through.
+            if model_ingress {
+                return Err(miette::miette!(
+                    "invalid active pattern '{}' ({}): {}",
+                    definition.label,
+                    snippet,
+                    diagnostic.message()
+                ));
+            }
             eprintln!(
                 "warning: skipping invalid pattern '{}' ({}): {}",
                 definition.label,
@@ -176,26 +202,29 @@ pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
     }
 
     // Build allowlist: CLI flags + allowlist-file + ~/.config/obfsck/allowlist
-    let mut allowlist = args.allowlist;
-    if let Some(path) = &args.allowlist_file {
-        let content = std::fs::read_to_string(path)
-            .into_diagnostic()
-            .wrap_err_with(|| format!("cannot read allowlist-file '{}'", path.display()))?;
-        allowlist.extend(
-            content
-                .lines()
-                .map(|l| l.trim().to_string())
-                .filter(|l| !l.is_empty() && !l.starts_with('#')),
-        );
-    }
-    let user_allowlist = shellexpand::tilde("~/.config/obfsck/allowlist").into_owned();
-    if let Ok(content) = std::fs::read_to_string(&user_allowlist) {
-        allowlist.extend(
-            content
-                .lines()
-                .map(|l| l.trim().to_string())
-                .filter(|l| !l.is_empty() && !l.starts_with('#')),
-        );
+    let mut allowlist = Vec::new();
+    if !model_ingress {
+        allowlist = args.allowlist;
+        if let Some(path) = &args.allowlist_file {
+            let content = std::fs::read_to_string(path)
+                .into_diagnostic()
+                .wrap_err_with(|| format!("cannot read allowlist-file '{}'", path.display()))?;
+            allowlist.extend(
+                content
+                    .lines()
+                    .map(|l| l.trim().to_string())
+                    .filter(|l| !l.is_empty() && !l.starts_with('#')),
+            );
+        }
+        let user_allowlist = shellexpand::tilde("~/.config/obfsck/allowlist").into_owned();
+        if let Ok(content) = std::fs::read_to_string(&user_allowlist) {
+            allowlist.extend(
+                content
+                    .lines()
+                    .map(|l| l.trim().to_string())
+                    .filter(|l| !l.is_empty() && !l.starts_with('#')),
+            );
+        }
     }
     let audit_allowlist = Allowlist::new(allowlist.clone());
 

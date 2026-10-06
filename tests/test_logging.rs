@@ -1,3 +1,5 @@
+//! Verifies robust `LOG_FORMAT` parsing and its JSON default.
+
 #![cfg(feature = "analyzer")]
 
 use obfsck::logging::{LogFormat, LogFormat::*};

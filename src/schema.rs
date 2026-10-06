@@ -1,3 +1,5 @@
+//! Defines the typed LLM analysis response and its generated BAML schema.
+
 use serde::{Deserialize, Serialize};
 use simplify_baml::BamlSchemaRegistry;
 
@@ -46,6 +48,7 @@ pub struct FalsePositive {
     pub distinguishing_factors: Vec<String>,
 }
 
+/// Builds the BAML intermediate representation for `AnalysisOutput` and nested types.
 pub fn analysis_ir() -> simplify_baml::IR {
     BamlSchemaRegistry::new()
         .register::<AnalysisOutput>()

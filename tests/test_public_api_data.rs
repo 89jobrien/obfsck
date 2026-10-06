@@ -1,3 +1,5 @@
+//! Optionally exercises obfuscation against live public JSON API payloads.
+
 use obfsck::{ObfuscationLevel, obfuscate_text};
 use std::process::Command;
 

@@ -1,3 +1,5 @@
+//! Escapes analysis data and renders the HTML results page.
+
 use super::AnalysisPageView;
 use serde_json::{Value, json};
 

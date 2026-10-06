@@ -1,3 +1,5 @@
+//! Generates bundled secret pattern definitions from `config/secrets.yaml`.
+
 // build.rs — generates OUT_DIR/secrets.rs from config/secrets.yaml
 // Uses std only (no build-deps). Minimal line-by-line YAML parser.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
@@ -24,6 +26,7 @@ fn main() {
 #[derive(Debug, Default)]
 struct PatternEntry {
     name: String,
+    group: Option<String>,
     pattern: String,
     label: String,
     paranoid_only: bool,
@@ -85,6 +88,7 @@ fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
     let mut patterns: Vec<PatternEntry> = Vec::new();
     let mut current: Option<PatternEntry> = None;
     // Track the current group's min_level (set when we see `min_level:` outside a pattern entry).
+    let mut current_group_name: Option<String> = None;
     let mut current_group_min_level: Option<String> = None;
 
     for raw_line in yaml.lines() {
@@ -117,6 +121,7 @@ fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
             if let Some(prev) = current.take().filter(|p| !p.name.is_empty()) {
                 patterns.push(prev);
             }
+            current_group_name = Some(trimmed.trim_end_matches(':').to_string());
             current_group_min_level = None;
             continue;
         }
@@ -127,6 +132,7 @@ fn parse_patterns(yaml: &str) -> Vec<PatternEntry> {
             }
             let entry = PatternEntry {
                 name: extract_scalar(trimmed, "- name:").to_string(),
+                group: current_group_name.clone(),
                 min_level: current_group_min_level.clone(),
                 ..PatternEntry::default()
             };
@@ -225,6 +231,7 @@ mod tests {
     fn validate_patterns_accepts_valid_entries() {
         let patterns = vec![PatternEntry {
             name: "foo".to_string(),
+            group: Some("test".to_string()),
             pattern: r"\bfoo\b".to_string(),
             label: "FOO".to_string(),
             paranoid_only: false,
@@ -343,6 +350,12 @@ fn emit_rust(patterns: &[PatternEntry]) -> String {
     );
 
     for p in patterns {
+        let group_escaped = p
+            .group
+            .as_deref()
+            .unwrap_or_default()
+            .replace('\\', "\\\\")
+            .replace('"', "\\\"");
         let pattern_escaped = p.pattern.replace('\\', "\\\\").replace('"', "\\\"");
         let name_escaped = p.name.replace('\\', "\\\\").replace('"', "\\\"");
         let label_escaped = p.label.replace('\\', "\\\\").replace('"', "\\\"");
@@ -353,8 +366,9 @@ fn emit_rust(patterns: &[PatternEntry]) -> String {
             Some(other) => panic!("build.rs: unknown min_level value '{other}'"),
         };
         out.push_str(&format!(
-            "    SecretPatternDef {{\n        name: \"{name}\",\n        pattern: \"{pattern}\",\n        label: \"{label}\",\n        paranoid_only: {paranoid_only},\n        min_level: {min_level},\n    }},\n",
+            "    SecretPatternDef {{\n        name: \"{name}\",\n        group: Some(\"{group}\"),\n        pattern: \"{pattern}\",\n        label: \"{label}\",\n        paranoid_only: {paranoid_only},\n        min_level: {min_level},\n    }},\n",
             name = name_escaped,
+            group = group_escaped,
             pattern = pattern_escaped,
             label = label_escaped,
             paranoid_only = p.paranoid_only,

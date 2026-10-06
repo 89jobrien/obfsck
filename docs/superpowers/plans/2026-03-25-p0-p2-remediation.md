@@ -29,6 +29,7 @@
 ## Task 1 (P0): PII Level-Gating — data structures
 
 **Files:**
+
 - Modify: `src/lib.rs:643-668` (yaml_config module)
 
 - [ ] **Step 1: Write the failing test** in `tests/redact_yaml.rs`
@@ -136,10 +137,13 @@ Find the `pii:` block (around line 282) and add the field right after `enabled: 
 - [ ] **Step 5: Update filter in `src/bin/redact.rs` (lines 49–52)**
 
 Replace:
+
 ```rust
         .filter(|g| g.enabled)
 ```
+
 With:
+
 ```rust
         .filter(|g| g.applies_at(level))
 ```
@@ -147,10 +151,13 @@ With:
 - [ ] **Step 6: Update `apply_yaml_patterns` helper in `tests/redact_yaml.rs` (lines 9–11)**
 
 Replace:
+
 ```rust
         .filter(|g| g.enabled)
 ```
+
 With:
+
 ```rust
         .filter(|g| g.applies_at(level))
 ```
@@ -188,9 +195,9 @@ Adds regression tests: pii_not_applied_at_minimal, pii_applied_at_standard."
 ## Task 2 (P1): Username Regex — POSIX charset expansion
 
 **Files:**
+
 - Modify: `src/lib.rs:615` (user_re function)
 - Modify: `tests/test_obfuscation.rs` (add tests)
-
 - [ ] **Step 1: Write the failing tests** in `tests/test_obfuscation.rs`
 
 Add after `obfuscate_text_replaces_ip_email_and_user_tokens`:
@@ -230,10 +237,13 @@ Expected: both FAIL (only `\w+` chars captured, stopping at `.` or `-`).
 - [ ] **Step 3: Fix user_re in `src/lib.rs` line 615**
 
 Replace:
+
 ```rust
         Regex::new(r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)(\w+)")
 ```
+
 With:
+
 ```rust
         Regex::new(r"(?i)(user=|uid=|username=|--username\s+|by user |/users/|/home/)([A-Za-z0-9._-]+)")
 ```
@@ -271,6 +281,7 @@ Adds regression tests for dotted and hyphenated paths under
 ## Task 3 (P2a): Narrow GitHub secret-scanning ignore rules
 
 **Files:**
+
 - Modify: `.github/secret_scanning.yml`
 
 This is a one-liner config change — no tests needed (GitHub Advanced Security validates it server-side).
@@ -302,6 +313,7 @@ added later will still be scanned for real credentials."
 ## Task 4 (P2b): Integration tests for `redact` CLI file I/O
 
 **Files:**
+
 - Create: `tests/test_redact_cli.rs`
 
 - [ ] **Step 1: Create `tests/test_redact_cli.rs`** with the following content:
@@ -392,6 +404,7 @@ fn nonexistent_input_file_exits_nonzero() {
 - [ ] **Step 2: Add `tempfile` to dev-dependencies in `Cargo.toml`**
 
 In `[dev-dependencies]` section, add:
+
 ```toml
 tempfile = "3"
 ```

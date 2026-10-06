@@ -66,6 +66,7 @@ Several fixture inputs require exact character counts to match their regex. Thes
 ## Task 1: Scaffold — demo.py skeleton, CLI, binary check
 
 **Files:**
+
 - Create: `demo/demo.py`
 
 - [ ] **Step 1: Create `demo/` directory and `demo.py` with PEP 723 header, imports, constants**
@@ -181,6 +182,7 @@ git commit -m "feat(demo): scaffold demo.py with CLI, binary check, data types"
 ## Task 2: Fixture loader
 
 **Files:**
+
 - Modify: `demo/demo.py`
 
 - [ ] **Step 1: Add `load_fixture()` and `load_all_fixtures()`**
@@ -245,6 +247,7 @@ git commit -m "feat(demo): add fixture loader"
 ## Task 3: Core helpers — `redact()` and `highlight_redacted()`
 
 **Files:**
+
 - Modify: `demo/demo.py`
 
 - [ ] **Step 1: Add `redact()`**
@@ -307,6 +310,7 @@ git commit -m "feat(demo): add redact() and highlight_redacted() helpers"
 ## Task 4: Renderers — kv table, block panels, fixture section
 
 **Files:**
+
 - Modify: `demo/demo.py`
 
 - [ ] **Step 1: Add `render_kv_table()`**
@@ -387,6 +391,7 @@ git commit -m "feat(demo): add kv/block renderers and render_fixture()"
 ## Task 5: Showcase mode and file mode
 
 **Files:**
+
 - Modify: `demo/demo.py`
 
 - [ ] **Step 1: Add `showcase_mode()`**
@@ -453,6 +458,7 @@ git commit -m "feat(demo): add showcase_mode() and file_mode(), wire main()"
 ## Task 6: Fixture files 00–06
 
 **Files:**
+
 - Create: `demo/examples/00_levels.yaml` through `demo/examples/06_databases.yaml`
 
 - [ ] **Step 1: Create `00_levels.yaml`**
@@ -675,6 +681,7 @@ git commit -m "feat(demo): add fixture files 00-06 (levels through databases)"
 ## Task 7: Fixture files 07–13
 
 **Files:**
+
 - Create: `demo/examples/07_package_managers.yaml` through `demo/examples/13_log_block.yaml`
 
 - [ ] **Step 1: Create `07_package_managers.yaml`**

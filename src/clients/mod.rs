@@ -1,3 +1,5 @@
+//! Defines the log-backend interface and exports Loki and VictoriaLogs adapters.
+
 use crate::analyzer::AnalyzerError;
 use chrono::{DateTime, Utc};
 use serde_json::Value;
@@ -14,6 +16,7 @@ pub use victoria::VictoriaLogsClient;
 type Result<T> = std::result::Result<T, AnalyzerError>;
 
 pub trait LogClient: Send + Sync + std::fmt::Debug {
+    /// Queries log entries within the UTC interval, capped at `limit` results.
     fn query_range(
         &self,
         query: &str,
@@ -22,6 +25,7 @@ pub trait LogClient: Send + Sync + std::fmt::Debug {
         limit: usize,
     ) -> Result<Vec<Value>>;
 
+    /// Writes one timestamped log line with the supplied labels.
     fn push(
         &self,
         labels: &HashMap<String, String>,

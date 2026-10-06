@@ -1,3 +1,5 @@
+//! Demonstrates paranoid redaction of a multiline synthetic log payload.
+
 use obfsck::{ObfuscationLevel, obfuscate_text};
 
 fn main() {

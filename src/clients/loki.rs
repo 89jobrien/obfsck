@@ -1,3 +1,5 @@
+//! Queries and pushes analyzer log entries through Loki's HTTP API.
+
 use super::client_utils::{from_loki_timestamp_ns, parse_alert_value, with_metadata};
 use super::http::BlockingHttp;
 use super::{LogClient, Result};
@@ -33,6 +35,7 @@ struct LokiStreamResult {
 }
 
 impl LokiClient {
+    /// Creates a Loki client for the given base URL.
     pub fn new(url: impl Into<String>) -> Result<Self> {
         Ok(Self {
             http: BlockingHttp::new(url)?,

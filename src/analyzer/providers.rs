@@ -1,3 +1,5 @@
+//! Adapts Ollama, OpenAI, and Anthropic HTTP APIs to the analyzer provider interface.
+
 // TODO(roadmap-providers): Build a shared provider pipeline with retries and bounded concurrency.
 // TODO(bamlish): the three provider impls below each hand-roll request construction, JSON-mode
 // coercion, and response-shape digging (message.content for Ollama, choices[0].message.content

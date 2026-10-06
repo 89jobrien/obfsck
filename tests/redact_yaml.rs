@@ -1,3 +1,5 @@
+//! Verifies bundled YAML patterns and level gates independently of the runtime engine.
+
 use obfsck::ObfuscationLevel;
 use obfsck::yaml_config::SecretsConfig;
 use regex::{Regex, RegexBuilder};

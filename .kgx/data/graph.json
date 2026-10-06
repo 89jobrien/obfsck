@@ -100,6 +100,15 @@
       ]
     },
     {
+      "id": "1abee58e-2504-4f24-8d08-683a8d266f6c",
+      "name": "alert analyzer",
+      "type": "system",
+      "supporting_text": "AlertAnalyzer fetches alerts from Loki or VictoriaLogs, obfuscates them, and sends them to configured large language model providers",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
       "id": "d1acb226-93ac-492e-baa5-1fa7a26d64ea",
       "name": "alertanalyzer",
       "type": "concept",
@@ -116,6 +125,15 @@
       "source_docs": [
         "obfsck_architecture",
         "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "734286d1-a601-4b87-ace0-7b21e3a14e67",
+      "name": "analyzer feature",
+      "type": "concept",
+      "supporting_text": "The analyzer Cargo feature enables the analyzer, Axum API server, CLI support, log clients, and all binaries",
+      "source_docs": [
+        "obfsck_architecture"
       ]
     },
     {
@@ -152,6 +170,15 @@
       "supporting_text": "AppState held Arc<AlertAnalyzer>",
       "source_docs": [
         "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "ee285861-2736-4468-bd7e-4319817794c7",
+      "name": "axum",
+      "type": "tool",
+      "supporting_text": "The analyzer Cargo feature enables the analyzer and Axum API server",
+      "source_docs": [
+        "obfsck_architecture"
       ]
     },
     {
@@ -209,6 +236,15 @@
       ]
     },
     {
+      "id": "cc4643a2-cd94-4977-b93c-826e5fbcbfac",
+      "name": "gitleaks",
+      "type": "tool",
+      "supporting_text": "The scan CLI scans unified diffs with native obfsck patterns and GitleaksAdapter",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
       "id": "fe0a2eaa-000e-4d53-a33e-4795ff57874b",
       "name": "helpers.rs",
       "type": "module",
@@ -218,10 +254,28 @@
       ]
     },
     {
+      "id": "933d2031-471d-4c7f-8038-6b9c1f144785",
+      "name": "large language model",
+      "type": "concept",
+      "supporting_text": "AlertAnalyzer sends obfuscated alerts to configured large language model providers",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
       "id": "0493fbb3-372d-4009-908d-b9d290fbcace",
       "name": "lib.rs",
       "type": "module",
       "supporting_text": "Public API, IP classification, regex, obfuscation engine",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "3e50628a-0a0f-4590-9506-4be534d39a7c",
+      "name": "loki",
+      "type": "system",
+      "supporting_text": "AlertAnalyzer fetches alerts from Loki or VictoriaLogs",
       "source_docs": [
         "obfsck_architecture"
       ]
@@ -254,6 +308,15 @@
       ]
     },
     {
+      "id": "26d4dfb8-6a3c-46ed-b93d-e98d33a6c52d",
+      "name": "minimal",
+      "type": "concept",
+      "supporting_text": "Minimal performs secret pattern redaction only",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
       "id": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
       "name": "obfsck",
       "type": "crate",
@@ -261,6 +324,24 @@
       "source_docs": [
         "obfsck_architecture",
         "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "387da183-ca2a-459f-aea2-7de02a53b645",
+      "name": "obfsck cli",
+      "type": "tool",
+      "supporting_text": "The canonical obfsck CLI routes redact and analyze commands",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "bcbee651-0dad-4f86-a66f-0b4aba5bd0d1",
+      "name": "obfsck mcp",
+      "type": "tool",
+      "supporting_text": "The obfsck-mcp binary is a JSON-RPC MCP server exposing audit and generate-filters tools",
+      "source_docs": [
+        "obfsck_architecture"
       ]
     },
     {
@@ -292,12 +373,66 @@
       ]
     },
     {
+      "id": "f388d312-c734-4e33-9902-cfe42b4c5863",
+      "name": "obfuscation level",
+      "type": "concept",
+      "supporting_text": "Its three ObfuscationLevel modes are Minimal, Standard, and Paranoid",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
       "id": "08ad082f-7a25-4074-a9f3-c391ed87b67f",
       "name": "openaiprovider",
       "type": "concept",
       "supporting_text": "hand-writing Debug impls for OpenAiProvider ... that redact the api_key field",
       "source_docs": [
         "session_2026_08_21_miette_and_demo"
+      ]
+    },
+    {
+      "id": "d2937757-76da-4348-8365-a707331fd83b",
+      "name": "paranoid",
+      "type": "concept",
+      "supporting_text": "Paranoid adds paths, hostnames, high-entropy strings, and paranoid-only PII",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "977fde1f-5176-4edd-b470-24173a72acb3",
+      "name": "path policy home user redact",
+      "type": "concept",
+      "supporting_text": "The path-policy-home-user-redact and path-policy-non-allowlisted-redact features conflict",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "c7401453-7015-4149-ad34-a4da57224daa",
+      "name": "path policy non allowlisted redact",
+      "type": "concept",
+      "supporting_text": "The path-policy-home-user-redact and path-policy-non-allowlisted-redact features conflict",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "4e210073-33da-417d-aff3-90892af9c2b6",
+      "name": "pattern compile error",
+      "type": "concept",
+      "supporting_text": "PatternSet records invalid regular expressions as PatternCompileError diagnostics",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "7fd60af2-0b3a-4373-b903-497562fb02e3",
+      "name": "pattern set",
+      "type": "concept",
+      "supporting_text": "PatternSet compiles bundled SECRET_PATTERN_DEFS or enabled runtime groups and custom patterns from SecretsConfig",
+      "source_docs": [
+        "obfsck_architecture"
       ]
     },
     {
@@ -338,6 +473,15 @@
       ]
     },
     {
+      "id": "10887d48-4b95-4adb-b622-61172ef30eef",
+      "name": "rust 2024 edition",
+      "type": "standard",
+      "supporting_text": "Cargo.toml sets edition = 2024",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
       "id": "1f904240-839e-48dc-8d4a-5df6efb50136",
       "name": "rust-audit",
       "type": "event",
@@ -366,10 +510,37 @@
       ]
     },
     {
+      "id": "28575555-1643-4ef4-bfd1-30fe3d81bb16",
+      "name": "scan cli",
+      "type": "tool",
+      "supporting_text": "The scan CLI scans unified diffs with native obfsck patterns and GitleaksAdapter",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
       "id": "46145156-32bc-4267-8f11-5d9106d4a778",
       "name": "secrets.rs",
       "type": "module",
       "supporting_text": "Generated from config/secrets.yaml via build.rs",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "e2dc4472-efca-4b0b-ba0b-387a1ee03470",
+      "name": "shared pattern engine",
+      "type": "concept",
+      "supporting_text": "The active shared pattern engine roadmap designs one configurable PatternSet for the library, CLI, scanner, and MCP consumers",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "f0ad496b-cfc1-426d-83a9-83a56f3bc55e",
+      "name": "standard",
+      "type": "concept",
+      "supporting_text": "Standard adds IP addresses, email addresses, container identifiers, users, and PII",
       "source_docs": [
         "obfsck_architecture"
       ]
@@ -397,6 +568,15 @@
       "name": "victoria_client",
       "type": "adapter",
       "supporting_text": "Log client for VictoriaLogs",
+      "source_docs": [
+        "obfsck_architecture"
+      ]
+    },
+    {
+      "id": "98294e16-28e9-414c-be46-6b4a5b296e61",
+      "name": "victorialogs",
+      "type": "system",
+      "supporting_text": "AlertAnalyzer fetches alerts from Loki or VictoriaLogs",
       "source_docs": [
         "obfsck_architecture"
       ]
@@ -798,6 +978,195 @@
       "confidence": 0.8,
       "supporting_text": "Replaced ports::Result<T> = Result<T, Box<dyn Error>> with a concrete PortsError enum",
       "source_doc": "session_2026_08_21_miette_and_demo"
+    },
+    {
+      "id": "4bf86c0a-b370-4132-88f7-67f57c705a91",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "10887d48-4b95-4adb-b622-61172ef30eef",
+      "type": "uses",
+      "confidence": 1.0,
+      "supporting_text": "obfsck is a Rust 2024 crate",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "37521401-c038-4df0-b5b2-723502af44a1",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "f388d312-c734-4e33-9902-cfe42b4c5863",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "The public library API includes ObfuscationLevel",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "2369c988-12ec-4bb2-ba73-45453fdbcbc6",
+      "source": "f388d312-c734-4e33-9902-cfe42b4c5863",
+      "target": "26d4dfb8-6a3c-46ed-b93d-e98d33a6c52d",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "Its three ObfuscationLevel modes are Minimal, Standard, and Paranoid",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "6eef392e-0f2a-4c0b-9a5d-29b5252d0e5d",
+      "source": "f388d312-c734-4e33-9902-cfe42b4c5863",
+      "target": "f0ad496b-cfc1-426d-83a9-83a56f3bc55e",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "Its three ObfuscationLevel modes are Minimal, Standard, and Paranoid",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "1f183360-ff4f-4206-a94d-45adf99554da",
+      "source": "f388d312-c734-4e33-9902-cfe42b4c5863",
+      "target": "d2937757-76da-4348-8365-a707331fd83b",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "Its three ObfuscationLevel modes are Minimal, Standard, and Paranoid",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "38eb499b-e502-464a-9cde-7c1d2656bd2c",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "61dc290b-0942-4838-baef-e82914482d43",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "The public library API includes Obfuscator",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "1a4364ed-a016-4023-baf0-b94bf03d884f",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "7fd60af2-0b3a-4373-b903-497562fb02e3",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "The public library API includes PatternSet",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "18ed4867-2022-45e0-b07c-541b870fe26f",
+      "source": "7fd60af2-0b3a-4373-b903-497562fb02e3",
+      "target": "7dbabf8d-29aa-4554-85a0-e4294afc4369",
+      "type": "uses",
+      "confidence": 0.95,
+      "supporting_text": "PatternSet compiles bundled SECRET_PATTERN_DEFS or enabled runtime groups and custom patterns from SecretsConfig; secret patterns are authored in config/secrets.yaml",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "e60da9f3-a7f4-49d6-ae0f-025682de50b5",
+      "source": "7fd60af2-0b3a-4373-b903-497562fb02e3",
+      "target": "4e210073-33da-417d-aff3-90892af9c2b6",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "PatternSet records invalid regular expressions as PatternCompileError diagnostics",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "4329aa6c-1aed-4807-a999-83a820223bdd",
+      "source": "87f55e95-5bf1-41e6-ba98-62a9d15443d1",
+      "target": "7dbabf8d-29aa-4554-85a0-e4294afc4369",
+      "type": "uses",
+      "confidence": 1.0,
+      "supporting_text": "build.rs reads config/secrets.yaml",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "7436c110-12a5-4171-92d3-a0d854462546",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "387da183-ca2a-459f-aea2-7de02a53b645",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "The canonical obfsck CLI routes redact and analyze commands",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "0607a303-4457-4dde-8f44-fa3c318d484c",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "28575555-1643-4ef4-bfd1-30fe3d81bb16",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "The scan CLI scans unified diffs",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "9ae80d7e-5b40-40b5-843d-f77d2f4db4f8",
+      "source": "28575555-1643-4ef4-bfd1-30fe3d81bb16",
+      "target": "cc4643a2-cd94-4977-b93c-826e5fbcbfac",
+      "type": "uses",
+      "confidence": 1.0,
+      "supporting_text": "The scan CLI scans unified diffs with native obfsck patterns and GitleaksAdapter",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "00edc44b-0f80-4c22-a5b9-7b93f11b584b",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "bcbee651-0dad-4f86-a66f-0b4aba5bd0d1",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "The obfsck-mcp binary is a JSON-RPC MCP server",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "b940e275-29cb-465d-b900-31c638ce081b",
+      "source": "58251be8-a8a9-4a61-87bb-eb6cdf422107",
+      "target": "1abee58e-2504-4f24-8d08-683a8d266f6c",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "AlertAnalyzer fetches alerts, obfuscates them, and sends them for analysis",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "216f00d9-8716-4449-9542-361322412c7f",
+      "source": "1abee58e-2504-4f24-8d08-683a8d266f6c",
+      "target": "3e50628a-0a0f-4590-9506-4be534d39a7c",
+      "type": "uses",
+      "confidence": 1.0,
+      "supporting_text": "AlertAnalyzer fetches alerts from Loki or VictoriaLogs",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "6f1e3248-ccee-4912-8ce9-9b5e75bd7334",
+      "source": "1abee58e-2504-4f24-8d08-683a8d266f6c",
+      "target": "98294e16-28e9-414c-be46-6b4a5b296e61",
+      "type": "uses",
+      "confidence": 1.0,
+      "supporting_text": "AlertAnalyzer fetches alerts from Loki or VictoriaLogs",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "b28bfd2f-bbc7-4445-bd8b-54f82c9d9715",
+      "source": "1abee58e-2504-4f24-8d08-683a8d266f6c",
+      "target": "933d2031-471d-4c7f-8038-6b9c1f144785",
+      "type": "uses",
+      "confidence": 1.0,
+      "supporting_text": "AlertAnalyzer sends obfuscated alerts to configured large language model providers",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "ec95da1e-a6fc-4da3-9afe-fe59fb99be2c",
+      "source": "734286d1-a601-4b87-ace0-7b21e3a14e67",
+      "target": "ee285861-2736-4468-bd7e-4319817794c7",
+      "type": "contains",
+      "confidence": 1.0,
+      "supporting_text": "The analyzer Cargo feature enables the Axum API server",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "dd54e711-36f8-461d-8b0b-34e07b41b902",
+      "source": "977fde1f-5176-4edd-b470-24173a72acb3",
+      "target": "c7401453-7015-4149-ad34-a4da57224daa",
+      "type": "conflicts_with",
+      "confidence": 1.0,
+      "supporting_text": "The path-policy-home-user-redact and path-policy-non-allowlisted-redact features conflict and cannot be enabled together",
+      "source_doc": "obfsck_architecture"
+    },
+    {
+      "id": "7acd9358-ab20-436f-a997-b074cfd17476",
+      "source": "e2dc4472-efca-4b0b-ba0b-387a1ee03470",
+      "target": "7fd60af2-0b3a-4373-b903-497562fb02e3",
+      "type": "uses",
+      "confidence": 1.0,
+      "supporting_text": "The shared pattern engine roadmap designs one configurable PatternSet for the library, CLI, scanner, and MCP consumers",
+      "source_doc": "obfsck_architecture"
     }
   ]
 }

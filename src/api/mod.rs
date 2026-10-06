@@ -1,3 +1,5 @@
+//! Serves alert analysis, health, history, and cached-result endpoints with Axum.
+
 use crate::analyzer::{AlertAnalyzer, AnalyzerError, load_config};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
@@ -129,6 +131,7 @@ struct AnalysisPageView<'a> {
     timestamp: &'a str,
 }
 
+/// Builds application state and serves the analysis API on the requested address.
 pub async fn run_server(host: String, port: u16) -> Result<(), ApiError> {
     // TODO(roadmap-secure-api): Add auth, restrictive CORS, limits, and redacted-only cache modes.
     let config = load_config(None)?;
@@ -675,6 +678,7 @@ fn list_cached_analyses(state: &AppState, limit: usize) -> Result<Vec<HistoryIte
     Ok(out)
 }
 
+/// Parses common truthy query values, using `default` only when the value is absent.
 pub fn parse_boolish(value: Option<&str>, default: bool) -> bool {
     match value {
         Some(v) => matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"),
@@ -682,6 +686,7 @@ pub fn parse_boolish(value: Option<&str>, default: bool) -> bool {
     }
 }
 
+/// Normalizes volatile timestamps, identifiers, container IDs, and IPs for cache deduplication.
 pub fn normalize_output(output: &str) -> String {
     let mut normalized = output.split_whitespace().collect::<Vec<_>>().join(" ");
 
@@ -701,6 +706,7 @@ pub fn normalize_output(output: &str) -> String {
     normalized
 }
 
+/// Returns a stable 16-character cache key for normalized output and its rule.
 pub fn get_cache_key(output: &str, rule: &str) -> String {
     let content = format!("{}:{}", normalize_output(output), rule);
     let mut hasher = Sha256::new();

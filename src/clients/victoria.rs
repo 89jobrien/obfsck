@@ -1,3 +1,5 @@
+//! Queries and pushes analyzer log entries through VictoriaLogs' HTTP API.
+
 use super::client_utils::{from_rfc3339_or_now, parse_alert_value, with_metadata};
 use super::http::BlockingHttp;
 use super::{LogClient, Result};
@@ -12,6 +14,7 @@ pub struct VictoriaLogsClient {
 }
 
 impl VictoriaLogsClient {
+    /// Creates a VictoriaLogs client for the given base URL.
     pub fn new(url: impl Into<String>) -> Result<Self> {
         Ok(Self {
             http: BlockingHttp::new(url)?,

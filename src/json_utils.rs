@@ -1,3 +1,5 @@
+//! Extracts balanced JSON objects from provider and backend text responses.
+
 /// Extract the first complete, non-overlapping JSON object from `raw`.
 ///
 /// Uses a brace-depth state machine so that nested objects are handled

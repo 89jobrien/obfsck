@@ -25,13 +25,14 @@
 ## Task 1: Add `walkdir`, expose `SECRET_PATTERN_DEFS` publicly
 
 **Files:**
+
 - Modify: `Cargo.toml`
 - Modify: `src/secrets.rs:3`
 - Modify: `src/lib.rs`
-
 - [ ] **Step 1: Add `walkdir` to Cargo.toml under `analyzer` feature**
 
 In `[dependencies]`:
+
 ```toml
 walkdir = { version = "2", optional = true }
 ```
@@ -41,6 +42,7 @@ In `[features] → analyzer = [...]`, add `"walkdir"`.
 - [ ] **Step 2: Change visibility of `SECRET_PATTERN_DEFS` in `src/secrets.rs`**
 
 Change line 3:
+
 ```rust
 // before
 pub(super) const SECRET_PATTERN_DEFS: &[SecretPatternDef] = &[
@@ -86,9 +88,9 @@ git commit -m "feat(redact): expose SecretPatternDef and SECRET_PATTERN_DEFS, ad
 Shows a per-pattern match report on stderr after redacting. Redacted output still goes to stdout — both are independent.
 
 **Files:**
+
 - Modify: `src/bin/redact.rs`
 - Create: `tests/redact_features.rs`
-
 - [ ] **Step 1: Create test file with feature gate**
 
 Create `tests/redact_features.rs`:
@@ -204,9 +206,9 @@ Profiles override the `enabled` state of groups in the loaded config. The `pii` 
 | `paranoid` | Enable all groups + force level to `paranoid` |
 
 **Files:**
+
 - Modify: `src/bin/redact.rs`
 - Modify: `tests/redact_features.rs`
-
 - [ ] **Step 1: Write the failing tests**
 
 Add to `tests/redact_features.rs`:
@@ -320,11 +322,13 @@ git commit -m "feat(redact): add --profile flag (default, pii, full, paranoid)"
 Walks a path (file or directory), reports which files contain secrets, exits non-zero if any found. Never modifies files.
 
 **Files:**
+
 - Modify: `src/bin/redact.rs`
 - Modify: `tests/redact_features.rs`
 
 **Output format:**
-```
+
+```text
 MATCH  path/to/file.log  [REDACTED-ANTHROPIC-KEY](2) [REDACTED-GITHUB-TOKEN](1)
 MATCH  path/to/other.env  [REDACTED-PASSWORD](1)
 ---
@@ -542,10 +546,10 @@ git commit -m "feat(redact): add scan subcommand for secret detection without mo
 Compares pattern names and content between `src/secrets.rs` (exported as `obfsck::SECRET_PATTERN_DEFS`) and `config/secrets.yaml` (embedded as `BUNDLED_CONFIG`). Reports: patterns only in one source, pattern string mismatches, `paranoid_only` mismatches.
 
 **Files:**
+
 - Modify: `src/bin/redact.rs` (replace `todo!()` stub)
 - Modify: `src/lib.rs` (add `pub use`)
 - Modify: `tests/redact_features.rs`
-
 - [ ] **Step 1: Re-export `SECRET_PATTERN_DEFS` from `src/lib.rs`**
 
 Add to `src/lib.rs`:
@@ -666,6 +670,7 @@ Expected: all tests pass, including `test_verify_exits_zero_when_in_sync`.
 - [ ] **Step 7: Add `verify-patterns` to mise tasks**
 
 In `mise.toml`, add:
+
 ```toml
 [tasks.verify-patterns]
 run = "cargo run --bin redact -- verify"

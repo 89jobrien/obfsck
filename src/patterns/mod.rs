@@ -1,3 +1,5 @@
+//! Compiles bundled or configured secret patterns with level and provenance metadata.
+
 use crate::yaml_config::{MinLevel, SecretsConfig};
 use crate::{ObfuscationLevel, SECRET_PATTERN_DEFS};
 use regex::{Regex, RegexBuilder};
@@ -72,7 +74,7 @@ impl PatternSet {
         let definitions = SECRET_PATTERN_DEFS.iter().map(|definition| {
             (
                 definition.name,
-                None,
+                definition.group,
                 definition.pattern,
                 definition.label,
                 definition.paranoid_only,

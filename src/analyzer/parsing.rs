@@ -1,8 +1,11 @@
+//! Parses analyzer duration arguments and normalizes JSON objects into string maps.
+
 use super::{AnalyzerError, Result};
 use chrono::Duration;
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 
+/// Parses a positive duration such as `15m`, `1h`, or `7d`.
 pub fn parse_last(last: &str) -> Result<Duration> {
     if last.len() < 2 {
         return Err(AnalyzerError::InvalidArgument(

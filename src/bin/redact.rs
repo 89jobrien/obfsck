@@ -1,3 +1,5 @@
+//! Deprecated `redact` binary that forwards to the canonical redaction command.
+
 use clap::Parser;
 use miette::Result;
 use obfsck::cli::{RedactArgs, run_redact_from_args};

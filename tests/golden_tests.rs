@@ -80,9 +80,7 @@ fn assert_golden(input_file: &str, level: &str) {
     );
 }
 
-// =============================================================================
 // pii_sample.txt — PII patterns gated at min_level: standard
-// =============================================================================
 
 #[test]
 fn pii_minimal() {
@@ -99,9 +97,7 @@ fn pii_paranoid() {
     assert_golden("pii_sample.txt", "paranoid");
 }
 
-// =============================================================================
 // secrets_sample.txt — Secrets that fire at all levels (minimal+)
-// =============================================================================
 
 #[test]
 fn secrets_minimal() {
@@ -118,9 +114,7 @@ fn secrets_paranoid() {
     assert_golden("secrets_sample.txt", "paranoid");
 }
 
-// =============================================================================
 // mixed_sample.txt — Secrets + PII + paranoid + innocent text combined
-// =============================================================================
 
 #[test]
 fn mixed_minimal() {
@@ -137,9 +131,7 @@ fn mixed_paranoid() {
     assert_golden("mixed_sample.txt", "paranoid");
 }
 
-// =============================================================================
 // paranoid_sample.txt — paranoid_only patterns and structural paranoid patterns
-// =============================================================================
 
 #[test]
 fn paranoid_sample_minimal() {
@@ -156,9 +148,7 @@ fn paranoid_sample_paranoid() {
     assert_golden("paranoid_sample.txt", "paranoid");
 }
 
-// =============================================================================
 // Invariant tests — assertions about level semantics that must always hold
-// =============================================================================
 
 /// Core invariant: --level minimal MUST NOT redact standard-gated PII.
 ///

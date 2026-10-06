@@ -1,3 +1,5 @@
+//! Demonstrates consistent redaction across an alert message and structured fields.
+
 use obfsck::{ObfuscationLevel, obfuscate_alert};
 use std::collections::HashMap;
 

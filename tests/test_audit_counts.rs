@@ -9,7 +9,7 @@ use obfsck::mcp::{Auditor, ObfsckAuditor};
 fn audit_is_deterministic_no_accumulation() {
     let text = "token: ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef01\n";
 
-    let auditor = ObfsckAuditor;
+    let auditor = ObfsckAuditor::default();
     let hits_a = auditor.audit(text);
     let hits_b = auditor.audit(text);
 
@@ -26,7 +26,7 @@ fn github_pat_counted_once() {
     // Use a token long enough to match only the github_pat pattern (40 chars after prefix)
     let text = "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcd";
 
-    let auditor = ObfsckAuditor;
+    let auditor = ObfsckAuditor::default();
     let hits = auditor.audit(text);
 
     let gh_hits: Vec<_> = hits.iter().filter(|h| h.label == "GITHUB-TOKEN").collect();
@@ -46,7 +46,7 @@ fn github_pat_counted_once() {
 fn anthropic_key_counted_once() {
     let text = "sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-    let auditor = ObfsckAuditor;
+    let auditor = ObfsckAuditor::default();
     let hits = auditor.audit(text);
 
     let ant_hits: Vec<_> = hits.iter().filter(|h| h.label == "ANTHROPIC-KEY").collect();
@@ -71,7 +71,7 @@ fn two_secrets_stable_counts() {
         "sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
     );
 
-    let auditor = ObfsckAuditor;
+    let auditor = ObfsckAuditor::default();
     let hits_a = auditor.audit(text);
     let hits_b = auditor.audit(text);
 

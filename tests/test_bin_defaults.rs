@@ -1,3 +1,5 @@
+//! Locks down default tracing filters exposed by analyzer-enabled binaries.
+
 #![cfg(feature = "analyzer")]
 
 #[test]

@@ -1,3 +1,5 @@
+//! Validates representative LLM responses against the generated analysis schema.
+
 #![cfg(feature = "analyzer")]
 
 use obfsck::schema::{AnalysisOutput, analysis_ir};

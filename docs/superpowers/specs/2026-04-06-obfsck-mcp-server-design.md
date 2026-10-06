@@ -16,7 +16,7 @@ configs at `.ctx/obfsck-filters.yaml`.
 
 ## Architecture
 
-```
+```text
 obfsck/
   src/bin/obfsck-mcp.rs         new stdio MCP binary (behind `mcp` feature flag)
   src/mcp/
@@ -34,7 +34,7 @@ coursers/
 
 **Data flow:**
 
-```
+```text
 crs discover
   └─ detect obfsck-mcp on PATH
        └─ mcpipe --stdio obfsck-mcp generate-filters --examples "[...]"
@@ -65,6 +65,7 @@ standalone and adds no axum or tokio dependencies.
 - `initialize` response: `{ name: "obfsck-mcp", version: "<crate version>", tools: [...] }`
 
 Error codes:
+
 | Code    | Meaning              | When used                          |
 |---------|----------------------|------------------------------------|
 | -32700  | Parse error          | Malformed JSON on stdin            |
@@ -83,6 +84,7 @@ EOF on stdin → exit 0.
 Equivalent to `redact --audit` but structured.
 
 **Input schema:**
+
 ```json
 {
   "content": "<string>",
@@ -91,6 +93,7 @@ Equivalent to `redact --audit` but structured.
 ```
 
 **Output schema:**
+
 ```json
 {
   "hits": [
@@ -101,6 +104,7 @@ Equivalent to `redact --audit` but structured.
 ```
 
 **Behaviour:**
+
 - Calls obfsck library directly — no subprocess
 - Empty content → `{ "hits": [], "clean": true }` (not an error)
 - Invalid `level` → JSON-RPC error `-32602`, message lists valid values
@@ -113,6 +117,7 @@ Equivalent to `redact --audit` but structured.
 fragment ready to write to `.ctx/obfsck-filters.yaml` and pass to `redact --config`.
 
 **Input schema:**
+
 ```json
 {
   "examples": ["sk-ant-api03-...", "ghp_abc123", "my-custom-token-xyz"]
@@ -121,6 +126,7 @@ fragment ready to write to `.ctx/obfsck-filters.yaml` and pass to `redact --conf
 
 **Output schema:** YAML string in `SecretsConfig` format (deserializable by obfsck's
 `yaml_config::SecretsConfig`):
+
 ```yaml
 groups:
   ai_apis:
@@ -139,6 +145,7 @@ custom:
 ```
 
 **Logic:**
+
 1. For each example, test against every built-in group's compiled patterns
 2. Matched → include that group entry (only matched patterns, not full group)
 3. Unmatched → attempt regex generation:
@@ -151,6 +158,7 @@ custom:
 6. Example matches multiple groups → include all matched groups
 
 **Emit rule for unmatched examples (quality gate):**
+
 - Require literal prefix ≥ 4 chars, OR
 - Remaining segment uses entropy-indicating char class (`[A-Za-z0-9/+=]` or `[A-Za-z0-9_-]`)
   AND length ≥ 20
@@ -167,13 +175,15 @@ After writing `HANDOFF.tools.yaml`, `cmd_discover` checks:
 3. (Always proceed if both true — the unhandled list may contain sensitive stems)
 
 Then:
-```
+
+```text
 mcpipe --stdio obfsck-mcp generate-filters --examples '<json array of unhandled stems>'
 ```
 
 On success → write `.ctx/obfsck-filters.yaml` → pass through `obfsck_audit`.
 
 **Failure handling:**
+
 - `obfsck-mcp` not on PATH → skip silently (same pattern as `rtk` detection)
 - mcpipe call fails (non-zero exit) → `eprintln!("warn: obfsck-mcp call failed: ...")`, continue
 - `.ctx/obfsck-filters.yaml` already exists → overwrite

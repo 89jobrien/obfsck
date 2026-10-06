@@ -1,3 +1,5 @@
+//! Deprecated `analyzer` binary that forwards to the canonical analysis command.
+
 use clap::Parser;
 use obfsck::analyzer::{CliArgs, run_from_args};
 use tracing::error;

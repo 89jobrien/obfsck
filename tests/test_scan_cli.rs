@@ -1,3 +1,5 @@
+//! Verifies diff-scanner diagnostics identify findings without echoing secrets.
+
 #![cfg(feature = "analyzer")]
 
 use std::io::Write;
@@ -41,5 +43,14 @@ fn scan_diagnostics_do_not_echo_secret_content() {
     assert!(
         stderr.contains("config.txt:7"),
         "missing source location: {stderr}"
+    );
+    assert!(
+        stderr.contains("communication"),
+        "missing pattern group provenance: {stderr}"
+    );
+    assert_eq!(
+        stderr.matches("[obfsck]").count(),
+        1,
+        "pattern hit was counted more than once: {stderr}"
     );
 }

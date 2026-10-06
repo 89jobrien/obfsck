@@ -178,7 +178,7 @@ scan-diff:
         echo "scan-diff: no staged changes to scan"
         exit 0
     fi
-    git diff --staged | $SCAN_BIN
+    git diff --staged | $SCAN_BIN --no-gitleaks
     OBFSCK_EXIT=$?
     if [ $OBFSCK_EXIT -ne 0 ]; then
         echo "scan-diff: obfsck found secrets in staged diff — aborting" >&2

@@ -31,8 +31,9 @@ pub use patterns::{Pattern, PatternCompileError, PatternSet};
 mod helpers;
 use helpers::{is_sensitive_path, obfuscate_path_value, shannon_entropy};
 pub(crate) mod json_utils;
+pub mod suppression;
 
-use regex::{Regex, RegexBuilder};
+use regex::Regex;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::net::Ipv6Addr;
@@ -50,6 +51,7 @@ pub struct Allowlist {
 
 impl Allowlist {
     // qual:allow(iosp) reason: "constructor — partitions entries by type; logic and construction are inseparable"
+    /// Partitions entries into exact matches and glob patterns.
     pub fn new(entries: impl IntoIterator<Item = String>) -> Self {
         let mut exact = HashSet::new();
         let mut globs = Vec::new();
@@ -85,6 +87,7 @@ impl Allowlist {
     }
 
     // qual:allow(iosp) reason: "pure boolean conjunction — && combines two delegate calls, no mixed logic"
+    /// Returns whether the allowlist contains no exact or glob entries.
     pub fn is_empty(&self) -> bool {
         self.exact.is_empty() && self.globs.is_empty()
     }
@@ -111,6 +114,7 @@ pub enum ObfuscationLevel {
 }
 
 impl ObfuscationLevel {
+    /// Parses a case-insensitive obfuscation level name.
     pub fn parse(s: &str) -> Option<Self> {
         match s.trim().to_ascii_lowercase().as_str() {
             "minimal" => Some(Self::Minimal),
@@ -133,6 +137,7 @@ pub struct ObfuscationMap {
 }
 
 impl ObfuscationMap {
+    /// Returns an owned, public snapshot of the current token mappings.
     pub fn export(&self) -> ObfuscationMapExport {
         ObfuscationMapExport::from(self)
     }
@@ -211,6 +216,11 @@ impl Counters {
     }
 }
 
+fn default_pattern_set() -> PatternSet {
+    static PATTERNS: OnceLock<PatternSet> = OnceLock::new();
+    PATTERNS.get_or_init(PatternSet::bundled).clone()
+}
+
 #[derive(Debug)]
 pub struct Obfuscator {
     level: ObfuscationLevel,
@@ -220,16 +230,19 @@ pub struct Obfuscator {
     /// Values in this set are never redacted even when they match a pattern.
     /// Supports exact strings and glob patterns (entries with `*` or `?`).
     allowlist: Allowlist,
+    pattern_set: PatternSet,
     map: ObfuscationMap,
     counters: Counters,
 }
 
 impl Obfuscator {
+    /// Creates an obfuscator with bundled patterns and PII redaction enabled.
     pub fn new(level: ObfuscationLevel) -> Self {
         Self {
             level,
             pii: true,
             allowlist: Allowlist::default(),
+            pattern_set: default_pattern_set(),
             map: ObfuscationMap::default(),
             counters: Counters::default(),
         }
@@ -241,6 +254,12 @@ impl Obfuscator {
         self
     }
 
+    /// Replaces the bundled secret patterns used by this obfuscator.
+    pub fn with_pattern_set(mut self, pattern_set: PatternSet) -> Self {
+        self.pattern_set = pattern_set;
+        self
+    }
+
     /// Values in this list will never be redacted even when they match a pattern.
     /// Entries containing `*` or `?` are treated as glob patterns.
     pub fn with_allowlist(mut self, entries: Vec<String>) -> Self {
@@ -248,15 +267,48 @@ impl Obfuscator {
         self
     }
 
+    /// Returns the configured obfuscation level.
     pub fn level(&self) -> ObfuscationLevel {
         self.level
     }
 
+    /// Returns an owned snapshot of mappings accumulated so far.
     pub fn mapping(&self) -> ObfuscationMapExport {
         self.map.export()
     }
 
+    /// Redacts secrets and level-appropriate PII while preserving stable token mappings.
+    ///
+    /// Lines carrying an inline `obfsck:ignore` marker are passed through
+    /// untouched, so credential-shaped fixtures can live in source without an
+    /// allowlist entry. See [`suppression`] for the marker syntax.
     pub fn obfuscate(&mut self, text: &str) -> String {
+        if text.is_empty() {
+            return text.to_string();
+        }
+
+        // Only pay for line-wise processing when a marker is actually present.
+        // Otherwise the whole text goes through as one string, which preserves
+        // cross-line matching for the common case.
+        if suppression::has_marker(text) {
+            let mut out = String::with_capacity(text.len());
+            // split_inclusive keeps each line's own terminator, so output is
+            // byte-identical to the input outside the redacted segments.
+            for line in text.split_inclusive('\n') {
+                if suppression::is_suppressed_line(line) {
+                    out.push_str(line);
+                } else {
+                    out.push_str(&self.obfuscate_line(line));
+                }
+            }
+            return out;
+        }
+
+        self.obfuscate_line(text)
+    }
+
+    /// Redact a single span of text, with no suppression-marker handling.
+    fn obfuscate_line(&mut self, text: &str) -> String {
         if text.is_empty() {
             return text.to_string();
         }
@@ -593,47 +645,37 @@ impl Obfuscator {
     const SECRET_TRUNCATE_LEN: usize = 20;
 
     fn obfuscate_secrets(&mut self, text: &str) -> String {
-        // TODO(roadmap-pattern-engine): Inject one configurable pattern set across all entry points.
-        let mut s: Cow<'_, str> = Cow::Borrowed(text);
-        for pat in secret_patterns() {
-            let applies = match pat.min_level {
-                None | Some(ObfuscationLevel::Minimal) => true,
-                Some(ObfuscationLevel::Standard) => {
-                    // Standard-gated patterns are PII. Skip when pii=false.
-                    self.pii
-                        && matches!(
-                            self.level,
-                            ObfuscationLevel::Standard | ObfuscationLevel::Paranoid
-                        )
-                }
-                Some(ObfuscationLevel::Paranoid) => self.level == ObfuscationLevel::Paranoid,
-            };
-            if !applies {
+        let mut output: Cow<'_, str> = Cow::Borrowed(text);
+        let allowlist = &self.allowlist;
+        let secrets = &mut self.map.secrets;
+
+        for pattern in self.pattern_set.patterns() {
+            if !pattern.applies_at(self.level, self.pii)
+                || !pattern.regex().is_match(output.as_ref())
+            {
                 continue;
             }
-            if !pat.re.is_match(s.as_ref()) {
-                continue;
-            }
-            let label = pat.label;
-            let replaced = pat
-                .re
-                .replace_all(s.as_ref(), |caps: &regex::Captures<'_>| {
-                    let m = &caps[0];
-                    if self.allowlist.contains(m) {
-                        return m.to_string();
+
+            let label = pattern.label();
+            let replaced = pattern
+                .regex()
+                .replace_all(output.as_ref(), |captures: &regex::Captures<'_>| {
+                    let matched = &captures[0];
+                    if allowlist.contains(matched) {
+                        return matched.to_string();
                     }
-                    let mut truncated = m
+                    let mut truncated = matched
                         .chars()
                         .take(Self::SECRET_TRUNCATE_LEN)
                         .collect::<String>();
                     truncated.push_str("...");
-                    self.map.secrets.insert(truncated);
+                    secrets.insert(truncated);
                     format!("[REDACTED-{label}]")
                 })
                 .into_owned();
-            s = Cow::Owned(replaced);
+            output = Cow::Owned(replaced);
         }
-        s.into_owned()
+        output.into_owned()
     }
 }
 
@@ -653,12 +695,14 @@ fn get_or_create_token(
     token
 }
 
+/// Redacts one text value and returns the redacted output with its token mappings.
 pub fn obfuscate_text(text: &str, level: ObfuscationLevel) -> (String, ObfuscationMapExport) {
     let mut obfuscator = Obfuscator::new(level);
     let out = obfuscator.obfuscate(text);
     (out, obfuscator.mapping())
 }
 
+/// Redacts an alert message and all field values with one shared mapping.
 pub fn obfuscate_alert(
     output: Option<&str>,
     output_fields: Option<&HashMap<String, String>>,
@@ -680,15 +724,10 @@ pub fn obfuscate_alert(
     (out, fields, obfuscator.mapping())
 }
 
-struct SecretPattern {
-    label: &'static str,
-    min_level: Option<ObfuscationLevel>,
-    re: Regex,
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct SecretPatternDef {
     pub name: &'static str,
+    pub group: Option<&'static str>,
     pub pattern: &'static str,
     pub label: &'static str,
     pub paranoid_only: bool,
@@ -708,51 +747,25 @@ mod secrets {
 }
 pub use secrets::SECRET_PATTERN_DEFS;
 
-fn secret_patterns() -> &'static [SecretPattern] {
-    static PATS: OnceLock<Vec<SecretPattern>> = OnceLock::new();
-    PATS.get_or_init(|| {
-        let mut errors = Vec::new();
-        let patterns = SECRET_PATTERN_DEFS
-            .iter()
-            .filter_map(|d| {
-                let re = match RegexBuilder::new(d.pattern).case_insensitive(true).build() {
-                    Ok(re) => re,
-                    Err(err) => {
-                        errors.push(SecretPatternError {
-                            name: d.name,
-                            error: err.to_string(),
-                        });
-                        return None;
-                    }
-                };
-
-                // Derive min_level: paranoid_only=true overrides YAML min_level to Paranoid
-                let min_level = if d.paranoid_only {
-                    Some(ObfuscationLevel::Paranoid)
-                } else {
-                    d.min_level
-                };
-                Some(SecretPattern {
-                    label: d.label,
-                    min_level,
-                    re,
-                })
-            })
-            .collect();
-
-        let _ = SECRET_PATTERN_ERRORS.set(errors);
-        patterns
-    })
-}
-
 static SECRET_PATTERN_ERRORS: OnceLock<Vec<SecretPatternError>> = OnceLock::new();
 
+/// Returns cached compilation errors for bundled secret patterns.
 pub fn secret_pattern_errors() -> &'static [SecretPatternError] {
-    if SECRET_PATTERN_ERRORS.get().is_none() {
-        let _ = secret_patterns();
-    }
-
-    SECRET_PATTERN_ERRORS.get_or_init(Vec::new)
+    SECRET_PATTERN_ERRORS.get_or_init(|| {
+        default_pattern_set()
+            .diagnostics()
+            .iter()
+            .filter_map(|diagnostic| {
+                let definition = SECRET_PATTERN_DEFS
+                    .iter()
+                    .find(|definition| definition.name == diagnostic.name())?;
+                Some(SecretPatternError {
+                    name: definition.name,
+                    error: diagnostic.message().to_string(),
+                })
+            })
+            .collect()
+    })
 }
 
 /// Helper to create a `OnceLock`-backed static regex.

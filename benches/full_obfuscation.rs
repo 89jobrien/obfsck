@@ -1,3 +1,5 @@
+//! Benchmarks the full obfuscation pipeline across payload sizes and privacy levels.
+
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use obfsck::{ObfuscationLevel, obfuscate_text};
 use regex::Regex;

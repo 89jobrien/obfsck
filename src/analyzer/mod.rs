@@ -1,3 +1,5 @@
+//! Fetches, redacts, analyzes, and optionally persists security alerts.
+
 use crate::clients::{LogClient, LokiClient, VictoriaLogsClient};
 use crate::schema::AnalysisOutput;
 use crate::{ObfuscationLevel, obfuscate_alert, obfuscate_text};
@@ -69,6 +71,7 @@ pub struct AlertAnalyzer {
 }
 
 impl AlertAnalyzer {
+    /// Builds an analyzer with the configured log backend, obfuscation level, and LLM provider.
     #[instrument(skip(config), fields(
         backend = %config.storage.backend,
         provider = %config.analysis.provider,
@@ -175,6 +178,7 @@ impl AlertAnalyzer {
         serde_json::to_value(typed).map_err(AnalyzerError::from)
     }
 
+    /// Fetches recent syscall alerts, optionally filtered by priority.
     #[instrument(skip(self), fields(
         backend = %self.backend,
         priority = ?priority,
@@ -210,6 +214,7 @@ impl AlertAnalyzer {
         Ok(alerts)
     }
 
+    /// Redacts one alert and either returns its prompt or submits it for structured analysis.
     #[instrument(skip(self, alert), fields(dry_run = %dry_run))]
     pub fn analyze_alert(&self, alert: &Value, dry_run: bool) -> Value {
         let labels = value_to_string_map(alert.get("_labels").and_then(Value::as_object));
@@ -273,6 +278,7 @@ impl AlertAnalyzer {
         })
     }
 
+    /// Pushes a successful analysis back to the configured log backend with enriched labels.
     #[instrument(skip(self, result))]
     pub fn store_analysis(&self, result: &Value) -> Result<()> {
         let analysis = result
@@ -399,6 +405,7 @@ impl AlertAnalyzer {
             })
     }
 
+    /// Analyzes each alert and optionally stores successful non-dry-run results.
     #[instrument(skip(self, alerts), fields(count = alerts.len(), dry_run = %dry_run, store = %store))]
     pub fn analyze_batch(&self, alerts: &[Value], dry_run: bool, store: bool) -> Vec<Value> {
         let mut results = Vec::new();

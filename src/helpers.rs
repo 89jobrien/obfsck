@@ -1,3 +1,5 @@
+//! Provides entropy measurement and cross-platform sensitive-path redaction helpers.
+
 const BYTE_RANGE: usize = 256;
 
 pub(super) fn shannon_entropy(s: &str) -> f64 {

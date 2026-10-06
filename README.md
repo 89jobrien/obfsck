@@ -57,10 +57,10 @@ obfsck redact input.txt --output redacted.txt
 obfsck redact input.txt --level standard   # + IPs, emails, usernames, PII
 obfsck redact input.txt --level paranoid   # + paths, hostnames, high-entropy
 
-# Audit mode — report findings to stderr without redacting
+# Audit mode — report findings to stderr while writing redacted output
 obfsck redact input.txt --audit
 
-# Custom secrets config (overrides bundled config)
+# Custom secrets config (adds a runtime pattern pass; bundled patterns remain active)
 obfsck redact input.txt --config ~/.config/obfsck/secrets.yaml
 ```
 
@@ -70,9 +70,12 @@ obfsck redact input.txt --config ~/.config/obfsck/secrets.yaml
 |------|---------|-------------|
 | `--level <minimal\|standard\|paranoid>` | `minimal` | Obfuscation level |
 | `--output <file>` / `-o` | stdout | Write redacted output to file |
-| `--config <path>` / `-c` | bundled | Path to secrets YAML config |
-| `--audit` | off | Report findings to stderr without redacting |
-| `--pii-off` | off | Suppress PII patterns at standard+ levels |
+| `--config <path>` / `-c` | automatic lookup | Path to secrets YAML config |
+| `--audit` | off | Report per-pattern findings to stderr while writing redacted output |
+| `--profile <default\|pii\|full\|paranoid>` | `default` | Apply a pattern-group preset; `pii` raises minimal to standard and `paranoid` forces paranoid level |
+| `--pii <on\|off>` | `on` | Enable or suppress PII patterns at standard+ levels |
+| `--allowlist <value>` | none | Preserve a value; repeatable |
+| `--allowlist-file <path>` | none | Load preserved values from a file |
 
 ## scan CLI (pre-commit)
 
@@ -87,6 +90,9 @@ scan --staged
 
 # Skip gitleaks (obfsck patterns only)
 scan --staged --no-gitleaks
+
+# Require gitleaks instead of skipping it when unavailable
+scan --staged --require-gitleaks
 
 # Set obfuscation level
 scan --staged --level standard
@@ -111,6 +117,26 @@ scan --staged --level minimal
 The allowlist at `~/.config/obfsck/allowlist` (one entry per line)
 skips known false positives like test fixtures.
 
+### `obfsck:ignore`
+
+Test fixtures and examples often contain credential-shaped strings that are not
+secrets. Mark the line and both `obfsck redact` and `obfsck scan` leave it alone:
+
+```rust
+let key = "AKIAIOSFODNN7EXAMPLE"; // obfsck:ignore
+```
+
+The marker is matched as a bare token anywhere in the line, so `#`, `//`, or no
+comment sigil all work, and `obfsck: ignore` is equivalent. A word boundary is
+required after `ignore` — `obfsck:ignored` is prose and does not suppress.
+
+The whole line is exempt, which is what you want for a fixture: it matches
+`gitleaks:allow` and `noqa` semantics. The marker travels with the code, so a
+reviewer can see why the value is safe without checking a config file.
+
+Use the allowlist instead when a value should be skipped everywhere, rather than
+only on one line.
+
 ## obfsck-mcp (MCP server)
 
 JSON-RPC server exposing two tools for IDE and agent integration:
@@ -120,7 +146,7 @@ JSON-RPC server exposing two tools for IDE and agent integration:
 
 ```bash
 # Build and install
-cargo build --bin obfsck-mcp
+cargo build --release --bin obfsck-mcp
 cp target/release/obfsck-mcp ~/.local/bin/
 
 # The server reads JSON-RPC from stdin and writes to stdout
@@ -146,6 +172,11 @@ Common options:
 -l, --last <duration>          Time range to query [default: 1h]
 -n, --limit <n>                Maximum number of alerts [default: 5]
 -d, --dry-run                  Skip LLM analysis, show obfuscated prompt
+-s, --store                    Store the generated analysis
+-v, --verbose                  Enable verbose output
+-j, --json                     Emit JSON output
+    --loki-url <url>            Override the Loki endpoint
+    --victorialogs-url <url>    Override the VictoriaLogs endpoint
 -b, --backend <backend>        Log backend (loki|vm|victorialogs)
 ```
 
@@ -168,7 +199,8 @@ groups:
 ```
 
 Lookup order: `--config` flag -> `~/.config/obfsck/secrets.yaml` ->
-bundled config.
+bundled config. The selected YAML supplies the CLI pattern pass; `Obfuscator`
+currently applies compiled bundled definitions afterward as a separate pass.
 
 ## Public API
 
@@ -191,6 +223,11 @@ Exports:
   Option<HashMap<String, String>>, ObfuscationMapExport)`
 - `Obfuscator::new(level)` — stateful, supports `.with_allowlist()`
 - `ObfuscationLevel::parse("minimal|standard|paranoid")`
+- `PatternSet::bundled()` — compile bundled secret definitions
+- `PatternSet::from_config(config)` — compile enabled runtime groups and custom patterns
+- `PatternSet::{patterns, diagnostics, is_empty}` — inspect compiled patterns and errors
+- `Pattern::{name, group, expression, label, min_level, regex, applies_at}` — inspect metadata and gating
+- `PatternCompileError::{name, group, message}` — inspect invalid-pattern diagnostics
 
 ## Development
 

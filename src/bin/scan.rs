@@ -130,8 +130,11 @@ impl SecretScanner for ObfsckScanner {
             let source_line = next_source_line.unwrap_or(line_no + 1);
             next_source_line = next_source_line.map(|line| line + 1);
 
-            // Skip lines that match any allowlisted value or glob pattern.
-            if self.allowlist.matches_line(content) {
+            // Skip lines carrying an inline suppression marker, then lines
+            // that match any allowlisted value or glob pattern.
+            if obfsck::suppression::is_suppressed_line(content)
+                || self.allowlist.matches_line(content)
+            {
                 continue;
             }
 

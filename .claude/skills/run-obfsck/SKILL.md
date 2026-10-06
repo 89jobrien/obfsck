@@ -123,6 +123,14 @@ property, and golden suites. 6 tests are skipped by design.
   pattern, while the *assembled* value (used at runtime, piped into
   `scan`) still does. If you add a new fixture secret to `demo.py`, split
   it the same way or the commit will fail its own pre-commit hook.
+- **`obfsck:ignore` on the line is cleaner than either workaround above.**
+  A fixture literal followed by `obfsck:ignore` is exempt from both the
+  hook and `obfsck redact`, so the value can stay contiguous and readable
+  instead of being assembled from fragments. Both `redact` and `scan`
+  honor it. It does not help the `.obfsck.toml` case above: an allowlist
+  entry suppresses the key everywhere, while the marker suppresses only
+  the line it sits on — so a `scan` demo can use the marker on its fixture
+  line and still detect the key elsewhere.
 - **`redact` has no `--version` flag.** `target/release/redact --version`
   exits 2 with a clap "unrecognized argument" error, not a version string.
 - **`api`/`analyzer` construct their backend clients at startup without

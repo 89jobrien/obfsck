@@ -87,8 +87,28 @@ Work items are tracked in `.ctx/HANDOFF.obfsck.obfsck.yaml` and
 
 The global git hook scans a filtered staged diff with `obfsck-scan` when available; its fallbacks
 extract added lines and use `obfsck redact --level minimal`, then the deprecated `redact` binary.
-Fake test tokens (e.g. `ghp_aaa...`) trigger it — add them to
-`~/.config/obfsck/allowlist` (one per line).
+
+### Suppressing False Positives on Test Fixtures
+
+Credential-shaped test data trips the hook. Three mechanisms, in order of preference:
+
+1. **Inline marker — preferred.** Append `obfsck:ignore` to the line:
+
+   ```text
+   let key = "AKIAIOSFODNN7EXAMPLE"; // obfsck:ignore
+   ```
+
+   The whole line is then exempt from redaction and from scan findings. The token is
+   matched as a bare token anywhere in the line, so `#`, `//`, or no sigil all work.
+   A word boundary is required after `ignore`, so `obfsck:ignored` does **not** count.
+   Honored by both `obfsck redact` and `obfsck-scan`.
+
+2. **Repo-local allowlist** — `.obfsck.toml` `[allowlist] patterns`. Loaded by
+   `obfsck-scan` only; the `redact` CLI does not read it.
+3. **Global allowlist** — `~/.config/obfsck/allowlist`, one entry per line. Honored by both.
+
+Prefer the inline marker over an allowlist entry: the justification travels with the code,
+so a reviewer can see why the value is safe without cross-referencing a config file.
 
 ## Pattern Sources — Audit Pass
 

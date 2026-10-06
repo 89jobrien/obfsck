@@ -31,6 +31,7 @@ pub use patterns::{Pattern, PatternCompileError, PatternSet};
 mod helpers;
 use helpers::{is_sensitive_path, obfuscate_path_value, shannon_entropy};
 pub(crate) mod json_utils;
+pub mod suppression;
 
 use regex::Regex;
 use std::borrow::Cow;
@@ -277,7 +278,37 @@ impl Obfuscator {
     }
 
     /// Redacts secrets and level-appropriate PII while preserving stable token mappings.
+    ///
+    /// Lines carrying an inline `obfsck:ignore` marker are passed through
+    /// untouched, so credential-shaped fixtures can live in source without an
+    /// allowlist entry. See [`suppression`] for the marker syntax.
     pub fn obfuscate(&mut self, text: &str) -> String {
+        if text.is_empty() {
+            return text.to_string();
+        }
+
+        // Only pay for line-wise processing when a marker is actually present.
+        // Otherwise the whole text goes through as one string, which preserves
+        // cross-line matching for the common case.
+        if suppression::has_marker(text) {
+            let mut out = String::with_capacity(text.len());
+            // split_inclusive keeps each line's own terminator, so output is
+            // byte-identical to the input outside the redacted segments.
+            for line in text.split_inclusive('\n') {
+                if suppression::is_suppressed_line(line) {
+                    out.push_str(line);
+                } else {
+                    out.push_str(&self.obfuscate_line(line));
+                }
+            }
+            return out;
+        }
+
+        self.obfuscate_line(text)
+    }
+
+    /// Redact a single span of text, with no suppression-marker handling.
+    fn obfuscate_line(&mut self, text: &str) -> String {
         if text.is_empty() {
             return text.to_string();
         }

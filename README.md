@@ -117,6 +117,26 @@ scan --staged --level minimal
 The allowlist at `~/.config/obfsck/allowlist` (one entry per line)
 skips known false positives like test fixtures.
 
+### `obfsck:ignore`
+
+Test fixtures and examples often contain credential-shaped strings that are not
+secrets. Mark the line and both `obfsck redact` and `obfsck scan` leave it alone:
+
+```rust
+let key = "AKIAIOSFODNN7EXAMPLE"; // obfsck:ignore
+```
+
+The marker is matched as a bare token anywhere in the line, so `#`, `//`, or no
+comment sigil all work, and `obfsck: ignore` is equivalent. A word boundary is
+required after `ignore` — `obfsck:ignored` is prose and does not suppress.
+
+The whole line is exempt, which is what you want for a fixture: it matches
+`gitleaks:allow` and `noqa` semantics. The marker travels with the code, so a
+reviewer can see why the value is safe without checking a config file.
+
+Use the allowlist instead when a value should be skipped everywhere, rather than
+only on one line.
+
 ## obfsck-mcp (MCP server)
 
 JSON-RPC server exposing two tools for IDE and agent integration:

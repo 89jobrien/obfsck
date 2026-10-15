@@ -1,7 +1,7 @@
 //! Routes canonical redaction and analysis commands and handles redaction I/O.
 
 use crate::yaml_config::SecretsConfig;
-use crate::{Allowlist, ObfuscationLevel, Obfuscator, PatternSet};
+use crate::{Allowlist, ObfuscationLevel, Obfuscator, PatternSet, suppression};
 use clap::{Parser, Subcommand, ValueEnum};
 use miette::{Context, IntoDiagnostic, Result};
 use std::collections::HashMap;
@@ -243,12 +243,21 @@ pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
     let writer = open_writer(args.output.as_deref())?;
     let mut writer = BufWriter::new(writer);
 
+    // `obfuscate` is handed one line at a time here, so it cannot see the line
+    // above on its own. The tracker carries an `obfsck:ignore` marker down to
+    // the line it precedes.
+    let mut tracker = suppression::SuppressionTracker::default();
+
     for (line_no, line) in reader.lines().enumerate() {
         let line = line
             .into_diagnostic()
             .wrap_err_with(|| format!("failed to read input at line {}", line_no + 1))?;
 
-        if args.audit {
+        // Capture this before the audit block, which must also stand down for
+        // suppressed lines: a line marked as fixture data is not a finding.
+        let suppressed = tracker.is_suppressed(&line);
+
+        if args.audit && !suppressed {
             let mut audit_text = line.clone();
             for pattern in pattern_set.patterns() {
                 if !pattern.applies_at(level, pii_enabled) {
@@ -277,7 +286,11 @@ pub fn run_redact_from_args(args: RedactArgs) -> Result<()> {
             }
         }
 
-        let out = obfuscator.obfuscate(&line);
+        let out = if suppressed {
+            line
+        } else {
+            obfuscator.obfuscate(&line)
+        };
 
         writeln!(writer, "{out}")
             .into_diagnostic()

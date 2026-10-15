@@ -108,19 +108,33 @@ impl SecretScanner for ObfsckScanner {
 
         let mut current_path: Option<String> = None;
         let mut next_source_line: Option<usize> = None;
+        // Carries a standalone `obfsck:ignore` marker down to the next line,
+        // since the scanner walks the diff rather than the file.
+        let mut tracker = obfsck::suppression::SuppressionTracker::default();
 
         for (line_no, line) in diff.lines().enumerate() {
             if let Some(path) = line.strip_prefix("+++ ") {
                 current_path = diff_path(path);
+                tracker.reset();
                 continue;
             }
             if line.starts_with("@@ ") {
                 next_source_line = hunk_new_line_start(line);
+                tracker.reset();
                 continue;
             }
 
             // Only scan added lines in the diff (lines starting with '+' but not '+++').
             if !line.starts_with('+') {
+                if line.starts_with('-') {
+                    // A removed marker line must not suppress what follows it.
+                    tracker.reset();
+                } else {
+                    // Context lines are not scanned, but an existing marker
+                    // above an added line still applies. Feed the line so the
+                    // tracker can see it; the verdict is unused here.
+                    let _ = tracker.is_suppressed(line);
+                }
                 if !line.starts_with('-') && next_source_line.is_some() {
                     next_source_line = next_source_line.map(|line| line + 1);
                 }
@@ -130,11 +144,10 @@ impl SecretScanner for ObfsckScanner {
             let source_line = next_source_line.unwrap_or(line_no + 1);
             next_source_line = next_source_line.map(|line| line + 1);
 
-            // Skip lines carrying an inline suppression marker, then lines
-            // that match any allowlisted value or glob pattern.
-            if obfsck::suppression::is_suppressed_line(content)
-                || self.allowlist.matches_line(content)
-            {
+            // Skip lines carrying an inline suppression marker or sitting
+            // below a standalone one, then lines that match any allowlisted
+            // value or glob pattern.
+            if tracker.is_suppressed(content) || self.allowlist.matches_line(content) {
                 continue;
             }
 

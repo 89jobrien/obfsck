@@ -103,6 +103,16 @@ Credential-shaped test data trips the hook. Three mechanisms, in order of prefer
    A word boundary is required after `ignore`, so `obfsck:ignored` does **not** count.
    Honored by both `obfsck redact` and `obfsck-scan`.
 
+   When the value cannot carry a comment, put the marker on the line above it:
+
+   ```text
+   #[obfsck:ignore]
+   AKIAIOSFODNN7EXAMPLE
+   ```
+
+   Only a line with no other text beside the marker suppresses the line below;
+   a trailing marker suppresses only its own line.
+
 2. **Repo-local allowlist** — `.obfsck.toml` `[allowlist] patterns`. Loaded by
    `obfsck-scan` only; the `redact` CLI does not read it.
 3. **Global allowlist** — `~/.config/obfsck/allowlist`, one entry per line. Honored by both.

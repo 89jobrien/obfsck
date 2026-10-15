@@ -281,7 +281,8 @@ impl Obfuscator {
     ///
     /// Lines carrying an inline `obfsck:ignore` marker are passed through
     /// untouched, so credential-shaped fixtures can live in source without an
-    /// allowlist entry. See [`suppression`] for the marker syntax.
+    /// allowlist entry. A line carrying only the marker also exempts the line
+    /// below it. See [`suppression`] for the marker syntax.
     pub fn obfuscate(&mut self, text: &str) -> String {
         if text.is_empty() {
             return text.to_string();
@@ -292,10 +293,11 @@ impl Obfuscator {
         // cross-line matching for the common case.
         if suppression::has_marker(text) {
             let mut out = String::with_capacity(text.len());
+            let mut tracker = suppression::SuppressionTracker::default();
             // split_inclusive keeps each line's own terminator, so output is
             // byte-identical to the input outside the redacted segments.
             for line in text.split_inclusive('\n') {
-                if suppression::is_suppressed_line(line) {
+                if tracker.is_suppressed(line) {
                     out.push_str(line);
                 } else {
                     out.push_str(&self.obfuscate_line(line));

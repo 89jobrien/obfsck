@@ -134,6 +134,22 @@ The whole line is exempt, which is what you want for a fixture: it matches
 `gitleaks:allow` and `noqa` semantics. The marker travels with the code, so a
 reviewer can see why the value is safe without checking a config file.
 
+#### Marker above the target
+
+A trailing marker has to share a line with the value, which is not always
+possible — a bare token in a fixture file cannot carry a comment. A line holding
+*only* the marker suppresses the line immediately below it:
+
+```rust
+#[obfsck:ignore]
+AKIAIOSFODNN7EXAMPLE
+```
+
+Only a line with no other text beside the marker reaches down this way. A
+trailing marker suppresses its own line and stops there, so marking one fixture
+line cannot quietly exempt the line after it. Both forms work with `obfsck
+redact` and `obfsck scan`.
+
 Use the allowlist instead when a value should be skipped everywhere, rather than
 only on one line.
 

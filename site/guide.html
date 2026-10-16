@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Redacts secrets and PII from log lines and structured text.">
+    <title>obfsck guide</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <nav class="nav" aria-label="Primary">
+      <a href="index.html" class="brand">obfsck</a>
+      <a href="index.html">Overview</a>
+      <a href="guide.html" aria-current="page">Guide</a>
+      <a href="crates.html">Crates</a>
+      <a href="features.html">Features</a>
+      <a href="cli.html">CLI</a>
+      <a href="commands.html">Commands</a>
+    </nav>
+
+    <main id="main">
+      <section id="guide" class="reveal">
+        <h2>Guide</h2>
+        <p class="note">
+          Carried over from <code>README.md</code>. Edit the README, not this
+          page.
+        </p>
+        <h3 id="install">Install</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">cargo install --path .</span></div>
+  <pre><span class="prompt">$</span> cargo install --path .
+</pre>
+</div>
+
+        <h3 id="what-it-does">What it does</h3>
+<p>- Replaces secrets with labeled tokens (for example <code>[REDACTED-AWS-KEY]</code>)
+- Obfuscates identifiers with stable mappings (same input =&gt; same token)
+- Supports privacy levels based on how aggressive redaction should be</p>
+
+        <h3 id="obfuscation-levels">Obfuscation levels</h3>
+<p>- <code>Minimal</code>: secret pattern redaction only
+- <code>Standard</code>: adds IP, email, container ID, user, and PII obfuscation
+- <code>Paranoid</code>: adds path, hostname, and high-entropy token redaction
+
+Path obfuscation supports Unix, Windows drive paths, and UNC paths.
+Sensitive system paths are preserved.
+
+Preserved path segments include common roots like <code>home</code>, <code>usr</code>, <code>etc</code>,
+<code>windows</code>, <code>users</code>, and <code>programdata</code>.</p>
+
+        <h3 id="what-each-level-redacts">What each level redacts</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Pattern category</th><th>minimal</th><th>standard</th><th>paranoid</th></tr>
+</thead>
+<tbody>
+<tr><td>API keys, tokens, passwords</td><td>yes</td><td>yes</td><td>yes</td></tr>
+<tr><td>IPs, emails, container IDs, usernames</td><td>—</td><td>yes</td><td>yes</td></tr>
+<tr><td>PII (names, SSN, phone, credit card)</td><td>—</td><td>yes</td><td>yes</td></tr>
+<tr><td>Paths, hostnames, high-entropy strings</td><td>—</td><td>—</td><td>yes</td></tr>
+<tr><td>Paranoid-only PII (IBAN, passport, DL)</td><td>—</td><td>—</td><td>yes</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>standard</code> is the privacy-forward default for sharing logs externally.
+<code>minimal</code> is safe for internal tooling where structural identifiers are useful.</p>
+
+        <h3 id="obfsck-cli">obfsck CLI</h3>
+<p>Redact secrets and PII from a file or stdin.</p>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">echo &quot;key=sk-ant-api03-ABCDEF...&quot; | obfsck redact</span></div>
+  <pre><span class="cmt"># Stdin -&gt; stdout (default level: minimal — secrets only)</span>
+<span class="prompt">$</span> echo &quot;key=sk-ant-api03-ABCDEF...&quot; | obfsck redact
+
+<span class="cmt"># File input</span>
+obfsck redact path/to/logfile.txt
+
+<span class="cmt"># Write to output file</span>
+obfsck redact input.txt --output redacted.txt
+
+<span class="cmt"># Increase level</span>
+obfsck redact input.txt --level standard   # + IPs, emails, usernames, PII
+obfsck redact input.txt --level paranoid   # + paths, hostnames, high-entropy
+
+<span class="cmt"># Audit mode — report findings to stderr while writing redacted output</span>
+obfsck redact input.txt --audit
+
+<span class="cmt"># Custom secrets config (adds a runtime pattern pass; bundled patterns remain active)</span>
+obfsck redact input.txt --config ~/.config/obfsck/secrets.yaml
+</pre>
+</div>
+
+        <h3 id="flags">Flags</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>`--level &lt;minimal\</td><td>standard\</td><td>paranoid&gt;`</td><td><code>minimal</code></td><td>Obfuscation level</td></tr>
+<tr><td><code>--output &lt;file&gt;</code> / <code>-o</code></td><td>stdout</td><td>Write redacted output to file</td></tr>
+<tr><td><code>--config &lt;path&gt;</code> / <code>-c</code></td><td>automatic lookup</td><td>Path to secrets YAML config</td></tr>
+<tr><td><code>--audit</code></td><td>off</td><td>Report per-pattern findings to stderr while writing redacted output</td></tr>
+<tr><td>`--profile &lt;default\</td><td>pii\</td><td>full\</td><td>paranoid&gt;`</td><td><code>default</code></td><td>Apply a pattern-group preset; <code>pii</code> raises minimal to standard and <code>paranoid</code> forces paranoid level</td></tr>
+<tr><td>`--pii &lt;on\</td><td>off&gt;`</td><td><code>on</code></td><td>Enable or suppress PII patterns at standard+ levels</td></tr>
+<tr><td><code>--allowlist &lt;value&gt;</code></td><td>none</td><td>Preserve a value; repeatable</td></tr>
+<tr><td><code>--allowlist-file &lt;path&gt;</code></td><td>none</td><td>Load preserved values from a file</td></tr>
+</tbody>
+</table>
+</div>
+
+        <h3 id="scan-cli--pre-commit-">scan CLI (pre-commit)</h3>
+<p>Scans a unified diff for secrets using both obfsck patterns and gitleaks.</p>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">git diff --staged | scan</span></div>
+  <pre><span class="cmt"># Pipe a diff</span>
+<span class="prompt">$</span> git diff --staged | scan
+
+<span class="cmt"># Or let scan capture the staged diff itself</span>
+scan --staged
+
+<span class="cmt"># Skip gitleaks (obfsck patterns only)</span>
+scan --staged --no-gitleaks
+
+<span class="cmt"># Require gitleaks instead of skipping it when unavailable</span>
+scan --staged --require-gitleaks
+
+<span class="cmt"># Set obfuscation level</span>
+scan --staged --level standard
+</pre>
+</div>
+
+        <h3 id="pre-commit-hook">Pre-commit hook</h3>
+<p>Add to <code>.githooks/pre-commit</code> or your global hooks:</p>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">git diff --staged | scan --level minimal</span></div>
+  <pre><span class="cmt">#!/bin/sh</span>
+<span class="prompt">$</span> git diff --staged | scan --level minimal
+</pre>
+</div>
+<p>Or use <code>--staged</code> mode:</p>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">scan --staged --level minimal</span></div>
+  <pre><span class="cmt">#!/bin/sh</span>
+<span class="prompt">$</span> scan --staged --level minimal
+</pre>
+</div>
+<p>The allowlist at <code>~/.config/obfsck/allowlist</code> (one entry per line)
+skips known false positives like test fixtures.</p>
+
+        <h3 id="obfsck-mcp--mcp-server-">obfsck-mcp (MCP server)</h3>
+<p>JSON-RPC server exposing two tools for IDE and agent integration:
+
+- <code>audit</code> — scan text for secret patterns, returns labeled findings
+- <code>generate-filters</code> — suggest log filter patterns from secret examples</p>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">cargo build --release --bin obfsck-mcp</span></div>
+  <pre><span class="cmt"># Build and install</span>
+<span class="prompt">$</span> cargo build --release --bin obfsck-mcp
+cp target/release/obfsck-mcp ~/.local/bin/
+
+<span class="cmt"># The server reads JSON-RPC from stdin and writes to stdout</span>
+</pre>
+</div>
+
+        <h3 id="alert-analyzer">Alert Analyzer</h3>
+<p>Fetches alerts from Loki or VictoriaLogs, obfuscates them, and sends
+to an LLM for analysis. Behind the <code>analyzer</code> feature flag.</p>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">cargo run --bin obfsck -- analyze --last 1h --limit 5 --dry-run</span></div>
+  <pre><span class="prompt">$</span> cargo run --bin obfsck -- analyze --last 1h --limit 5 --dry-run
+</pre>
+</div>
+<p>The standalone <code>redact</code> and <code>analyzer</code> binaries are deprecated compatibility aliases.
+New scripts should use <code>obfsck redact</code> and <code>obfsck analyze</code>.
+
+Common options:</p>
+<pre><code>-c, --config &lt;path&gt;            Configuration file path
+-p, --priority &lt;priority&gt;      Filter by priority
+-l, --last &lt;duration&gt;          Time range to query [default: 1h]
+-n, --limit &lt;n&gt;                Maximum number of alerts [default: 5]
+-d, --dry-run                  Skip LLM analysis, show obfuscated prompt
+-s, --store                    Store the generated analysis
+-v, --verbose                  Enable verbose output
+-j, --json                     Emit JSON output
+    --loki-url &lt;url&gt;            Override the Loki endpoint
+    --victorialogs-url &lt;url&gt;    Override the VictoriaLogs endpoint
+-b, --backend &lt;backend&gt;        Log backend (loki|vm|victorialogs)
+</code></pre>
+
+        <h3 id="custom-config">Custom config</h3>
+<p>The bundled <code>config/secrets.yaml</code> covers common secret patterns grouped
+by category (<code>ai_apis</code>, <code>cloud</code>, <code>pii</code>, <code>paranoid</code>, etc.). Each group
+supports:</p>
+<pre><code>groups:
+  my_group:
+    enabled: true
+    min_level: standard   # omit to apply at all levels
+    patterns:
+      - name: my_token
+        pattern: '\bTOK_[A-Za-z0-9]{32}\b'
+        label: MY-TOKEN
+        paranoid_only: false  # true = only fires at paranoid
+</code></pre>
+<p>Lookup order: <code>--config</code> flag -&gt; <code>~/.config/obfsck/secrets.yaml</code> -&gt;
+bundled config. The selected YAML supplies the CLI pattern pass; <code>Obfuscator</code>
+currently applies compiled bundled definitions afterward as a separate pass.</p>
+
+        <h3 id="public-api">Public API</h3>
+<pre><code>use obfsck::{obfuscate_text, ObfuscationLevel, Obfuscator};
+
+// One-shot function
+let (redacted, map) = obfuscate_text(text, ObfuscationLevel::Standard);
+
+// Stateful obfuscator with allowlist
+let mut obfuscator = Obfuscator::new(ObfuscationLevel::Standard)
+    .with_allowlist(vec![&quot;10.0.0.1&quot;.into()]);
+let redacted = obfuscator.obfuscate(text);
+</code></pre>
+<p>Exports:
+
+- <code>obfuscate_text(text, level) -&gt; (String, ObfuscationMapExport)</code>
+- <code>obfuscate_alert(output, fields, level) -&gt; (Option&lt;String&gt;,
+  Option&lt;HashMap&lt;String, String&gt;&gt;, ObfuscationMapExport)</code>
+- <code>Obfuscator::new(level)</code> — stateful, supports <code>.with_allowlist()</code>
+- <code>ObfuscationLevel::parse(&quot;minimal|standard|paranoid&quot;)</code>
+- <code>PatternSet::bundled()</code> — compile bundled secret definitions
+- <code>PatternSet::from_config(config)</code> — compile enabled runtime groups and custom patterns
+- <code>PatternSet::{patterns, diagnostics, is_empty}</code> — inspect compiled patterns and errors
+- <code>Pattern::{name, group, expression, label, min_level, regex, applies_at}</code> — inspect metadata and gating
+- <code>PatternCompileError::{name, group, message}</code> — inspect invalid-pattern diagnostics</p>
+
+        <h3 id="development">Development</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">just ci               # or: mise run ci</span></div>
+  <pre><span class="cmt"># check / build / test / lint / CI gate</span>
+<span class="prompt">$</span> just ci               # or: mise run ci
+
+<span class="cmt"># individual steps</span>
+cargo check
+cargo test
+cargo clippy --all-targets -- -D warnings
+cargo bench            # criterion benchmarks
+
+<span class="cmt"># formatting</span>
+cargo fmt --all
+</pre>
+</div>
+
+        <h3 id="example-output">Example output</h3>
+<pre><code>Before: event_id=evt-001 user=alice src=10.1.1.5 dst=198.51.100.10
+        email=alice@corp.example path=/var/lib/app/env.json
+
+After:  event_id=evt-001 user=[USER-1] src=[IP-INTERNAL-1]
+        dst=[IP-EXTERNAL-1] email=[EMAIL-1] path=/var/lib/app/[FILE].json
+</code></pre>
+
+        <h3 id="further-reading">Further reading</h3>
+        <ul>
+          <li><code>docs/GAP_ANALYSIS.md</code></li>
+          <li><code>docs/PATTERN_QUICK_REFERENCE.md</code></li>
+          <li><code>docs/PATTERN_RESEARCH.md</code></li>
+          <li><code>docs/dotfiles-integration.md</code></li>
+          <li><code>docs/feature-roadmap.md</code></li>
+          <li><code>docs/garble-style-obfuscation-idea.md</code></li>
+          <li><code>docs/gitleaks-gap-analysis.md</code></li>
+          <li><code>docs/token-format-research.md</code></li>
+          <li><code>docs/workflow-integrations.md</code></li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

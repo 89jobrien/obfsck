@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Redacts secrets and PII from log lines and structured text.">
+    <title>obfsck features</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <nav class="nav" aria-label="Primary">
+      <a href="index.html" class="brand">obfsck</a>
+      <a href="index.html">Overview</a>
+      <a href="guide.html">Guide</a>
+      <a href="crates.html">Crates</a>
+      <a href="features.html" aria-current="page">Features</a>
+      <a href="cli.html">CLI</a>
+      <a href="commands.html">Commands</a>
+    </nav>
+
+    <main id="main">
+      <section id="features" class="reveal">
+        <h2>Features</h2>
+        <p>
+          Cargo features as declared, not as intended. A feature listed here
+          with no enables clause is a flag nothing currently reads.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Feature</th><th>Crate</th><th>Enables</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>analyzer</code></td>
+                <td><code>obfsck</code></td>
+                <td>axum, chrono, clap, reqwest, serde_yaml, sha2, shellexpand, simplify_baml, simplify_baml_macros, tokio, tower-http, tracing-appender, tracing-subscriber</td>
+              </tr>
+              <tr>
+                <td><code>axum</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:axum</td>
+              </tr>
+              <tr>
+                <td><code>chrono</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:chrono</td>
+              </tr>
+              <tr>
+                <td><code>clap</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:clap</td>
+              </tr>
+              <tr>
+                <td><code>default</code></td>
+                <td><code>obfsck</code></td>
+                <td>analyzer</td>
+              </tr>
+              <tr>
+                <td><code>legacy-user-scan</code></td>
+                <td><code>obfsck</code></td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td><code>path-policy-home-user-redact</code></td>
+                <td><code>obfsck</code></td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td><code>path-policy-non-allowlisted-redact</code></td>
+                <td><code>obfsck</code></td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td><code>reqwest</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:reqwest</td>
+              </tr>
+              <tr>
+                <td><code>serde_yaml</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:serde_yaml</td>
+              </tr>
+              <tr>
+                <td><code>sha2</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:sha2</td>
+              </tr>
+              <tr>
+                <td><code>shellexpand</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:shellexpand</td>
+              </tr>
+              <tr>
+                <td><code>simplify_baml</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:simplify_baml</td>
+              </tr>
+              <tr>
+                <td><code>simplify_baml_macros</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:simplify_baml_macros</td>
+              </tr>
+              <tr>
+                <td><code>tokio</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:tokio</td>
+              </tr>
+              <tr>
+                <td><code>tower-http</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:tower-http</td>
+              </tr>
+              <tr>
+                <td><code>tracing-appender</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:tracing-appender</td>
+              </tr>
+              <tr>
+                <td><code>tracing-subscriber</code></td>
+                <td><code>obfsck</code></td>
+                <td>dep:tracing-subscriber</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

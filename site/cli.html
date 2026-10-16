@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Redacts secrets and PII from log lines and structured text.">
+    <title>obfsck CLI</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <nav class="nav" aria-label="Primary">
+      <a href="index.html" class="brand">obfsck</a>
+      <a href="index.html">Overview</a>
+      <a href="guide.html">Guide</a>
+      <a href="crates.html">Crates</a>
+      <a href="features.html">Features</a>
+      <a href="cli.html" aria-current="page">CLI</a>
+      <a href="commands.html">Commands</a>
+    </nav>
+
+    <main id="main">
+      <section id="cli" class="reveal">
+        <h2>CLI</h2>
+        <p class="note">
+          Captured by running each binary with <code>--help</code>. It cannot
+          drift from the tool the way a transcribed page can.
+        </p>
+        <h3 id="analyzer---help">analyzer --help</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">analyzer --help</span></div>
+  <pre><span class="prompt">$</span> Alert Analyzer - LLM-powered security alert analysis
+
+Usage: analyzer [OPTIONS]
+
+Options:
+  -c, --config &lt;CONFIG&gt;                      
+  -p, --priority &lt;PRIORITY&gt;                  
+  -l, --last &lt;LAST&gt;                          [default: 1h]
+  -n, --limit &lt;LIMIT&gt;                        [default: 5]
+  -d, --dry-run                              
+  -s, --store                                
+  -v, --verbose                              
+  -j, --json                                 
+      --loki-url &lt;LOKI_URL&gt;                  
+      --victorialogs-url &lt;VICTORIALOGS_URL&gt;  
+  -b, --backend &lt;BACKEND&gt;                    
+  -h, --help                                 Print help
+  -V, --version                              Print version
+</pre>
+</div>
+        <h3 id="api---help">api --help</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">api --help</span></div>
+  <pre><span class="prompt">$</span> REST API for AI-powered alert analysis
+
+Usage: api [OPTIONS]
+
+Options:
+      --host &lt;HOST&gt;  [default: 0.0.0.0]
+  -p, --port &lt;PORT&gt;  [default: 5000]
+  -h, --help         Print help
+  -V, --version      Print version
+</pre>
+</div>
+        <h3 id="obfsck---help">obfsck --help</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">obfsck --help</span></div>
+  <pre><span class="prompt">$</span> Redact and analyze sensitive log data
+
+Usage: obfsck &lt;COMMAND&gt;
+
+Commands:
+  redact   Redact secrets and PII from a file or stdin
+  analyze  Fetch and analyze security alerts
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+</pre>
+</div>
+        <h3 id="obfsck-redact---help">obfsck redact --help</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">obfsck redact --help</span></div>
+  <pre><span class="prompt">$</span> Redact and analyze sensitive log data
+
+Usage: obfsck &lt;COMMAND&gt;
+
+Commands:
+  redact   Redact secrets and PII from a file or stdin
+  analyze  Fetch and analyze security alerts
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+</pre>
+</div>
+        <h3 id="obfsck-analyze---help">obfsck analyze --help</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">obfsck analyze --help</span></div>
+  <pre><span class="prompt">$</span> Redact and analyze sensitive log data
+
+Usage: obfsck &lt;COMMAND&gt;
+
+Commands:
+  redact   Redact secrets and PII from a file or stdin
+  analyze  Fetch and analyze security alerts
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+</pre>
+</div>
+        <h3 id="obfsck-help---help">obfsck help --help</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">obfsck help --help</span></div>
+  <pre><span class="prompt">$</span> Redact and analyze sensitive log data
+
+Usage: obfsck &lt;COMMAND&gt;
+
+Commands:
+  redact   Redact secrets and PII from a file or stdin
+  analyze  Fetch and analyze security alerts
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+</pre>
+</div>
+        <h3 id="redact---help">redact --help</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">redact --help</span></div>
+  <pre><span class="prompt">$</span> Redact secrets and PII from a file or stdin. Output goes to stdout unless -o is given.
+
+Usage: redact [OPTIONS] [INPUT]
+
+Arguments:
+  [INPUT]  Input file to redact. Reads from stdin if omitted
+
+Options:
+  -o, --output &lt;OUTPUT&gt;        Write redacted output to this file instead of stdout
+  -l, --level &lt;LEVEL&gt;          Obfuscation level: minimal, standard, paranoid [default: minimal]
+  -c, --config &lt;CONFIG&gt;        Path to secrets YAML config. Lookup order: explicit path → ~/.config/obfsck/secrets.yaml → bundled config
+      --audit                  Print a per-pattern match report to stderr. Output is still written to stdout
+      --profile &lt;PROFILE&gt;      Preset profile: default, pii, full, paranoid [default: default]
+      --pii &lt;PII&gt;              Enable or disable PII redaction (email, IP, names, SSN, etc.). Secrets (API keys, tokens) are always redacted regardless of this flag. Accepted values: on, off, true, false, yes, no, 1, 0 [default: on]
+      --allowlist &lt;VALUE&gt;      Values to never redact, even if they match a pattern. Repeatable. Also loaded from ~/.config/obfsck/allowlist (one entry per line)
+      --allowlist-file &lt;PATH&gt;  File containing allowlist entries, one per line
+  -h, --help                   Print help
+  -V, --version                Print version
+</pre>
+</div>
+        <h3 id="scan---help">scan --help</h3>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">scan --help</span></div>
+  <pre><span class="prompt">$</span> Scan a diff for secrets using obfsck and gitleaks. Reads unified diff from stdin or uses --staged to capture git diff automatically.
+
+Usage: scan [OPTIONS]
+
+Options:
+      --staged            Run `git diff --staged` internally instead of reading from stdin
+  -l, --level &lt;LEVEL&gt;     Obfuscation level for obfsck patterns: minimal, standard, paranoid [default: minimal]
+      --no-gitleaks       Skip the gitleaks scan even if gitleaks is on PATH
+      --require-gitleaks  Treat a missing gitleaks binary as an error (default: skip silently)
+  -h, --help              Print help
+  -V, --version           Print version
+</pre>
+</div>
+      </section>
+    </main>
+  </body>
+</html>

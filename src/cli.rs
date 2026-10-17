@@ -34,6 +34,11 @@ enum ObfsckCommand {
         #[command(flatten)]
         args: crate::analyzer::CliArgs,
     },
+    /// Scan a diff for secrets using obfsck and gitleaks.
+    Scan {
+        #[command(flatten)]
+        args: crate::scan::ScanArgs,
+    },
 }
 
 /// Arguments accepted by the redaction command.
@@ -131,6 +136,7 @@ pub fn run_from_args(args: ObfsckArgs) -> Result<i32> {
             crate::logging::init(crate::ANALYZER_DEFAULT_FILTER);
             crate::analyzer::run_from_args(args).map_err(miette::Report::new)
         }
+        ObfsckCommand::Scan { args } => crate::scan::run_scan_from_args(args),
     }
 }
 

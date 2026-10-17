@@ -30,7 +30,8 @@ Preserved path segments include common roots like `home`, `usr`, `etc`,
 
 | Pattern category | minimal | standard | paranoid |
 |-----------------|---------|----------|----------|
-| API keys, tokens, passwords | yes | yes | yes |
+| Prefixed API keys & tokens (AWS, GitHub, Stripe, …) | yes | yes | yes |
+| Generic `password = …` / `api_key = …` in source | — | — | — |
 | IPs, emails, container IDs, usernames | — | yes | yes |
 | PII (names, SSN, phone, credit card) | — | yes | yes |
 | Paths, hostnames, high-entropy strings | — | — | yes |
@@ -38,6 +39,11 @@ Preserved path segments include common roots like `home`, `usr`, `etc`,
 
 `standard` is the privacy-forward default for sharing logs externally.
 `minimal` is safe for internal tooling where structural identifiers are useful.
+
+Generic keyword-anchored patterns (`password = …`, `api_key = …`) live in the
+`code_context` group, which is disabled by default because it false-positives
+heavily on source code. Enable it in a custom config when scanning `.env`
+files, config dumps, or log output rather than code.
 
 ## obfsck CLI
 
@@ -60,7 +66,7 @@ obfsck redact input.txt --level paranoid   # + paths, hostnames, high-entropy
 # Audit mode — report findings to stderr while writing redacted output
 obfsck redact input.txt --audit
 
-# Custom secrets config (adds a runtime pattern pass; bundled patterns remain active)
+# Custom secrets config (replaces the bundled pattern set)
 obfsck redact input.txt --config ~/.config/obfsck/secrets.yaml
 ```
 
@@ -77,41 +83,45 @@ obfsck redact input.txt --config ~/.config/obfsck/secrets.yaml
 | `--allowlist <value>` | none | Preserve a value; repeatable |
 | `--allowlist-file <path>` | none | Load preserved values from a file |
 
-## scan CLI (pre-commit)
+## `obfsck scan` (pre-commit)
 
 Scans a unified diff for secrets using both obfsck patterns and gitleaks.
 
 ```bash
 # Pipe a diff
-git diff --staged | scan
+git diff --staged | obfsck scan
 
 # Or let scan capture the staged diff itself
-scan --staged
+obfsck scan --staged
 
 # Skip gitleaks (obfsck patterns only)
-scan --staged --no-gitleaks
+obfsck scan --staged --no-gitleaks
 
 # Require gitleaks instead of skipping it when unavailable
-scan --staged --require-gitleaks
+obfsck scan --staged --require-gitleaks
 
 # Set obfuscation level
-scan --staged --level standard
+obfsck scan --staged --level standard
 ```
+
+Exit codes: `0` clean, `1` findings reported, `2` scanner or git failure.
 
 ### Pre-commit hook
 
-Add to `.githooks/pre-commit` or your global hooks:
+The repo ships `just scan-diff`, which pipes the staged diff through
+`obfsck scan --no-gitleaks` and then runs `gitleaks protect --staged`. To wire
+it into `.githooks/pre-commit` directly:
 
 ```bash
 #!/bin/sh
-git diff --staged | scan --level minimal
+git diff --staged | obfsck scan --level minimal
 ```
 
 Or use `--staged` mode:
 
 ```bash
 #!/bin/sh
-scan --staged --level minimal
+obfsck scan --staged --level minimal
 ```
 
 The allowlist at `~/.config/obfsck/allowlist` (one entry per line)

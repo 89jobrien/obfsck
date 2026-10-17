@@ -16,10 +16,10 @@ Evidence-backed opportunities identified from the current repository. Status val
 | Priority | Status | Feature | Evidence |
 | --- | --- | --- | --- |
 | M1 | queued | Emit structured, non-mutating audit findings | `src/cli.rs` contains `TODO(roadmap-audit)`; current audit mode still writes transformed output. |
-| M2 | queued | Scan files and repositories recursively | `src/bin/scan.rs` contains `TODO(roadmap-scan-path)` and currently accepts unified diffs only. |
+| M2 | queued | Scan files and repositories recursively | `src/scan.rs` contains `TODO(roadmap-scan-path)` and currently accepts unified diffs only. |
 | M3 | queued | Complete the level-aware MCP contract | `src/mcp/mod.rs` contains `TODO(roadmap-mcp)`; MCP tools do not accept level, PII, allowlist, or custom pattern settings. |
 | M4 | queued | Support configurable analyzer queries and labels | `src/analyzer/mod.rs` contains `TODO(roadmap-query)` and constructs fixed backend queries. |
-| M5 | queued | Move remaining binaries under the canonical CLI | `src/cli.rs` exposes `redact` and `analyze`, while `scan`, `api`, and `obfsck-mcp` remain separate binaries. |
+| M5 | queued | Move remaining binaries under the canonical CLI | `src/cli.rs` exposes `redact`, `analyze`, and `scan`; `api` and `obfsck-mcp` remain separate binaries. |
 
 ## Large
 

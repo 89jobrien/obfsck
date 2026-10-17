@@ -20,6 +20,8 @@ pub mod logging;
 #[cfg(feature = "analyzer")]
 pub mod mcp;
 #[cfg(feature = "analyzer")]
+pub mod scan;
+#[cfg(feature = "analyzer")]
 pub mod schema;
 
 pub mod adapters;

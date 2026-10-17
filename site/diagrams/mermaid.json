@@ -8,7 +8,7 @@
     "lineColor": "#aaa99b",
     "secondaryColor": "#20211c",
     "tertiaryColor": "#171812",
-    "fontFamily": "Martian Mono, IBM Plex Mono, ui-monospace, monospace",
+    "fontFamily": "IBM Plex Mono, ui-monospace, monospace",
     "fontSize": "14px",
     "clusterBkg": "#20211c",
     "clusterBorder": "#484a3e",

@@ -170,16 +170,24 @@ audit-levels:
 scan-diff:
     #!/usr/bin/env sh
     set -e
-    SCAN_BIN="obfsck-scan"
-    if ! command -v "$SCAN_BIN" > /dev/null 2>&1; then
-        SCAN_BIN="cargo run --bin scan --"
+    # Prefer the canonical `obfsck scan`. The standalone `scan` binary is a
+    # deprecated compatibility shim and is deliberately not used here:
+    # invoking it would print a deprecation warning on every commit.
+    if command -v obfsck > /dev/null 2>&1; then
+        SCAN="obfsck scan"
+    else
+        SCAN="cargo run --quiet --bin obfsck -- scan"
     fi
     if [ -z "$(git diff --staged --name-only)" ]; then
         echo "scan-diff: no staged changes to scan"
         exit 0
     fi
-    git diff --staged | $SCAN_BIN --no-gitleaks
+    # `set -e` would abort the pipeline before the exit code could be
+    # inspected, so the handler below would never run.
+    set +e
+    git diff --staged | $SCAN --no-gitleaks
     OBFSCK_EXIT=$?
+    set -e
     if [ $OBFSCK_EXIT -ne 0 ]; then
         echo "scan-diff: obfsck found secrets in staged diff — aborting" >&2
         exit $OBFSCK_EXIT

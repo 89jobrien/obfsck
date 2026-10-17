@@ -56,7 +56,8 @@ Preserved path segments include common roots like <code>home</code>, <code>usr</
 <tr><th>Pattern category</th><th>minimal</th><th>standard</th><th>paranoid</th></tr>
 </thead>
 <tbody>
-<tr><td>API keys, tokens, passwords</td><td>yes</td><td>yes</td><td>yes</td></tr>
+<tr><td>Prefixed API keys &amp; tokens (AWS, GitHub, Stripe, &hellip;)</td><td>yes</td><td>yes</td><td>yes</td></tr>
+<tr><td>Generic <code>password&nbsp;=&nbsp;&hellip;</code> / <code>api_key&nbsp;=&nbsp;&hellip;</code> in source</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
 <tr><td>IPs, emails, container IDs, usernames</td><td>—</td><td>yes</td><td>yes</td></tr>
 <tr><td>PII (names, SSN, phone, credit card)</td><td>—</td><td>yes</td><td>yes</td></tr>
 <tr><td>Paths, hostnames, high-entropy strings</td><td>—</td><td>—</td><td>yes</td></tr>
@@ -66,6 +67,13 @@ Preserved path segments include common roots like <code>home</code>, <code>usr</
 </div>
 <p><code>standard</code> is the privacy-forward default for sharing logs externally.
 <code>minimal</code> is safe for internal tooling where structural identifiers are useful.</p>
+<p class="note">Generic keyword-anchored patterns (<code>password = …</code>,
+<code>api_key = …</code>) live in the <code>code_context</code> group in
+<code>config/secrets.yaml</code>, which is <code>enabled: false</code> because they
+false-positive heavily on source code. Nothing of that shape is redacted at any
+level unless you enable that group in a custom config &mdash; which is the right
+setting when scanning <code>.env</code> files, config dumps, or log output rather
+than code.</p>
 
         <h3 id="obfsck-cli">obfsck CLI</h3>
 <p>Redact secrets and PII from a file or stdin.</p>
@@ -87,7 +95,7 @@ obfsck redact input.txt --level paranoid   # + paths, hostnames, high-entropy
 <span class="cmt"># Audit mode — report findings to stderr while writing redacted output</span>
 obfsck redact input.txt --audit
 
-<span class="cmt"># Custom secrets config (adds a runtime pattern pass; bundled patterns remain active)</span>
+<span class="cmt"># Custom secrets config (REPLACES the bundled pattern set)</span>
 obfsck redact input.txt --config ~/.config/obfsck/secrets.yaml
 </pre>
 </div>
@@ -111,44 +119,77 @@ obfsck redact input.txt --config ~/.config/obfsck/secrets.yaml
 </table>
 </div>
 
-        <h3 id="scan-cli--pre-commit-">scan CLI (pre-commit)</h3>
+        <h3 id="obfsck-scan--pre-commit-">obfsck scan (pre-commit)</h3>
 <p>Scans a unified diff for secrets using both obfsck patterns and gitleaks.</p>
 <div class="terminal">
-  <div class="terminal-bar"><span class="label">git diff --staged | scan</span></div>
+  <div class="terminal-bar"><span class="label">git diff --staged | obfsck scan</span></div>
   <pre><span class="cmt"># Pipe a diff</span>
-<span class="prompt">$</span> git diff --staged | scan
+<span class="prompt">$</span> git diff --staged | obfsck scan
 
 <span class="cmt"># Or let scan capture the staged diff itself</span>
-scan --staged
+obfsck scan --staged
 
 <span class="cmt"># Skip gitleaks (obfsck patterns only)</span>
-scan --staged --no-gitleaks
+obfsck scan --staged --no-gitleaks
 
 <span class="cmt"># Require gitleaks instead of skipping it when unavailable</span>
-scan --staged --require-gitleaks
+obfsck scan --staged --require-gitleaks
 
 <span class="cmt"># Set obfuscation level</span>
-scan --staged --level standard
+obfsck scan --staged --level standard
 </pre>
 </div>
+<p>Exit codes: <code>0</code> clean, <code>1</code> findings reported, <code>2</code>
+scanner or git failure.</p>
 
         <h3 id="pre-commit-hook">Pre-commit hook</h3>
-<p>Add to <code>.githooks/pre-commit</code> or your global hooks:</p>
+<p>The repository ships <code>just scan-diff</code>, which pipes the staged diff
+through <code>obfsck scan --no-gitleaks</code> and then runs
+<code>gitleaks protect --staged</code>. To wire it up directly:</p>
 <div class="terminal">
-  <div class="terminal-bar"><span class="label">git diff --staged | scan --level minimal</span></div>
+  <div class="terminal-bar"><span class="label">git diff --staged | obfsck scan --level minimal</span></div>
   <pre><span class="cmt">#!/bin/sh</span>
-<span class="prompt">$</span> git diff --staged | scan --level minimal
+<span class="prompt">$</span> git diff --staged | obfsck scan --level minimal
 </pre>
 </div>
 <p>Or use <code>--staged</code> mode:</p>
 <div class="terminal">
-  <div class="terminal-bar"><span class="label">scan --staged --level minimal</span></div>
+  <div class="terminal-bar"><span class="label">obfsck scan --staged --level minimal</span></div>
   <pre><span class="cmt">#!/bin/sh</span>
-<span class="prompt">$</span> scan --staged --level minimal
+<span class="prompt">$</span> obfsck scan --staged --level minimal
 </pre>
 </div>
+<p>The standalone <code>scan</code> binary still works and forwards here, but it
+prints a deprecation warning on every run. Prefer <code>obfsck scan</code>.</p>
 <p>The allowlist at <code>~/.config/obfsck/allowlist</code> (one entry per line)
 skips known false positives like test fixtures.</p>
+
+        <h3 id="obfsck-ignore">obfsck:ignore</h3>
+<p>Fixtures and examples routinely contain credential-shaped strings that are
+not secrets. Mark the line and both <code>obfsck redact</code> and
+<code>obfsck scan</code> leave it alone:</p>
+<div class="terminal">
+  <div class="terminal-bar"><span class="label">obfsck:ignore</span></div>
+  <pre><span class="cmt"># Trailing marker — suppresses its own line</span>
+let key = "AKIAIOSFODNN7EXAMPLE"; // obfsck:ignore
+
+<span class="cmt"># Standalone marker — suppresses the line below it</span>
+#[obfsck:ignore]
+AKIAIOSFODNN7EXAMPLE
+</pre>
+</div>
+<p>The marker is matched as a bare token anywhere in the line, so <code>#</code>,
+<code>//</code>, or no comment sigil all work, and <code>obfsck: ignore</code> is
+equivalent. A word boundary is required after <code>ignore</code> &mdash;
+<code>obfsck:ignored</code> is prose and does not suppress.</p>
+<p>Only a line with <em>no other text beside the marker</em> suppresses the line
+below it. A trailing marker suppresses its own line and stops there, so marking
+one fixture line cannot quietly exempt the next.</p>
+<p class="note">In a diff, a marker on a context line governs the added line
+replacing the line below it. A marker that is itself being removed is not
+honoured.</p>
+<p>Use the allowlist instead when a value should be skipped everywhere, rather
+than on one line. See <code>README.md</code> for the full marker rules.</p>
 
         <h3 id="obfsck-mcp--mcp-server-">obfsck-mcp (MCP server)</h3>
 <p>JSON-RPC server exposing two tools for IDE and agent integration:
@@ -205,8 +246,15 @@ supports:</p>
         paranoid_only: false  # true = only fires at paranoid
 </code></pre>
 <p>Lookup order: <code>--config</code> flag -&gt; <code>~/.config/obfsck/secrets.yaml</code> -&gt;
-bundled config. The selected YAML supplies the CLI pattern pass; <code>Obfuscator</code>
-currently applies compiled bundled definitions afterward as a separate pass.</p>
+bundled config. The selected YAML <strong>replaces</strong> the bundled pattern
+set; it is not merged on top of it. <code>Obfuscator::with_pattern_set</code> is
+documented as &ldquo;Replaces the bundled secret patterns used by this
+obfuscator.&rdquo;</p>
+<p class="note">This is a replacement, not an overlay. Verified: with a custom
+config that defines a single unrelated pattern, <code>aws_key=AKIA…</code> is
+passed through unredacted, whereas with the bundled config it becomes
+<code>[REDACTED-AWS-KEY]</code>. If you supply a custom config, re-declare every
+pattern you still want.</p>
 
         <h3 id="public-api">Public API</h3>
 <pre><code>use obfsck::{obfuscate_text, ObfuscationLevel, Obfuscator};
@@ -224,13 +272,24 @@ let redacted = obfuscator.obfuscate(text);
 - <code>obfuscate_text(text, level) -&gt; (String, ObfuscationMapExport)</code>
 - <code>obfuscate_alert(output, fields, level) -&gt; (Option&lt;String&gt;,
   Option&lt;HashMap&lt;String, String&gt;&gt;, ObfuscationMapExport)</code>
-- <code>Obfuscator::new(level)</code> — stateful, supports <code>.with_allowlist()</code>
+- <code>Obfuscator::new(level)</code> — stateful, also supports
+  <code>.with_pii()</code>, <code>.with_pattern_set()</code>, and reads back
+  <code>.level()</code> / <code>.mapping()</code>
+- <code>Allowlist::new(entries)</code> — exact values and glob patterns preserved verbatim
 - <code>ObfuscationLevel::parse(&quot;minimal|standard|paranoid&quot;)</code>
 - <code>PatternSet::bundled()</code> — compile bundled secret definitions
 - <code>PatternSet::from_config(config)</code> — compile enabled runtime groups and custom patterns
 - <code>PatternSet::{patterns, diagnostics, is_empty}</code> — inspect compiled patterns and errors
 - <code>Pattern::{name, group, expression, label, min_level, regex, applies_at}</code> — inspect metadata and gating
-- <code>PatternCompileError::{name, group, message}</code> — inspect invalid-pattern diagnostics</p>
+- <code>PatternCompileError::{name, group, message}</code> — inspect invalid-pattern diagnostics
+- <code>SECRET_PATTERN_DEFS</code> and <code>secret_pattern_errors()</code> — the
+  definitions baked in by <code>build.rs</code>, and any that failed to compile</p>
+<p>Feature-gated modules (<code>api</code>, <code>analyzer</code>,
+<code>clients</code>, <code>mcp</code>, <code>schema</code>,
+<code>logging</code>, <code>cli</code>, <code>scan</code>) require the
+<code>analyzer</code> feature, which is on by default. <code>adapters</code>,
+<code>ports</code>, <code>patterns</code>, <code>helpers</code>, and
+<code>suppression</code> are always available.</p>
 
         <h3 id="development">Development</h3>
 <div class="terminal">
@@ -251,11 +310,15 @@ cargo fmt --all
 
         <h3 id="example-output">Example output</h3>
 <pre><code>Before: event_id=evt-001 user=alice src=10.1.1.5 dst=198.51.100.10
-        email=alice@corp.example path=/var/lib/app/env.json
+        email=alice@corp.example path=/var/lib/app/environment.json
 
 After:  event_id=evt-001 user=[USER-1] src=[IP-INTERNAL-1]
         dst=[IP-EXTERNAL-1] email=[EMAIL-1] path=/var/lib/app/[FILE].json
 </code></pre>
+<p class="note">Filenames are only redacted when the stem is longer than
+three characters, so <code>env.json</code> survives the path pass and is then
+caught by the hostname pass as <code>[HOST-1]</code> instead. Lengthen the stem,
+or accept <code>[HOST-1]</code>, if that surprises you.</p>
 
         <h3 id="further-reading">Further reading</h3>
         <ul>

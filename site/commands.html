@@ -26,46 +26,54 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Command</th><th>Crate</th><th>Entry point</th></tr>
+              <tr><th>Command</th><th>Crate</th><th>Entry point</th><th>Status</th></tr>
             </thead>
             <tbody>
+              <tr>
+                <td><code>obfsck</code></td>
+                <td><code>obfsck</code></td>
+                <td><code>obfsck.rs</code></td>
+                <td>Canonical. <code>redact</code>, <code>analyze</code>, <code>scan</code></td>
+              </tr>
               <tr>
                 <td><code>analyzer</code></td>
                 <td><code>obfsck</code></td>
                 <td><code>analyzer.rs</code></td>
+                <td>Deprecated &rarr; <code>obfsck analyze</code></td>
               </tr>
               <tr>
                 <td><code>api</code></td>
                 <td><code>obfsck</code></td>
                 <td><code>api.rs</code></td>
-              </tr>
-              <tr>
-                <td><code>obfsck</code></td>
-                <td><code>obfsck</code></td>
-                <td><code>obfsck.rs</code></td>
+                <td>Supported &mdash; REST server, no subcommand form</td>
               </tr>
               <tr>
                 <td><code>obfsck-mcp</code></td>
                 <td><code>obfsck</code></td>
                 <td><code>mcp.rs</code></td>
+                <td>Supported &mdash; JSON-RPC, no <code>--help</code></td>
               </tr>
               <tr>
                 <td><code>redact</code></td>
                 <td><code>obfsck</code></td>
                 <td><code>redact.rs</code></td>
+                <td>Deprecated &rarr; <code>obfsck redact</code></td>
               </tr>
               <tr>
                 <td><code>scan</code></td>
                 <td><code>obfsck</code></td>
                 <td><code>scan.rs</code></td>
+                <td>Deprecated &rarr; <code>obfsck scan</code></td>
               </tr>
             </tbody>
           </table>
         </div>
         <p class="note">
-          Subcommands and flags are not listed because they are not in
-          <code>cargo metadata</code>. Add them by hand, or generate them from
-          <code>--help</code>, if this site needs to document them.
+          Subcommands and flags are not in <code>cargo metadata</code>, so they
+          live on the <a href="cli.html">CLI page</a> instead. Those blocks are
+          generated from the real binaries by
+          <code>uv run scripts/gen_cli_help.py</code>; run it with
+          <code>--check</code> to verify the page has not drifted.
         </p>
       </section>
     </main>

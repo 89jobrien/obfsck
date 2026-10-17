@@ -1,36 +1,58 @@
-//! Parses analyzer CLI options and renders fetched alert analyses.
-
-use super::{AlertAnalyzer, Result, load_config};
-
-const SEPARATOR: &str = "======================================================================";
 use clap::Parser;
 use serde_json::Value;
 use tracing::{debug, error, info, warn};
 
+use super::{AlertAnalyzer, Result, load_config};
+
+const SEPARATOR: &str = "======================================================================";
+
+/// Options accepted by the alert analysis command.
 #[derive(Debug, Parser, Clone)]
 #[command(name = "alert-analyzer", version)]
 #[command(about = "Alert Analyzer - LLM-powered security alert analysis")]
 pub struct CliArgs {
+    /// Path to analyzer config YAML. Lookup order: explicit path →
+    /// ~/.config/obfsck/analyzer.yaml → bundled config.
     #[arg(short = 'c', long = "config")]
     pub config: Option<String>,
+
+    /// Only analyze alerts with this priority, e.g. high or critical.
     #[arg(short = 'p', long = "priority")]
     pub priority: Option<String>,
+
+    /// How far back to fetch alerts, as a duration such as 1h or 24h.
     #[arg(short = 'l', long = "last", default_value = "1h")]
     pub last: String,
+
+    /// Maximum number of alerts to fetch and analyze.
     #[arg(short = 'n', long = "limit", default_value_t = 5)]
     pub limit: usize,
+
+    /// Build and print the LLM prompt without calling the API.
     #[arg(short = 'd', long = "dry-run", default_value_t = false)]
     pub dry_run: bool,
+
+    /// Persist successful analyses to the result cache. Ignored with --dry-run.
     #[arg(short = 's', long = "store", default_value_t = false)]
     pub store: bool,
+
+    /// Log the obfuscation token summary for each analyzed alert.
     #[arg(short = 'v', long = "verbose", default_value_t = false)]
     pub verbose: bool,
+
+    /// Emit results as JSON instead of rendered text.
     #[arg(short = 'j', long = "json", default_value_t = false)]
     pub json: bool,
+
+    /// Override the Loki URL. Implies the loki backend.
     #[arg(long = "loki-url")]
     pub loki_url: Option<String>,
+
+    /// Override the VictoriaLogs URL. Implies the victorialogs backend.
     #[arg(long = "victorialogs-url")]
     pub victorialogs_url: Option<String>,
+
+    /// Log backend to query: loki or victorialogs.
     #[arg(short = 'b', long = "backend")]
     pub backend: Option<String>,
 }

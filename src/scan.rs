@@ -20,18 +20,18 @@ use std::io::{self, Read};
 /// finding something. Distinct from `1`, which means findings were reported.
 const EXIT_ERROR: i32 = 2;
 
-/// Arguments accepted by the diff scanning command.
+// The command name below is pinned to `scan` so the usage line reads correctly
+// both under the canonical `obfsck scan` and under the deprecated standalone
+// `scan` binary, which shares this struct. This note is deliberately a plain
+// comment: anything in the doc comment becomes the binary's `--help` text.
+
+/// Scan a unified diff for secrets using obfsck patterns and gitleaks.
 ///
-/// The command name is pinned to `scan` so the usage line reads correctly
-/// both under the canonical `obfsck scan` and under the deprecated
-/// standalone `scan` binary, which shares this struct.
+/// Reads the diff from stdin, or captures `git diff --staged` when `--staged`
+/// is passed. Exits 0 when clean, 1 when findings are reported, and 2 when the
+/// scanner itself cannot run.
 #[derive(Debug, Parser)]
-#[command(
-    name = "scan",
-    version,
-    about = "Scan a diff for secrets using obfsck and gitleaks. \
-             Reads unified diff from stdin or uses --staged to capture git diff automatically."
-)]
+#[command(name = "scan", version)]
 pub struct ScanArgs {
     /// Run `git diff --staged` internally instead of reading from stdin.
     #[arg(long)]

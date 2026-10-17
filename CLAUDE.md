@@ -81,6 +81,24 @@ documents this directly ("Replaces the bundled secret patterns"). A custom confi
 fewer patterns therefore redacts fewer secrets — verified: with a minimal custom config,
 `aws_key=AKIA…` passes through untouched.
 
+## Documentation Gates
+
+`site/` is published to GitHub Pages, so drift is user-visible. Two gates run in
+CI (`site` job), in `just ci`, and in the pre-push hook via `just site-check`:
+
+- `just site-validate` — tag balance, JSON validity, internal links
+  (`rust-script scripts/validate-site.rs`)
+- `just site-cli-help` — `site/cli.html` must match the real `--help` output
+  (`rust-script scripts/gen-cli-help.rs --check`)
+
+After changing any flag, doc comment, or subcommand, run `just site-update` to
+rewrite the captured help and re-validate. Do not hand-edit the help blocks in
+`site/cli.html`; they are generated, and `--check` fails on the difference.
+
+**Gotcha:** a doc comment on a clap `Parser`/`Args` struct becomes its `--help`
+text. Keep internal rationale in `//` comments, not `///`, or it leaks into
+user-facing help.
+
 ## Issue Tracking
 
 Work items are tracked in `.ctx/HANDOFF.obfsck.obfsck.yaml` and

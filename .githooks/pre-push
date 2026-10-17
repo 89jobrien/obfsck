@@ -1,5 +1,8 @@
 #!/bin/sh
-# pre-push: full test suite — blocks broken tests before push
+# pre-push: full test suite plus the documentation gates — blocks broken tests
+# and a site that has drifted from the code before anything leaves the machine.
 set -e
 echo "pre-push: cargo nextest run"
 cargo nextest run
+echo "pre-push: just site-check"
+just site-check

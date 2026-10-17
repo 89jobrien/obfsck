@@ -38,6 +38,22 @@ jobs:
           tool: cargo-nextest
       - run: cargo nextest run --workspace
 
+  site:
+    name: Site Drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: rust-script
+      # Structure, JSON validity, and internal links.
+      - run: rust-script scripts/validate-site.rs
+      # site/cli.html must match the real --help output. The script falls back
+      # to `cargo run` when nothing is installed, so this needs no release build.
+      - run: rust-script scripts/gen-cli-help.rs --check
+
   audit:
     name: Audit & Deny
     runs-on: ubuntu-latest

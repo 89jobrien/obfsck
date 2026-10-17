@@ -113,8 +113,30 @@ install-hooks:
 # CI gate
 # ---------------------------------------------------------------------------
 
-# Full local CI: lint + test + build (mirrors mise run ci)
-ci: lint test build
+# Full local CI: lint + test + build + docs drift (mirrors mise run ci)
+ci: lint test build site-check
+
+# ---------------------------------------------------------------------------
+# Documentation gates — keep site/ honest about the code
+# ---------------------------------------------------------------------------
+
+# Fail if the static site has broken tags, invalid JSON, or dead internal links.
+site-validate:
+    @echo "--- site: structure and links ---"
+    rust-script scripts/validate-site.rs
+
+# Fail if site/cli.html no longer matches the real --help output.
+site-cli-help:
+    @echo "--- site: cli.html vs built binaries ---"
+    rust-script scripts/gen-cli-help.rs --check
+
+# Both documentation gates. This is the single entry point used by `ci`.
+site-check: site-validate site-cli-help
+
+# Rewrite site/cli.html from the real --help output. Run after changing a flag.
+site-update:
+    rust-script scripts/gen-cli-help.rs
+    rust-script scripts/validate-site.rs
 
 # ---------------------------------------------------------------------------
 # Level invariant probes — quick manual checks for the PII gating invariant

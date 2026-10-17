@@ -21,16 +21,17 @@ cargo bench             # criterion benchmarks
 - `src/lib.rs` — public API: redaction functions, `Obfuscator`, and pattern types
 - `src/patterns/mod.rs` — `Pattern`, `PatternSet`, and pattern diagnostics
 - `config/secrets.yaml` — authoritative bundled secret definitions compiled by `build.rs`
-- `src/cli.rs` — canonical `obfsck redact` / `obfsck analyze` routing
+- `src/cli.rs` — canonical `obfsck redact` / `obfsck analyze` / `obfsck scan` routing
 - `src/helpers.rs` — path/entropy utilities
 - `src/analyzer/` — alert fetching + LLM analysis (behind `analyzer` feature)
 - `src/api/` — axum REST server (behind `analyzer` feature)
 - `src/clients/` — Loki / VictoriaLogs backends (behind `analyzer` feature)
 - `src/schema.rs` — BAML schema for structured LLM output
+- `src/scan.rs` — unified-diff secret scanner engine (`obfsck scan`)
 - `src/bin/obfsck.rs` — canonical CLI entry point
 - `src/bin/redact.rs` — deprecated redaction compatibility alias
 - `src/bin/analyzer.rs` — deprecated analyzer compatibility alias
-- `src/bin/scan.rs` — unified-diff secret scanner
+- `src/bin/scan.rs` — deprecated scan compatibility alias
 - `src/bin/api.rs` — HTTP API server
 - `src/bin/mcp.rs` — MCP JSON-RPC server (`obfsck-mcp`)
 
@@ -74,9 +75,11 @@ mise run baml:dry-run   # Analyzer without LLM calls (inspect prompt)
 Secret patterns live in **one place**: `config/secrets.yaml`. `build.rs` generates Rust into
 Cargo's `OUT_DIR` and `src/lib.rs` includes it at compile time — do not edit generated output.
 
-`~/.config/obfsck/secrets.yaml` replaces the YAML selected for the CLI pattern pass, but
-`Obfuscator` currently applies compiled bundled definitions afterward. Custom config therefore
-does not disable bundled library patterns until the shared pattern-engine migration is complete.
+`~/.config/obfsck/secrets.yaml` **replaces** the YAML selected for the CLI pattern pass, and
+the compiled-in bundled definitions are not applied afterward. `Obfuscator::with_pattern_set`
+documents this directly ("Replaces the bundled secret patterns"). A custom config that defines
+fewer patterns therefore redacts fewer secrets — verified: with a minimal custom config,
+`aws_key=AKIA…` passes through untouched.
 
 ## Issue Tracking
 
@@ -85,8 +88,13 @@ Work items are tracked in `.ctx/HANDOFF.obfsck.obfsck.yaml` and
 
 ## Pre-commit Hook
 
-The global git hook scans a filtered staged diff with `obfsck-scan` when available; its fallbacks
-extract added lines and use `obfsck redact --level minimal`, then the deprecated `redact` binary.
+The global git hook runs `just scan-diff`, which pipes the staged diff through `obfsck scan` and
+then gitleaks. Fallbacks extract added lines and use `obfsck redact --level minimal`, then the
+deprecated `redact` binary.
+
+**`obfsck scan` is canonical.** The standalone `scan` binary is a deprecated compatibility shim
+that warns and forwards; do not add new invocations of it. There is no `obfsck-scan` binary — do
+not reference that name.
 
 ### Suppressing False Positives on Test Fixtures
 
@@ -101,7 +109,7 @@ Credential-shaped test data trips the hook. Three mechanisms, in order of prefer
    The whole line is then exempt from redaction and from scan findings. The token is
    matched as a bare token anywhere in the line, so `#`, `//`, or no sigil all work.
    A word boundary is required after `ignore`, so `obfsck:ignored` does **not** count.
-   Honored by both `obfsck redact` and `obfsck-scan`.
+   Honored by both `obfsck redact` and `obfsck scan`.
 
    When the value cannot carry a comment, put the marker on the line above it:
 
@@ -114,7 +122,7 @@ Credential-shaped test data trips the hook. Three mechanisms, in order of prefer
    a trailing marker suppresses only its own line.
 
 2. **Repo-local allowlist** — `.obfsck.toml` `[allowlist] patterns`. Loaded by
-   `obfsck-scan` only; the `redact` CLI does not read it.
+   `obfsck scan` only; the `redact` CLI does not read it.
 3. **Global allowlist** — `~/.config/obfsck/allowlist`, one entry per line. Honored by both.
 
 Prefer the inline marker over an allowlist entry: the justification travels with the code,
